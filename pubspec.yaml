@@ -1,0 +1,39 @@
+name: bed_space
+description: "Bed Space Management App - Client-only with Google Sheets"
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  
+  # State Management
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.5
+  
+  # Google Services
+  google_sign_in: ^6.2.1
+  googleapis: ^13.0.0
+  http: ^1.2.2
+  
+  # Local Storage
+  shared_preferences: ^2.2.3
+  
+  # Date & Time
+  intl: ^0.19.0
+  
+  # Notifications
+  flutter_local_notifications: ^17.2.2
+  timezone: ^0.9.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
