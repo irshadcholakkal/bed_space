@@ -4,65 +4,53 @@ abstract class ManagementState extends Equatable {
   const ManagementState();
 
   @override
-  List<Object> get props => [];
+  List<Object?> get props => [];
 }
- 
 
 class ManagementInitial extends ManagementState {}
 
-class ManagementLoading extends ManagementState {}
-
-class BuildingsLoaded extends ManagementState {
+class ManagementLoaded extends ManagementState {
+  final bool isLoading;
+  final String? error;
   final List<BuildingModel> buildings;
-
-  const BuildingsLoaded({required this.buildings});
-
-  @override
-  List<Object> get props => [buildings];
-}
-
-class RoomsLoaded extends ManagementState {
   final List<RoomModel> rooms;
-
-  const RoomsLoaded({required this.rooms});
-
-  @override
-  List<Object> get props => [rooms];
-}
-
-class TenantsLoaded extends ManagementState {
   final List<TenantModel> tenants;
-
-  const TenantsLoaded({required this.tenants});
-
-  @override
-  List<Object> get props => [tenants];
-}
-
-class PaymentsLoaded extends ManagementState {
   final List<PaymentModel> payments;
+  final Map<String, dynamic> tenantBalance;
 
-  const PaymentsLoaded({required this.payments});
+  const ManagementLoaded({
+    this.isLoading = false,
+    this.error,
+    this.buildings = const [],
+    this.rooms = const [],
+    this.tenants = const [],
+    this.payments = const [],
+    this.tenantBalance = const {},
+  });
+
+  ManagementLoaded copyWith({
+    bool? isLoading,
+    String? error,
+    List<BuildingModel>? buildings,
+    List<RoomModel>? rooms,
+    List<TenantModel>? tenants,
+    List<PaymentModel>? payments,
+    Map<String, dynamic>? tenantBalance,
+  }) {
+    return ManagementLoaded(
+      isLoading: isLoading ?? this.isLoading,
+      error: error, // error is not persisted by default, unless explicitly passed
+      buildings: buildings ?? this.buildings,
+      rooms: rooms ?? this.rooms,
+      tenants: tenants ?? this.tenants,
+      payments: payments ?? this.payments,
+      tenantBalance: tenantBalance ?? this.tenantBalance,
+    );
+  }
 
   @override
-  List<Object> get props => [payments];
+  List<Object?> get props => [isLoading, error, buildings, rooms, tenants, payments, tenantBalance];
 }
 
-class TenantBalanceLoaded extends ManagementState {
-  final Map<String, dynamic> balance;
-
-  const TenantBalanceLoaded({required this.balance});
-
-  @override
-  List<Object> get props => [balance];
-}
-
-class ManagementError extends ManagementState {
-  final String message;
-
-  const ManagementError(this.message);
-
-  @override
-  List<Object> get props => [message];
-}
-
+// Deprecated states retained temporarily if needed, but we will migrate away.
+// Actually, I will remove them to force migration and fix all errors.

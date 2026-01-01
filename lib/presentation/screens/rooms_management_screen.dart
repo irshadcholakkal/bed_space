@@ -13,10 +13,20 @@ class RoomsManagementScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Rooms'),
+        title: Text(
+          'Manage Rooms',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.textColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+            tooltip: 'Add Room',
             onPressed: () => _showAddRoomDialog(context),
           ),
         ],
@@ -26,46 +36,63 @@ class RoomsManagementScreen extends StatelessWidget {
           if (state is ManagementInitial) {
             context.read<ManagementBloc>().add(const LoadRooms());
             context.read<ManagementBloc>().add(const LoadBuildings());
+            return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
           }
 
-          if (state is ManagementLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          if (state is ManagementLoaded) {
+             if (state.isLoading && state.rooms.isEmpty) {
+              return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+            }
 
-          if (state is ManagementError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
-                  const SizedBox(height: 16),
-                  Text('Error: ${state.message}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<ManagementBloc>().add(const LoadRooms());
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
+            if (state.error != null && state.rooms.isEmpty) {
+               return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${state.error}',
+                      style: const TextStyle(color: AppTheme.textColor),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<ManagementBloc>().add(const LoadRooms());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          if (state is RoomsLoaded) {
             if (state.rooms.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.door_front_door_outlined, size: 64, color: AppTheme.textColor),
+                    const Icon(Icons.meeting_room_outlined, size: 64, color: AppTheme.softGrey),
                     const SizedBox(height: 16),
-                    const Text('No rooms found'),
+                    Text(
+                      'No rooms found',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppTheme.softGrey,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: () => _showAddRoomDialog(context),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Room'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                      ),
                     ),
                   ],
                 ),
@@ -73,40 +100,61 @@ class RoomsManagementScreen extends StatelessWidget {
             }
 
             return RefreshIndicator(
+              color: AppTheme.primaryColor,
               onRefresh: () async {
                 context.read<ManagementBloc>().add(const LoadRooms());
               },
               child: ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 itemCount: state.rooms.length,
                 itemBuilder: (context, index) {
                   final room = state.rooms[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: AppTheme.cardDecoration,
                     child: ListTile(
-                      leading: const Icon(Icons.door_front_door, color: AppTheme.primaryColor),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.door_front_door, color: AppTheme.primaryColor),
+                      ),
                       title: Text(
                         'Room ${room.roomNumber}',
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.textColor,
+                        ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Capacity: ${room.totalCapacity} beds'),
-                          Text('Lower: ${room.lowerBedsCount} | Upper: ${room.upperBedsCount}'),
-                          Text('Rent: Lower ₹${room.lowerBedRent.toStringAsFixed(0)} | Upper ₹${room.upperBedRent.toStringAsFixed(0)}'),
-                          Text('Utility: ₹${room.utilityCostMonthly.toStringAsFixed(0)}/month'),
-                        ],
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Capacity: ${room.totalCapacity} beds', style: const TextStyle(color: AppTheme.secondaryTextColor)),
+                            const SizedBox(height: 4),
+                            Text('Lower: ${room.lowerBedsCount} | Upper: ${room.upperBedsCount}', style: const TextStyle(color: AppTheme.secondaryTextColor, fontSize: 12)),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Rent: L ₹${room.lowerBedRent.toStringAsFixed(0)} | U ₹${room.upperBedRent.toStringAsFixed(0)}',
+                              style: const TextStyle(color: AppTheme.textColor, fontWeight: FontWeight.w500, fontSize: 13),
+                            ),
+                          ],
+                        ),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, color: AppTheme.primaryColor),
+                            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor, size: 20),
                             onPressed: () => _showEditRoomDialog(context, room),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: AppTheme.errorColor),
+                            icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor, size: 20),
                             onPressed: () => _showDeleteConfirmation(context, room),
                           ),
                         ],
@@ -125,12 +173,13 @@ class RoomsManagementScreen extends StatelessWidget {
   }
 
   void _showAddRoomDialog(BuildContext context) async {
+    final managementBloc = context.read<ManagementBloc>();
     // Load buildings first
-    context.read<ManagementBloc>().add(const LoadBuildings());
+    managementBloc.add(const LoadBuildings());
     
-    await Future.delayed(const Duration(milliseconds: 500));
-    
-    final buildingIdController = TextEditingController();
+    // Check if context is still valid
+    if (!context.mounted) return;
+
     final roomNumberController = TextEditingController();
     final capacityController = TextEditingController(text: '2');
     final lowerBedsController = TextEditingController(text: '1');
@@ -143,97 +192,102 @@ class RoomsManagementScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => BlocBuilder<ManagementBloc, ManagementState>(
-        builder: (context, state) {
-          List<BuildingModel> buildings = [];
-          if (state is BuildingsLoaded) {
-            buildings = state.buildings;
-          }
+      builder: (context) => BlocProvider.value(
+        value: managementBloc,
+        child: BlocBuilder<ManagementBloc, ManagementState>(
+          builder: (context, state) {
+            List<BuildingModel> buildings = [];
+            if (state is ManagementLoaded) {
+              buildings = state.buildings;
+            }
 
-          return StatefulBuilder(
-            builder: (context, setState) => AlertDialog(
-              title: const Text('Add Room'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      value: selectedBuildingId,
-                      decoration: const InputDecoration(labelText: 'Building'),
-                      items: buildings.map((b) => DropdownMenuItem(
-                        value: b.buildingId,
-                        child: Text(b.buildingName),
-                      )).toList(),
-                      onChanged: (value) => setState(() => selectedBuildingId = value),
-                    ),
-                    TextField(
-                      controller: roomNumberController,
-                      decoration: const InputDecoration(labelText: 'Room Number'),
-                    ),
-                    TextField(
-                      controller: capacityController,
-                      decoration: const InputDecoration(labelText: 'Total Capacity'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: lowerBedsController,
-                      decoration: const InputDecoration(labelText: 'Lower Beds Count'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: upperBedsController,
-                      decoration: const InputDecoration(labelText: 'Upper Beds Count'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: lowerRentController,
-                      decoration: const InputDecoration(labelText: 'Lower Bed Rent'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: upperRentController,
-                      decoration: const InputDecoration(labelText: 'Upper Bed Rent'),
-                      keyboardType: TextInputType.number,
-                    ),
-                    TextField(
-                      controller: utilityController,
-                      decoration: const InputDecoration(labelText: 'Utility Cost (Monthly)'),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ],
+            return StatefulBuilder(
+              builder: (context, setState) => AlertDialog(
+                title: const Text('Add Room', style: TextStyle(fontWeight: FontWeight.bold)),
+                content: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      DropdownButtonFormField<String>(
+                        value: selectedBuildingId,
+                        decoration: const InputDecoration(labelText: 'Building', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        items: buildings.map((b) => DropdownMenuItem(
+                          value: b.buildingId,
+                          child: Text(b.buildingName),
+                        )).toList(),
+                        onChanged: (value) => setState(() => selectedBuildingId = value),
+                      ),
+                      TextField(
+                        controller: roomNumberController,
+                        decoration: const InputDecoration(labelText: 'Room Number', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                      ),
+                      TextField(
+                        controller: capacityController,
+                        decoration: const InputDecoration(labelText: 'Total Capacity', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: lowerBedsController,
+                        decoration: const InputDecoration(labelText: 'Lower Beds Count', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: upperBedsController,
+                        decoration: const InputDecoration(labelText: 'Upper Beds Count', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: lowerRentController,
+                        decoration: const InputDecoration(labelText: 'Lower Bed Rent', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: upperRentController,
+                        decoration: const InputDecoration(labelText: 'Upper Bed Rent', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        keyboardType: TextInputType.number,
+                      ),
+                      TextField(
+                        controller: utilityController,
+                        decoration: const InputDecoration(labelText: 'Utility Cost (Monthly)', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ],
+                  ),
                 ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+                  ),
+                  ElevatedButton(
+                    onPressed: selectedBuildingId == null ? null : () {
+                      final room = RoomModel(
+                        buildingId: selectedBuildingId!,
+                        roomNumber: roomNumberController.text,
+                        totalCapacity: int.tryParse(capacityController.text) ?? 2,
+                        lowerBedsCount: int.tryParse(lowerBedsController.text) ?? 1,
+                        upperBedsCount: int.tryParse(upperBedsController.text) ?? 1,
+                        lowerBedRent: double.tryParse(lowerRentController.text) ?? 0,
+                        upperBedRent: double.tryParse(upperRentController.text) ?? 0,
+                        utilityCostMonthly: double.tryParse(utilityController.text) ?? 0,
+                      );
+                      managementBloc.add(AddRoom(room));
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+                    child: const Text('Add'),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: selectedBuildingId == null ? null : () {
-                    final room = RoomModel(
-                      buildingId: selectedBuildingId!,
-                      roomNumber: roomNumberController.text,
-                      totalCapacity: int.tryParse(capacityController.text) ?? 2,
-                      lowerBedsCount: int.tryParse(lowerBedsController.text) ?? 1,
-                      upperBedsCount: int.tryParse(upperBedsController.text) ?? 1,
-                      lowerBedRent: double.tryParse(lowerRentController.text) ?? 0,
-                      upperBedRent: double.tryParse(upperRentController.text) ?? 0,
-                      utilityCostMonthly: double.tryParse(utilityController.text) ?? 0,
-                    );
-                    context.read<ManagementBloc>().add(AddRoom(room));
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Add'),
-                ),
-              ],
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 
   void _showEditRoomDialog(BuildContext context, RoomModel room) {
+    final managementBloc = context.read<ManagementBloc>();
     final roomNumberController = TextEditingController(text: room.roomNumber);
     final capacityController = TextEditingController(text: room.totalCapacity.toString());
     final lowerBedsController = TextEditingController(text: room.lowerBedsCount.toString());
@@ -244,101 +298,108 @@ class RoomsManagementScreen extends StatelessWidget {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Room'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: roomNumberController,
-                decoration: const InputDecoration(labelText: 'Room Number'),
-              ),
-              TextField(
-                controller: capacityController,
-                decoration: const InputDecoration(labelText: 'Total Capacity'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: lowerBedsController,
-                decoration: const InputDecoration(labelText: 'Lower Beds Count'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: upperBedsController,
-                decoration: const InputDecoration(labelText: 'Upper Beds Count'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: lowerRentController,
-                decoration: const InputDecoration(labelText: 'Lower Bed Rent'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: upperRentController,
-                decoration: const InputDecoration(labelText: 'Upper Bed Rent'),
-                keyboardType: TextInputType.number,
-              ),
-              TextField(
-                controller: utilityController,
-                decoration: const InputDecoration(labelText: 'Utility Cost (Monthly)'),
-                keyboardType: TextInputType.number,
-              ),
-            ],
+      builder: (context) => BlocProvider.value(
+        value: managementBloc,
+        child: AlertDialog(
+          title: const Text('Edit Room', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: roomNumberController,
+                  decoration: const InputDecoration(labelText: 'Room Number', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                ),
+                TextField(
+                  controller: capacityController,
+                  decoration: const InputDecoration(labelText: 'Total Capacity', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: lowerBedsController,
+                  decoration: const InputDecoration(labelText: 'Lower Beds Count', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: upperBedsController,
+                  decoration: const InputDecoration(labelText: 'Upper Beds Count', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: lowerRentController,
+                  decoration: const InputDecoration(labelText: 'Lower Bed Rent', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: upperRentController,
+                  decoration: const InputDecoration(labelText: 'Upper Bed Rent', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  keyboardType: TextInputType.number,
+                ),
+                TextField(
+                  controller: utilityController,
+                  decoration: const InputDecoration(labelText: 'Utility Cost (Monthly)', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final updated = RoomModel(
+                  roomId: room.roomId,
+                  buildingId: room.buildingId,
+                  roomNumber: roomNumberController.text,
+                  totalCapacity: int.tryParse(capacityController.text) ?? 2,
+                  lowerBedsCount: int.tryParse(lowerBedsController.text) ?? 1,
+                  upperBedsCount: int.tryParse(upperBedsController.text) ?? 1,
+                  lowerBedRent: double.tryParse(lowerRentController.text) ?? 0,
+                  upperBedRent: double.tryParse(upperRentController.text) ?? 0,
+                  utilityCostMonthly: double.tryParse(utilityController.text) ?? 0,
+                );
+                managementBloc.add(UpdateRoom(updated));
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              child: const Text('Update'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final updated = RoomModel(
-                roomId: room.roomId,
-                buildingId: room.buildingId,
-                roomNumber: roomNumberController.text,
-                totalCapacity: int.tryParse(capacityController.text) ?? 2,
-                lowerBedsCount: int.tryParse(lowerBedsController.text) ?? 1,
-                upperBedsCount: int.tryParse(upperBedsController.text) ?? 1,
-                lowerBedRent: double.tryParse(lowerRentController.text) ?? 0,
-                upperBedRent: double.tryParse(upperRentController.text) ?? 0,
-                utilityCostMonthly: double.tryParse(utilityController.text) ?? 0,
-              );
-              context.read<ManagementBloc>().add(UpdateRoom(updated));
-              Navigator.pop(context);
-            },
-            child: const Text('Update'),
-          ),
-        ],
       ),
     );
   }
 
   void _showDeleteConfirmation(BuildContext context, RoomModel room) {
+    final managementBloc = context.read<ManagementBloc>();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Room?'),
-        content: Text('Are you sure you want to delete Room ${room.roomNumber}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (room.roomId != null) {
-                context.read<ManagementBloc>().add(DeleteRoom(room.roomId!));
-              }
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
-            child: const Text('Delete'),
-          ),
-        ],
+      builder: (context) => BlocProvider.value(
+        value: managementBloc,
+        child: AlertDialog(
+          title: const Text('Delete Room?', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text('Are you sure you want to delete Room ${room.roomNumber}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (room.roomId != null) {
+                  managementBloc.add(DeleteRoom(room.roomId!));
+                }
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-

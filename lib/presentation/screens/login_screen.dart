@@ -14,85 +14,76 @@ class LoginScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                // App Icon/Logo
-                Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Icon(
-                    Icons.bed_outlined,
-                    size: 60,
-                    color: Colors.white,
-                  ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 40.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 40),
+              // Logo Area (Minimalist)
+              Icon(
+                Icons.bed_outlined, // Or a better home/business icon
+                size: 48,
+                color: AppTheme.primaryColor,
+              ),
+              const SizedBox(height: 32),
+              
+              // Big Staggered Heading
+              Text(
+                'Welcome to\nBed Space.',
+                style: Theme.of(context).textTheme.displayLarge?.copyWith(
+                  height: 1.1,
+                  color: AppTheme.textColor,
                 ),
-                const SizedBox(height: 32),
-                
-                // App Title
-                const Text(
-                  'Bed Space Management',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textColor,
-                  ),
-                  textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              
+              Text(
+                'Manage your shared accommodation seamlessly.',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: AppTheme.subtitleColor,
+                  fontWeight: FontWeight.w400,
                 ),
-                const SizedBox(height: 16),
-                
-                const Text(
-                  'Manage your shared accommodation\nwith ease',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppTheme.textColor,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 48),
-                
-                // Sign In Button
-                BlocConsumer<AuthBloc, AuthState>(
-                  listener: (context, authState) {
-                    if (authState is AuthAuthenticatedWithoutSheet) {
-                      // Create sheet
-                      context.read<SheetBloc>().add(
-                            SheetCreateRequested(
-                              accessToken: authState.accessToken,
-                              userEmail: authState.userEmail,
-                            ),
-                          );
-                    } else if (authState is AuthError) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(authState.message),
-                          backgroundColor: AppTheme.errorColor,
-                        ),
-                      );
-                    }
-                  },
-                  builder: (context, authState) {
-                    return BlocListener<SheetBloc, SheetState>(
-                      listener: (context, sheetState) {
-                        if (sheetState is SheetCreated) {
-                          // Re-check auth to get authenticated state with sheet
-                          context.read<AuthBloc>().add(const AuthCheckRequested());
-                        } else if (sheetState is SheetError) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(sheetState.message),
-                              backgroundColor: AppTheme.errorColor,
-                            ),
-                          );
-                        }
-                      },
+              ),
+              
+              const Spacer(),
+              
+              // Sign In Button
+              BlocConsumer<AuthBloc, AuthState>(
+                listener: (context, authState) {
+                  if (authState is AuthAuthenticatedWithoutSheet) {
+                    context.read<SheetBloc>().add(
+                          SheetCreateRequested(
+                            accessToken: authState.accessToken,
+                            userEmail: authState.userEmail,
+                          ),
+                        );
+                  } else if (authState is AuthError) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(authState.message),
+                        backgroundColor: AppTheme.errorColor,
+                      ),
+                    );
+                  }
+                },
+                builder: (context, authState) {
+                  return BlocListener<SheetBloc, SheetState>(
+                    listener: (context, sheetState) {
+                      if (sheetState is SheetCreated) {
+                        context.read<AuthBloc>().add(const AuthCheckRequested());
+                      } else if (sheetState is SheetError) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(sheetState.message),
+                            backgroundColor: AppTheme.errorColor,
+                          ),
+                        );
+                      }
+                    },
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56,
                       child: ElevatedButton.icon(
                         onPressed: authState is AuthLoading
                             ? null
@@ -101,8 +92,8 @@ class LoginScreen extends StatelessWidget {
                               },
                         icon: authState is AuthLoading
                             ? const SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: 24,
+                                height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -110,39 +101,24 @@ class LoginScreen extends StatelessWidget {
                               )
                             : const Icon(Icons.login),
                         label: Text(
-                          authState is AuthLoading ? 'Signing in...' : 'Sign in with Google',
-                          style: const TextStyle(fontSize: 16),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 32,
-                            vertical: 16,
-                          ),
+                          authState is AuthLoading ? 'Signing in...' : 'Continue with Google',
+                          style: const TextStyle(fontSize: 18),
                         ),
                       ),
-                    );
-                  },
-                ),
-                const SizedBox(height: 32),
-                
-                // Disclaimer
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: AppTheme.warningColor.withOpacity(0.5),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    '⚠️ Internal use only\nClient-only app with Google Sheets',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppTheme.textColor,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
+                  );
+                },
+              ),
+              const SizedBox(height: 24),
+              
+              // Footer / Disclaimer
+              Center(
+                child: Text(
+                  'Internal prototype • Client-side only',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

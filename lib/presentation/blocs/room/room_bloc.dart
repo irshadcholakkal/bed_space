@@ -96,6 +96,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
             roomId: '',
             bedId: '',
             rentAmount: 0,
+            advanceAmount: 0,
             joiningDate: DateTime.now(),
             rentDueDay: 1,
             active: false,

@@ -7,6 +7,7 @@ class TenantModel {
   final String roomId;
   final String bedId;
   final double rentAmount;
+  final double advanceAmount;
   final DateTime joiningDate;
   final int rentDueDay;
   final bool active;
@@ -19,6 +20,7 @@ class TenantModel {
     required this.roomId,
     required this.bedId,
     required this.rentAmount,
+    required this.advanceAmount,
     required this.joiningDate,
     required this.rentDueDay,
     required this.active,
@@ -33,6 +35,7 @@ class TenantModel {
       'room_id': roomId,
       'bed_id': bedId,
       'rent_amount': rentAmount,
+      'advance_amount': advanceAmount,
       'joining_date': joiningDate.toIso8601String().split('T')[0],
       'rent_due_day': rentDueDay,
       'active': active ? 'TRUE' : 'FALSE',
@@ -48,6 +51,7 @@ class TenantModel {
       roomId: json['room_id']?.toString() ?? '',
       bedId: json['bed_id']?.toString() ?? '',
       rentAmount: double.tryParse(json['rent_amount']?.toString() ?? '0') ?? 0.0,
+      advanceAmount: double.tryParse(json['advance_amount']?.toString() ?? '0') ?? 0.0,
       joiningDate: DateTime.tryParse(json['joining_date']?.toString() ?? '') ?? DateTime.now(),
       rentDueDay: int.tryParse(json['rent_due_day']?.toString() ?? '1') ?? 1,
       active: json['active']?.toString().toUpperCase() == 'TRUE',

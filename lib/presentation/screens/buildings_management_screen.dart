@@ -12,10 +12,20 @@ class BuildingsManagementScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Buildings'),
+        title: Text(
+          'Manage Buildings',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.textColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+            tooltip: 'Add Building',
             onPressed: () => _showAddBuildingDialog(context),
           ),
         ],
@@ -24,47 +34,62 @@ class BuildingsManagementScreen extends StatelessWidget {
         builder: (context, state) {
           if (state is ManagementInitial) {
             context.read<ManagementBloc>().add(const LoadBuildings());
-            
           }
          
-          if (state is ManagementLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          if (state is ManagementLoaded) {
+            if (state.isLoading && state.buildings.isEmpty) {
+              return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+            }
 
-          if (state is ManagementError) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
-                  const SizedBox(height: 16),
-                  Text('Error: ${state.message}'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      context.read<ManagementBloc>().add(const LoadBuildings());
-                    },
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            );
-          }
+            if (state.error != null && state.buildings.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Error: ${state.error}',
+                      style: const TextStyle(color: AppTheme.textColor),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        context.read<ManagementBloc>().add(const LoadBuildings());
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                      ),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              );
+            }
 
-          if (state is BuildingsLoaded) {
             if (state.buildings.isEmpty) {
               return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.business_outlined, size: 64, color: AppTheme.textColor),
+                    const Icon(Icons.business_outlined, size: 64, color: AppTheme.softGrey),
                     const SizedBox(height: 16),
-                    const Text('No buildings found'),
+                    Text(
+                      'No buildings found',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: AppTheme.softGrey,
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: () => _showAddBuildingDialog(context),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Building'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                      ),
                     ),
                   ],
                 ),
@@ -72,38 +97,56 @@ class BuildingsManagementScreen extends StatelessWidget {
             }
 
             return RefreshIndicator(
+              color: AppTheme.primaryColor,
               onRefresh: () async {
                 context.read<ManagementBloc>().add(const LoadBuildings());
               },
               child: ListView.builder(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 itemCount: state.buildings.length,
                 itemBuilder: (context, index) {
                   final building = state.buildings[index];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: AppTheme.cardDecoration,
                     child: ListTile(
-                      leading: const Icon(Icons.business, color: AppTheme.primaryColor),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      leading: Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.business, color: AppTheme.primaryColor),
+                      ),
                       title: Text(
                         building.buildingName,
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.textColor,
+                        ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(building.address),
-                          Text('Rooms: ${building.totalRooms}'),
-                        ],
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(building.address, style: const TextStyle(color: AppTheme.secondaryTextColor)),
+                            const SizedBox(height: 4),
+                            Text('Total Rooms: ${building.totalRooms}', style: const TextStyle(color: AppTheme.secondaryTextColor, fontSize: 13)),
+                          ],
+                        ),
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, color: AppTheme.primaryColor),
+                            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor),
                             onPressed: () => _showEditBuildingDialog(context, building),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: AppTheme.errorColor),
+                            icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
                             onPressed: () => _showDeleteConfirmation(context, building),
                           ),
                         ],
@@ -122,127 +165,140 @@ class BuildingsManagementScreen extends StatelessWidget {
   }
 
   void _showAddBuildingDialog(BuildContext context) {
+    final managementBloc = context.read<ManagementBloc>();
     final nameController = TextEditingController();
     final addressController = TextEditingController();
     final roomsController = TextEditingController(text: '0');
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Building'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Building Name'),
+      builder: (context) => BlocProvider.value(
+        value: managementBloc,
+        child: AlertDialog(
+          title: const Text('Add Building', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Building Name', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+              ),
+              TextField(
+                controller: addressController,
+                decoration: const InputDecoration(labelText: 'Address', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+              ),
+              TextField(
+                controller: roomsController,
+                decoration: const InputDecoration(labelText: 'Total Rooms', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
             ),
-            TextField(
-              controller: addressController,
-              decoration: const InputDecoration(labelText: 'Address'),
-            ),
-            TextField(
-              controller: roomsController,
-              decoration: const InputDecoration(labelText: 'Total Rooms'),
-              keyboardType: TextInputType.number,
+            ElevatedButton(
+              onPressed: () {
+                final building = BuildingModel(
+                  buildingName: nameController.text,
+                  address: addressController.text,
+                  totalRooms: int.tryParse(roomsController.text) ?? 0,
+                );
+                managementBloc.add(AddBuilding(building));
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              child: const Text('Add'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final building = BuildingModel(
-                buildingName: nameController.text,
-                address: addressController.text,
-                totalRooms: int.tryParse(roomsController.text) ?? 0,
-              );
-              context.read<ManagementBloc>().add(AddBuilding(building));
-              Navigator.pop(context);
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
 
   void _showEditBuildingDialog(BuildContext context, BuildingModel building) {
+    final managementBloc = context.read<ManagementBloc>();
     final nameController = TextEditingController(text: building.buildingName);
     final addressController = TextEditingController(text: building.address);
     final roomsController = TextEditingController(text: building.totalRooms.toString());
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Building'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: const InputDecoration(labelText: 'Building Name'),
+      builder: (context) => BlocProvider.value(
+        value: managementBloc,
+        child: AlertDialog(
+          title: const Text('Edit Building', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Building Name', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+              ),
+              TextField(
+                controller: addressController,
+                decoration: const InputDecoration(labelText: 'Address', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+              ),
+              TextField(
+                controller: roomsController,
+                decoration: const InputDecoration(labelText: 'Total Rooms', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
             ),
-            TextField(
-              controller: addressController,
-              decoration: const InputDecoration(labelText: 'Address'),
-            ),
-            TextField(
-              controller: roomsController,
-              decoration: const InputDecoration(labelText: 'Total Rooms'),
-              keyboardType: TextInputType.number,
+            ElevatedButton(
+              onPressed: () {
+                final updated = building.copyWith(
+                  buildingName: nameController.text,
+                  address: addressController.text,
+                  totalRooms: int.tryParse(roomsController.text) ?? 0,
+                );
+                managementBloc.add(UpdateBuilding(updated));
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              child: const Text('Update'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final updated = building.copyWith(
-                buildingName: nameController.text,
-                address: addressController.text,
-                totalRooms: int.tryParse(roomsController.text) ?? 0,
-              );
-              context.read<ManagementBloc>().add(UpdateBuilding(updated));
-              Navigator.pop(context);
-            },
-            child: const Text('Update'),
-          ),
-        ],
       ),
     );
   }
 
   void _showDeleteConfirmation(BuildContext context, BuildingModel building) {
+    final managementBloc = context.read<ManagementBloc>();
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Delete Building?'),
-        content: Text('Are you sure you want to delete ${building.buildingName}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (building.buildingId != null) {
-                context.read<ManagementBloc>().add(DeleteBuilding(building.buildingId!));
-              }
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
-            child: const Text('Delete'),
-          ),
-        ],
+      builder: (context) => BlocProvider.value(
+        value: managementBloc,
+        child: AlertDialog(
+          title: const Text('Delete Building?', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Text('Are you sure you want to delete ${building.buildingName}?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                if (building.buildingId != null) {
+                  managementBloc.add(DeleteBuilding(building.buildingId!));
+                }
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+              child: const Text('Delete'),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
-

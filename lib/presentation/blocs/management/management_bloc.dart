@@ -39,16 +39,25 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     on<LoadTenantBalance>(_onLoadTenantBalance);
   }
 
+  ManagementLoaded get _currentState {
+    if (state is ManagementLoaded) {
+      return state as ManagementLoaded;
+    }
+    return const ManagementLoaded();
+  }
+
+  // --- Buildings ---
+
   Future<void> _onLoadBuildings(
     LoadBuildings event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       final buildings = await _sheetsService.getBuildings();
-      emit(BuildingsLoaded(buildings: buildings));
+      emit(_currentState.copyWith(buildings: buildings, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -56,13 +65,13 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     AddBuilding event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.addBuilding(event.building);
       final buildings = await _sheetsService.getBuildings();
-      emit(BuildingsLoaded(buildings: buildings));
+      emit(_currentState.copyWith(buildings: buildings, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -70,13 +79,13 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     UpdateBuilding event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.updateBuilding(event.building);
       final buildings = await _sheetsService.getBuildings();
-      emit(BuildingsLoaded(buildings: buildings));
+      emit(_currentState.copyWith(buildings: buildings, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -84,26 +93,28 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     DeleteBuilding event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.deleteBuilding(event.buildingId);
       final buildings = await _sheetsService.getBuildings();
-      emit(BuildingsLoaded(buildings: buildings));
+      emit(_currentState.copyWith(buildings: buildings, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
+
+  // --- Rooms ---
 
   Future<void> _onLoadRooms(
     LoadRooms event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       final rooms = await _sheetsService.getRooms();
-      emit(RoomsLoaded(rooms: rooms));
+      emit(_currentState.copyWith(rooms: rooms, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -111,7 +122,7 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     AddRoom event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.addRoom(event.room);
       // Get the created room to get its ID
@@ -140,9 +151,9 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
       }
       
       final updatedRooms = await _sheetsService.getRooms();
-      emit(RoomsLoaded(rooms: updatedRooms));
+      emit(_currentState.copyWith(rooms: updatedRooms, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -150,13 +161,13 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     UpdateRoom event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.updateRoom(event.room);
       final rooms = await _sheetsService.getRooms();
-      emit(RoomsLoaded(rooms: rooms));
+      emit(_currentState.copyWith(rooms: rooms, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -164,26 +175,28 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     DeleteRoom event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.deleteRoom(event.roomId);
       final rooms = await _sheetsService.getRooms();
-      emit(RoomsLoaded(rooms: rooms));
+      emit(_currentState.copyWith(rooms: rooms, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
+
+  // --- Tenants ---
 
   Future<void> _onLoadTenants(
     LoadTenants event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       final tenants = await _sheetsService.getTenants();
-      emit(TenantsLoaded(tenants: tenants));
+      emit(_currentState.copyWith(tenants: tenants, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -191,15 +204,17 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     AddTenant event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.addTenant(event.tenant);
       // Update bed status to occupied
       await _sheetsService.updateBedStatus(event.tenant.bedId, BedStatus.occupied);
       final tenants = await _sheetsService.getTenants();
-      emit(TenantsLoaded(tenants: tenants));
+      // Also reload rooms to reflect any capacity/occupancy changes if computed
+      // or at least we should reload tenants to get the new one.
+      emit(_currentState.copyWith(tenants: tenants, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -207,13 +222,24 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     UpdateTenant event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
+      // Get the current tenant to check if bed changed
+      final oldTenant = await _sheetsService.getTenantById(event.tenant.tenantId!);
+      
+      // If bed changed, update bed statuses
+      if (oldTenant != null && oldTenant.bedId != event.tenant.bedId) {
+        // Mark old bed as vacant
+        await _sheetsService.updateBedStatus(oldTenant.bedId, BedStatus.vacant);
+        // Mark new bed as occupied
+        await _sheetsService.updateBedStatus(event.tenant.bedId, BedStatus.occupied);
+      }
+      
       await _sheetsService.updateTenant(event.tenant);
       final tenants = await _sheetsService.getTenants();
-      emit(TenantsLoaded(tenants: tenants));
+      emit(_currentState.copyWith(tenants: tenants, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -221,7 +247,7 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     DeleteTenant event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       // Get tenant to find bed ID
       final tenant = await _sheetsService.getTenantById(event.tenantId);
@@ -231,22 +257,24 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
       }
       await _sheetsService.deleteTenant(event.tenantId);
       final tenants = await _sheetsService.getTenants();
-      emit(TenantsLoaded(tenants: tenants));
+      emit(_currentState.copyWith(tenants: tenants, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
+
+  // --- Payments ---
 
   Future<void> _onLoadPayments(
     LoadPayments event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       final payments = await _sheetsService.getPayments();
-      emit(PaymentsLoaded(payments: payments));
+      emit(_currentState.copyWith(payments: payments, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -254,13 +282,13 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     AddPayment event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.addPayment(event.payment);
       final payments = await _sheetsService.getPayments();
-      emit(PaymentsLoaded(payments: payments));
+      emit(_currentState.copyWith(payments: payments, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -268,13 +296,13 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     DeletePayment event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       await _sheetsService.deletePayment(event.paymentId);
       final payments = await _sheetsService.getPayments();
-      emit(PaymentsLoaded(payments: payments));
+      emit(_currentState.copyWith(payments: payments, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 
@@ -282,13 +310,12 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     LoadTenantBalance event,
     Emitter<ManagementState> emit,
   ) async {
-    emit(ManagementLoading());
+    emit(_currentState.copyWith(isLoading: true));
     try {
       final balance = await _sheetsService.getTenantRentBalance(event.tenantId);
-      emit(TenantBalanceLoaded(balance: balance));
+      emit(_currentState.copyWith(tenantBalance: balance, isLoading: false));
     } catch (e) {
-      emit(ManagementError(e.toString()));
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }
 }
-

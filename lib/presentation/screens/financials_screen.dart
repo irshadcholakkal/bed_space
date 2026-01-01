@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../blocs/financial/financial_bloc.dart';
+import '../blocs/management/management_bloc.dart';
 import '../theme/app_theme.dart';
+import 'tenants_management_screen.dart';
 
 /// Financials Screen
 /// Shows tenant payments and room-wise totals for selected month
@@ -28,18 +30,35 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     return Scaffold(
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('Financials'),
+        title: Text(
+          'Financials',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.textColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.calendar_today),
+            icon: const Icon(Icons.calendar_today_outlined, color: AppTheme.textColor),
             onPressed: _selectMonth,
             tooltip: 'Select Month',
           ),
           IconButton(
-            icon: const Icon(Icons.person),
+            icon: const Icon(Icons.people_outline, color: AppTheme.textColor),
             tooltip: 'Manage Tenants',
             onPressed: () {
-              Navigator.pushNamed(context, '/tenants');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: context.read<ManagementBloc>(),
+                    child: const TenantsManagementScreen(),
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -53,7 +72,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
           }
 
           if (state is FinancialLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
           }
 
           if (state is FinancialError) {
@@ -75,6 +94,10 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                             FinancialLoadRequested(month: _selectedMonth),
                           );
                     },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                    ),
                     child: const Text('Retry'),
                   ),
                 ],
@@ -87,6 +110,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
             final paidTenants = state.tenantPayments.where((tp) => tp.hasPaid).toList();
 
             return RefreshIndicator(
+              color: AppTheme.primaryColor,
               onRefresh: () async {
                 context.read<FinancialBloc>().add(
                       FinancialLoadRequested(month: _selectedMonth),
@@ -94,123 +118,167 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
               },
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(24),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Month Selector
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text(
-                              'Selected Month:',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textColor,
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: AppTheme.cardDecoration,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Overview For',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: AppTheme.secondaryTextColor,
+                                ),
                               ),
-                            ),
-                            Text(
-                              _formatMonth(state.month),
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.primaryColor,
+                              const SizedBox(height: 4),
+                              Text(
+                                _formatMonth(state.month),
+                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryColor,
+                                ),
                               ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          ],
-                        ),
+                            child: const Icon(Icons.calendar_month, color: AppTheme.primaryColor),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 32),
 
                     // Unpaid Tenants
                     if (unpaidTenants.isNotEmpty) ...[
                       Row(
                         children: [
-                          const Icon(Icons.warning, color: AppTheme.warningColor),
+                          const Icon(Icons.warning_amber_rounded, color: AppTheme.warningColor),
                           const SizedBox(width: 8),
                           Text(
-                            'Unpaid (${unpaidTenants.length})',
-                            style: const TextStyle(
-                              fontSize: 18,
+                            'Pending Payments',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: AppTheme.textColor,
                             ),
                           ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.warningColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${unpaidTenants.length}',
+                              style: const TextStyle(
+                                color: AppTheme.warningColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       ...unpaidTenants.map((tp) => _buildTenantCard(tp, false)),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 32),
                     ],
 
                     // Paid Tenants
                     if (paidTenants.isNotEmpty) ...[
                       Row(
                         children: [
-                          const Icon(Icons.check_circle, color: AppTheme.successColor),
+                          const Icon(Icons.check_circle_outline, color: AppTheme.successColor),
                           const SizedBox(width: 8),
                           Text(
-                            'Paid (${paidTenants.length})',
-                            style: const TextStyle(
-                              fontSize: 18,
+                            'Received Payments',
+                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: AppTheme.textColor,
                             ),
                           ),
+                          const Spacer(),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: AppTheme.successColor.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${paidTenants.length}',
+                              style: const TextStyle(
+                                color: AppTheme.successColor,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 16),
                       ...paidTenants.map((tp) => _buildTenantCard(tp, true)),
+                      const SizedBox(height: 32),
                     ],
 
                     // Summary
-                    const SizedBox(height: 24),
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'Summary',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: AppTheme.textColor,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _buildSummaryRow(
-                              'Total Tenants',
-                              state.tenantPayments.length.toString(),
-                            ),
-                            _buildSummaryRow(
-                              'Paid',
-                              paidTenants.length.toString(),
-                              AppTheme.successColor,
-                            ),
-                            _buildSummaryRow(
-                              'Unpaid',
-                              unpaidTenants.length.toString(),
-                              AppTheme.errorColor,
-                            ),
-                            const Divider(),
-                            _buildSummaryRow(
-                              'Total Expected',
-                              '₹${state.tenantPayments.fold<double>(0, (sum, tp) => sum + tp.amount).toStringAsFixed(0)}',
-                            ),
-                            _buildSummaryRow(
-                              'Total Collected',
-                              '₹${paidTenants.fold<double>(0, (sum, tp) => sum + tp.amount).toStringAsFixed(0)}',
-                              AppTheme.successColor,
-                            ),
-                          ],
-                        ),
+                    Text(
+                      'Monthly Summary',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(24),
+                      decoration: AppTheme.cardDecoration,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSummaryRow(
+                            context,
+                            'Total Tenants',
+                            state.tenantPayments.length.toString(),
+                          ),
+                          const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
+                          _buildSummaryRow(
+                            context,
+                            'Paid Count',
+                            paidTenants.length.toString(),
+                            valueColor: AppTheme.successColor,
+                          ),
+                          _buildSummaryRow(
+                            context,
+                            'Unpaid Count',
+                            unpaidTenants.length.toString(),
+                            valueColor: AppTheme.errorColor,
+                          ),
+                          const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
+                          _buildSummaryRow(
+                            context,
+                            'Expected Revenue',
+                            '₹${state.tenantPayments.fold<double>(0, (sum, tp) => sum + tp.amount).toStringAsFixed(0)}',
+                            isBold: true,
+                          ),
+                          _buildSummaryRow(
+                            context,
+                            'Collected Revenue',
+                            '₹${paidTenants.fold<double>(0, (sum, tp) => sum + tp.amount).toStringAsFixed(0)}',
+                            valueColor: AppTheme.successColor,
+                            isBold: true,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -226,30 +294,51 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
   }
 
   Widget _buildTenantCard(tp, bool isPaid) {
-    return Card(
-      color: isPaid
-          ? AppTheme.successColor.withOpacity(0.2)
-          : AppTheme.errorColor.withOpacity(0.2),
-      margin: const EdgeInsets.only(bottom: 8),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: AppTheme.cardDecoration.copyWith(
+        border: Border.all(
+          color: isPaid ? AppTheme.successColor.withOpacity(0.3) : AppTheme.warningColor.withOpacity(0.3),
+        ),
+      ),
       child: ListTile(
-        leading: Icon(
-          isPaid ? Icons.check_circle : Icons.pending,
-          color: isPaid ? AppTheme.successColor : AppTheme.errorColor,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: isPaid ? AppTheme.successColor.withOpacity(0.1) : AppTheme.warningColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            isPaid ? Icons.check : Icons.priority_high,
+            color: isPaid ? AppTheme.successColor : AppTheme.warningColor,
+            size: 20,
+          ),
         ),
         title: Text(
           tp.tenant.tenantName,
           style: const TextStyle(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.bold,
             color: AppTheme.textColor,
+            fontSize: 16,
           ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Room: ${tp.tenant.roomId}'),
-            Text('Phone: ${tp.tenant.phone}'),
+            const SizedBox(height: 4),
+            Text(
+              'Room ${tp.tenant.roomId} • ${tp.tenant.phone}',
+              style: const TextStyle(color: AppTheme.secondaryTextColor, fontSize: 13),
+            ),
             if (isPaid && tp.paidDate != null)
-              Text('Paid: ${DateFormat('dd MMM yyyy').format(tp.paidDate!)}'),
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  'Paid: ${DateFormat('dd MMM').format(tp.paidDate!)}',
+                  style: const TextStyle(color: AppTheme.successColor, fontSize: 12, fontWeight: FontWeight.w500),
+                ),
+              ),
           ],
         ),
         trailing: Text(
@@ -257,14 +346,14 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: isPaid ? AppTheme.successColor : AppTheme.errorColor,
+            color: isPaid ? AppTheme.successColor : AppTheme.textColor,
           ),
         ),
       ),
     );
   }
 
-  Widget _buildSummaryRow(String label, String value, [Color? valueColor]) {
+  Widget _buildSummaryRow(BuildContext context, String label, String value, {Color? valueColor, bool isBold = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -272,17 +361,14 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
         children: [
           Text(
             label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.normal,
-              color: AppTheme.textColor,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppTheme.secondaryTextColor,
             ),
           ),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              fontWeight: isBold ? FontWeight.bold : FontWeight.w600,
               color: valueColor ?? AppTheme.textColor,
             ),
           ),
@@ -314,6 +400,18 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
       firstDate: firstDate,
       lastDate: lastDate,
       initialDatePickerMode: DatePickerMode.year,
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: AppTheme.primaryColor,
+              onPrimary: Colors.white,
+              onSurface: AppTheme.textColor,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {

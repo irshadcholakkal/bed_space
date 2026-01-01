@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/dashboard/dashboard_bloc.dart';
+import '../blocs/management/management_bloc.dart';
 import '../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
+import 'buildings_management_screen.dart';
 
 /// Dashboard Screen
 /// Shows overview statistics and current month financials
@@ -20,7 +22,15 @@ class DashboardScreen extends StatelessWidget {
             icon: const Icon(Icons.business),
             tooltip: 'Manage Buildings',
             onPressed: () {
-              Navigator.pushNamed(context, '/buildings');
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: context.read<ManagementBloc>(),
+                    child: const BuildingsManagementScreen(),
+                  ),
+                ),
+              );
             },
           ),
         ],
@@ -67,74 +77,78 @@ class DashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     // Overview Stats
-                    const Text(
+                    Text(
                       'Overview',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                         color: AppTheme.textColor,
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // We can add a filter or date selector here later akin to Airbnb
+                      ],
+                    ),
                     Row(
                       children: [
                         Expanded(
                           child: StatCard(
                             title: 'Buildings',
                             value: state.totalBuildings.toString(),
-                            icon: Icons.business,
+                            icon: Icons.apartment, // More Airbnb-like icon
                             color: AppTheme.primaryColor,
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: StatCard(
                             title: 'Rooms',
                             value: state.totalRooms.toString(),
-                            icon: Icons.door_front_door,
-                            color: AppTheme.accentColor,
+                            icon: Icons.meeting_room,
+                            color: AppTheme.secondaryColor,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Expanded(
                           child: StatCard(
                             title: 'Total Beds',
                             value: state.totalBeds.toString(),
-                            icon: Icons.bed,
-                            color: AppTheme.primaryColor,
+                            icon: Icons.single_bed,
+                            color: AppTheme.textColor, // Neutral for total
                           ),
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: StatCard(
                             title: 'Occupied',
                             value: state.occupiedBeds.toString(),
-                            icon: Icons.person,
+                            icon: Icons.people,
                             color: AppTheme.successColor,
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 16),
                     StatCard(
-                      title: 'Vacant Beds',
+                      title: 'Available Beds',
                       value: state.vacantBeds.toString(),
                       icon: Icons.event_available,
-                      color: AppTheme.accentColor,
+                      color: AppTheme.primaryColor, // Highlight availability
                       fullWidth: true,
                     ),
-                    const SizedBox(height: 32),
+                    const SizedBox(height: 48),
                     
                     // Current Month Financials
-                    const Text(
-                      'Current Month',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
+                    Text(
+                      'Financials',
+                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
                         color: AppTheme.textColor,
                       ),
                     ),

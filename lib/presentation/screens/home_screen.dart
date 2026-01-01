@@ -38,19 +38,23 @@ class _HomeScreenState extends State<HomeScreen> {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
+            icon: Icon(Icons.grid_view), // Dashboard
+            activeIcon: Icon(Icons.grid_view_rounded),
             label: 'Dashboard',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.door_front_door),
+            icon: Icon(Icons.meeting_room_outlined), // Rooms
+            activeIcon: Icon(Icons.meeting_room),
             label: 'Rooms',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet),
+            icon: Icon(Icons.account_balance_wallet_outlined), // Financials
+            activeIcon: Icon(Icons.account_balance_wallet),
             label: 'Financials',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
+            icon: Icon(Icons.settings_outlined), // Settings
+            activeIcon: Icon(Icons.settings),
             label: 'Settings',
           ),
         ],

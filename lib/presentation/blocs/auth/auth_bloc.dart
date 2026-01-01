@@ -27,11 +27,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
-      final isSignedIn = await _authService.isSignedIn();
-      if (isSignedIn) {
+      // Try silent sign-in to restore session
+      final accessToken = await _authService.signInSilently();
+      
+      if (accessToken != null) {
         final user = await _authService.getCurrentUser();
-        final accessToken = await _authService.getAccessToken();
-        if (user != null && accessToken != null) {
+        if (user != null) {
           final sheetId = await _sheetRepository.getSheetId();
           if (sheetId != null) {
             emit(AuthAuthenticated(
