@@ -32,10 +32,6 @@ class BuildingsManagementScreen extends StatelessWidget {
       ),
       body: BlocBuilder<ManagementBloc, ManagementState>(
         builder: (context, state) {
-          if (state is ManagementInitial) {
-            context.read<ManagementBloc>().add(const LoadBuildings());
-          }
-         
           if (state is ManagementLoaded) {
             if (state.isLoading && state.buildings.isEmpty) {
               return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));

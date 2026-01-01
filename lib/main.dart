@@ -121,7 +121,8 @@ class AuthWrapper extends StatelessWidget {
             ..add(const NotificationScheduleRemindersRequested()),
         ),
         BlocProvider(
-          create: (context) => ManagementBloc(sheetsService: sheetsService),
+          create: (context) => ManagementBloc(sheetsService: sheetsService)
+            ..add(const LoadAllManagementData()),
         ),
       ],
       child: const HomeScreen(),

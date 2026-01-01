@@ -39,14 +39,6 @@ class TenantsManagementScreen extends StatelessWidget {
       ),
       body: BlocBuilder<ManagementBloc, ManagementState>(
         builder: (context, state) {
-          if (state is ManagementInitial) {
-            context.read<ManagementBloc>().add(const LoadTenants());
-            context.read<ManagementBloc>().add(const LoadBuildings());
-            context.read<ManagementBloc>().add(const LoadRooms());
-            context.read<ManagementBloc>().add(const LoadPayments());
-            return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
-          }
-
           if (state is ManagementLoaded) {
             if (state.isLoading && state.tenants.isEmpty) {
               return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));

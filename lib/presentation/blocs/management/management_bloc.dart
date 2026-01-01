@@ -17,6 +17,8 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     required GoogleSheetsService sheetsService,
   })  : _sheetsService = sheetsService,
         super(ManagementInitial()) {
+    on<LoadAllManagementData>(_onLoadAllManagementData);
+    
     on<LoadBuildings>(_onLoadBuildings);
     on<AddBuilding>(_onAddBuilding);
     on<UpdateBuilding>(_onUpdateBuilding);
@@ -44,6 +46,34 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
       return state as ManagementLoaded;
     }
     return const ManagementLoaded();
+  }
+
+  // --- Load All (Startup Optimization) ---
+
+  Future<void> _onLoadAllManagementData(
+    LoadAllManagementData event,
+    Emitter<ManagementState> emit,
+  ) async {
+    emit(_currentState.copyWith(isLoading: true));
+    try {
+      // Load all data in parallel
+      final results = await Future.wait([
+        _sheetsService.getBuildings(),
+        _sheetsService.getRooms(),
+        _sheetsService.getTenants(),
+        _sheetsService.getPayments(),
+      ]);
+      
+      emit(_currentState.copyWith(
+        buildings: results[0] as List<BuildingModel>,
+        rooms: results[1] as List<RoomModel>,
+        tenants: results[2] as List<TenantModel>,
+        payments: results[3] as List<PaymentModel>,
+        isLoading: false,
+      ));
+    } catch (e) {
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
+    }
   }
 
   // --- Buildings ---

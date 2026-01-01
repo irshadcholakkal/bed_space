@@ -8,6 +8,11 @@ abstract class ManagementEvent extends Equatable {
 }
 
 
+// Load All Data (for startup optimization)
+class LoadAllManagementData extends ManagementEvent {
+  const LoadAllManagementData();
+}
+
 // Buildings
 class LoadBuildings extends ManagementEvent {
   const LoadBuildings();
