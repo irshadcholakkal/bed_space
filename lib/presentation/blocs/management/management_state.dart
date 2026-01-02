@@ -42,7 +42,8 @@ class ManagementLoaded extends ManagementState {
   }) {
     return ManagementLoaded(
       isLoading: isLoading ?? this.isLoading,
-      error: error, // error is not persisted by default, unless explicitly passed
+      error:
+          error, // error is not persisted by default, unless explicitly passed
       buildings: buildings ?? this.buildings,
       rooms: rooms ?? this.rooms,
       tenants: tenants ?? this.tenants,
@@ -53,7 +54,16 @@ class ManagementLoaded extends ManagementState {
   }
 
   @override
-  List<Object?> get props => [isLoading, error, buildings, rooms, tenants, payments, beds, tenantBalance];
+  List<Object?> get props => [
+    isLoading,
+    error,
+    buildings,
+    rooms,
+    tenants,
+    payments,
+    beds,
+    tenantBalance,
+  ];
 }
 
 // Deprecated states retained temporarily if needed, but we will migrate away.

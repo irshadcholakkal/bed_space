@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../../data/models/payment_model.dart';
 import '../../../data/models/tenant_model.dart';
 import '../../../data/models/room_model.dart';
+import '../../../data/models/building_model.dart';
 import '../../../data/repositories/management_repository.dart';
 
 part 'financial_event.dart';
@@ -44,11 +45,19 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
         final tenants = data['tenants'] as List<TenantModel>;
         final payments = data['payments'] as List<PaymentModel>;
         final rooms = data['rooms'] as List<RoomModel>;
+        final buildings = data['buildings'] as List<BuildingModel>;
 
         final activeTenants = tenants.where((t) => t.active).toList();
         final monthPayments = payments
             .where((p) => p.paymentMonth == month)
             .toList();
+
+        // Map room IDs to Room Numbers for easy lookup
+        final roomMap = {for (var r in rooms) r.roomId!: r.roomNumber};
+        // Map building IDs to Building Names
+        final buildingMap = {
+          for (var b in buildings) b.buildingId!: b.buildingName,
+        };
 
         // Create tenant payment status
         final List<TenantPaymentStatus> tenantPayments = activeTenants.map((
@@ -86,12 +95,17 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
             status = PaymentStatus.overdue;
           }
 
+          final roomNumber = roomMap[tenant.roomId] ?? 'Unknown';
+          final buildingName = buildingMap[tenant.buildingId] ?? 'Unknown';
+
           return TenantPaymentStatus(
             tenant: tenant,
             paidAmount: paidAmount,
             rentAmount: rentAmount,
             status: status,
             paidDate: lastPaidDate,
+            roomNumber: roomNumber,
+            buildingName: buildingName,
           );
         }).toList();
 
@@ -139,6 +153,8 @@ class TenantPaymentStatus {
   final double rentAmount;
   final PaymentStatus status;
   final DateTime? paidDate;
+  final String? roomNumber;
+  final String? buildingName;
 
   // Helper
   bool get hasPaid => status == PaymentStatus.paid;
@@ -149,5 +165,7 @@ class TenantPaymentStatus {
     required this.rentAmount,
     required this.status,
     this.paidDate,
+    this.roomNumber,
+    this.buildingName,
   });
 }

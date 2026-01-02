@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import '../blocs/management/management_bloc.dart';
-import '../blocs/auth/auth_bloc.dart';
-import '../../data/models/tenant_model.dart';
 import '../../data/models/building_model.dart';
 import '../../data/models/room_model.dart';
 import '../../data/models/bed_model.dart';
+import '../../data/models/tenant_model.dart';
 import '../../data/models/payment_model.dart';
-import '../../data/services/google_sheets_service.dart';
 import '../theme/app_theme.dart';
 
 class TenantsManagementScreen extends StatefulWidget {
@@ -72,12 +70,16 @@ class TenantsManagementScreen extends StatefulWidget {
                     : <RoomModel>[];
 
                 return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   title: const Text(
                     'Add Tenant',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   content: SingleChildScrollView(
                     child: Column(
+                      spacing: 10,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextField(
@@ -993,12 +995,16 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                     : <RoomModel>[];
 
                 return AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                   title: const Text(
                     'Edit Tenant',
                     style: TextStyle(fontWeight: FontWeight.bold),
                   ),
                   content: SingleChildScrollView(
                     child: Column(
+                      spacing: 10,
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         TextField(
@@ -1326,6 +1332,9 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           title: Row(
             children: [
               Icon(Icons.exit_to_app, color: AppTheme.warningColor),
@@ -1552,6 +1561,9 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           title: const Text(
             'Remove Tenant?',
             style: TextStyle(fontWeight: FontWeight.bold),
@@ -2105,6 +2117,9 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
         value: managementBloc,
         child: StatefulBuilder(
           builder: (context, setState) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
             title: const Text(
               'Add Payment',
               style: TextStyle(fontWeight: FontWeight.bold),

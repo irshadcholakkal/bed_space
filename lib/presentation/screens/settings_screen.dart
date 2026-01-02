@@ -318,6 +318,7 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: const Text(
           'Reset Local Sheet?',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -358,6 +359,7 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         title: const Text(
           'Logout?',
           style: TextStyle(fontWeight: FontWeight.bold),

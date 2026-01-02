@@ -49,11 +49,12 @@ class _RoomsScreenState extends State<RoomsScreen> {
             ),
             tooltip: 'Manage Rooms',
             onPressed: () {
+              final bloc = context.read<management_bloc.ManagementBloc>();
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => BlocProvider.value(
-                    value: context.read<management_bloc.ManagementBloc>(),
+                    value: bloc,
                     child: const RoomsManagementScreen(),
                   ),
                 ),
@@ -64,11 +65,12 @@ class _RoomsScreenState extends State<RoomsScreen> {
             icon: const Icon(Icons.people_outline, color: AppTheme.textColor),
             tooltip: 'Manage Tenants',
             onPressed: () {
+              final bloc = context.read<management_bloc.ManagementBloc>();
               Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => BlocProvider.value(
-                    value: context.read<management_bloc.ManagementBloc>(),
+                    value: bloc,
                     child: const TenantsManagementScreen(),
                   ),
                 ),
@@ -469,6 +471,9 @@ extension on RoomsScreen {
                 : null;
 
             return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [

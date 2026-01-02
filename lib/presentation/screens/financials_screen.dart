@@ -70,8 +70,6 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                 (sum, tp) => sum + tp.paidAmount,
               );
 
-              final pendingAmount = totalRentalIncome - totalCollected;
-
               return RefreshIndicator(
                 onRefresh: () async {
                   context.read<FinancialBloc>().add(
@@ -548,12 +546,20 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Room ${item.tenant.roomId}',
+                      'Building :${item.buildingName ?? "Unknown"}',
                       style: const TextStyle(
                         color: AppTheme.secondaryTextColor,
                         fontSize: 13,
                       ),
                     ),
+                    Text(
+                      'Room :${item.roomNumber ?? item.tenant.roomId}',
+                      style: const TextStyle(
+                        color: AppTheme.secondaryTextColor,
+                        fontSize: 13,
+                      ),
+                    ),
+
                     if (status == PaymentStatus.partial)
                       Text(
                         'Paid: ₹${item.paidAmount.toStringAsFixed(0)} / ₹${item.rentAmount.toStringAsFixed(0)}',
@@ -620,9 +626,8 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
 
     // Parse month string to get correct year/month for the payment
     try {
-      final parts = month.split('-');
-      final year = int.parse(parts[0]);
-      final monthNum = int.parse(parts[1]);
+      // Validate month format just in case
+      month.split('-');
       // If we are paying for a past month, default date to end of that month or today?
       // Usually payment date is TODAY even if it's for a past month.
       // So selectedDate = DateTime.now() is correct for "Paid Date".
@@ -635,6 +640,9 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
       barrierDismissible: false,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           title: Text(
             'Add Payment for $tenantName',
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),

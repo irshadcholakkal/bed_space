@@ -8,7 +8,8 @@ import '../models/payment_model.dart';
 import '../models/bed_model.dart';
 
 class LocalDatabaseService {
-  static final LocalDatabaseService _instance = LocalDatabaseService._internal();
+  static final LocalDatabaseService _instance =
+      LocalDatabaseService._internal();
   static Database? _database;
 
   factory LocalDatabaseService() => _instance;
@@ -141,7 +142,11 @@ class LocalDatabaseService {
 
   Future<void> upsertBuilding(BuildingModel building) async {
     final db = await database;
-    await db.insert('buildings', building.toJson(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'buildings',
+      building.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> deleteBuildingLocal(String id) async {
@@ -162,7 +167,11 @@ class LocalDatabaseService {
 
   Future<void> upsertRoom(RoomModel room) async {
     final db = await database;
-    await db.insert('rooms', room.toJson(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'rooms',
+      room.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> deleteRoomLocal(String id) async {
@@ -189,7 +198,11 @@ class LocalDatabaseService {
 
   Future<void> upsertTenant(TenantModel tenant) async {
     final db = await database;
-    await db.insert('tenants', tenant.toJson(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'tenants',
+      tenant.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> deleteTenantLocal(String id) async {
@@ -216,7 +229,11 @@ class LocalDatabaseService {
 
   Future<void> upsertPayment(PaymentModel payment) async {
     final db = await database;
-    await db.insert('payments', payment.toJson(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'payments',
+      payment.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> deletePaymentLocal(String id) async {
@@ -243,7 +260,11 @@ class LocalDatabaseService {
 
   Future<void> upsertBed(BedModel bed) async {
     final db = await database;
-    await db.insert('beds', bed.toJson(), conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'beds',
+      bed.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<List<BedModel>> getBeds() async {
@@ -260,7 +281,11 @@ class LocalDatabaseService {
 
   Future<void> addToQueue(Map<String, dynamic> mutation) async {
     final db = await database;
-    await db.insert('mutation_queue', mutation, conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'mutation_queue',
+      mutation,
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
   }
 
   Future<void> removeFromQueue(String id) async {
@@ -270,7 +295,12 @@ class LocalDatabaseService {
 
   Future<void> updateMutationRetryCount(String id, int count) async {
     final db = await database;
-    await db.update('mutation_queue', {'retry_count': count}, where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'mutation_queue',
+      {'retry_count': count},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<void> clearAll() async {

@@ -7,7 +7,6 @@ abstract class ManagementEvent extends Equatable {
   List<Object> get props => [];
 }
 
-
 // Load All Data (for startup optimization)
 class LoadAllManagementData extends ManagementEvent {
   const LoadAllManagementData();

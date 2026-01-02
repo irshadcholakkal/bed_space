@@ -125,6 +125,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: AppTheme.cardDecoration,
                     child: ListTile(
+                      onTap: () => _showEditBuildingDialog(context, building),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 12,
@@ -170,27 +171,6 @@ class BuildingsManagementScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.edit_outlined,
-                              color: AppTheme.primaryColor,
-                            ),
-                            onPressed: () =>
-                                _showEditBuildingDialog(context, building),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: AppTheme.errorColor,
-                            ),
-                            onPressed: () =>
-                                _showDeleteConfirmation(context, building),
-                          ),
-                        ],
-                      ),
                     ),
                   );
                 },
@@ -215,17 +195,22 @@ class BuildingsManagementScreen extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           title: const Text(
             'Add Building',
             style: TextStyle(fontWeight: FontWeight.bold),
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            spacing: 10,
             children: [
               TextField(
                 controller: nameController,
                 decoration: const InputDecoration(
                   labelText: 'Building Name',
+
                   labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
                 ),
               ),
@@ -288,12 +273,39 @@ class BuildingsManagementScreen extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
-          title: const Text(
-            'Edit Building',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Edit Building',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+
+
+              Builder(
+                builder: (context) {
+                  return IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppTheme.errorColor,
+                    ),
+                    onPressed: () {
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
+                      _showDeleteConfirmation(context, building);
+                    },
+                  );
+                },
+              ),
+            ],
           ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
+            spacing: 10,
             children: [
               TextField(
                 controller: nameController,
@@ -355,6 +367,9 @@ class BuildingsManagementScreen extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           title: const Text(
             'Delete Building?',
             style: TextStyle(fontWeight: FontWeight.bold),

@@ -124,9 +124,10 @@ class RoomsManagementScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: AppTheme.cardDecoration,
                     child: ListTile(
+                      onTap: () => _showEditRoomDialog(context, room),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
-                        vertical: 12,
+                        vertical: 10,
                       ),
                       leading: Container(
                         padding: const EdgeInsets.all(10),
@@ -178,28 +179,7 @@ class RoomsManagementScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(
-                              Icons.edit_outlined,
-                              color: AppTheme.primaryColor,
-                              size: 20,
-                            ),
-                            onPressed: () => _showEditRoomDialog(context, room),
-                          ),
-                          IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: AppTheme.errorColor,
-                              size: 20,
-                            ),
-                            onPressed: () =>
-                                _showDeleteConfirmation(context, room),
-                          ),
-                        ],
-                      ),
+                     
                     ),
                   );
                 },
@@ -225,8 +205,8 @@ class RoomsManagementScreen extends StatelessWidget {
     final capacityController = TextEditingController(text: '2');
     final lowerBedsController = TextEditingController(text: '1');
     final upperBedsController = TextEditingController(text: '1');
-    final lowerRentController = TextEditingController(text: '0');
-    final upperRentController = TextEditingController(text: '0');
+    final lowerRentController = TextEditingController(text: '650');
+    final upperRentController = TextEditingController(text: '600');
     final utilityController = TextEditingController(text: '0');
 
     String? selectedBuildingId;
@@ -244,12 +224,16 @@ class RoomsManagementScreen extends StatelessWidget {
 
             return StatefulBuilder(
               builder: (context, setState) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
                 title: const Text(
                   'Add Room',
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
                 content: SingleChildScrollView(
                   child: Column(
+                    spacing: 10,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       DropdownButtonFormField<String>(
@@ -417,12 +401,38 @@ class RoomsManagementScreen extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
-          title: const Text(
-            'Edit Room',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Edit Room',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+
+                 Builder(
+                builder: (context) {
+                  return IconButton(
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: AppTheme.errorColor,
+                    ),
+                    onPressed: () {
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      }
+                                _showDeleteConfirmation(context, room);
+                    },
+                  );
+                },
+              ),
+            ],
           ),
           content: SingleChildScrollView(
             child: Column(
+              spacing: 10,
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
@@ -526,6 +536,9 @@ class RoomsManagementScreen extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
           title: const Text(
             'Delete Room?',
             style: TextStyle(fontWeight: FontWeight.bold),
