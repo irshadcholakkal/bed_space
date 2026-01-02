@@ -10,6 +10,7 @@ import '../widgets/stat_card.dart';
 import 'buildings_management_screen.dart';
 import 'rooms_screen.dart';
 import 'tenants_management_screen.dart';
+import 'vacant_beds_screen.dart';
 
 /// Dashboard Screen
 /// Shows overview statistics and current month financials
@@ -51,7 +52,11 @@ class DashboardScreen extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+                  const Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: AppTheme.errorColor,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Error: ${state.message}',
@@ -61,7 +66,9 @@ class DashboardScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      context.read<DashboardBloc>().add(const DashboardLoadRequested());
+                      context.read<DashboardBloc>().add(
+                        const DashboardLoadRequested(),
+                      );
                     },
                     child: const Text('Retry'),
                   ),
@@ -84,10 +91,11 @@ class DashboardScreen extends StatelessWidget {
                     // Overview Stats
                     Text(
                       'Overview',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textColor,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textColor,
+                          ),
                     ),
                     const SizedBox(height: 24),
                     const Row(
@@ -100,7 +108,6 @@ class DashboardScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: StatCard(
-
                             title: 'Buildings',
                             value: state.totalBuildings.toString(),
                             icon: Icons.apartment, // More Airbnb-like icon
@@ -158,19 +165,18 @@ class DashboardScreen extends StatelessWidget {
                             value: state.occupiedBeds.toString(),
                             icon: Icons.people,
                             color: AppTheme.successColor,
-                            
-                             
-                              
-                            onTap: (){
-                               Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: context.read<management_bloc.ManagementBloc>(),
-                    child: const TenantsManagementScreen(),
-                  ),
-                ),
-              );
+
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BlocProvider.value(
+                                    value: context
+                                        .read<management_bloc.ManagementBloc>(),
+                                    child: const TenantsManagementScreen(),
+                                  ),
+                                ),
+                              );
                             },
                           ),
                         ),
@@ -183,16 +189,28 @@ class DashboardScreen extends StatelessWidget {
                       icon: Icons.event_available,
                       color: AppTheme.primaryColor, // Highlight availability
                       fullWidth: true,
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BlocProvider.value(
+                              value: context.read<ManagementBloc>(),
+                              child: const VacantBedsScreen(),
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     const SizedBox(height: 48),
-                    
+
                     // Current Month Financials
                     Text(
                       'Financials',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.textColor,
-                      ),
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppTheme.textColor,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     Card(
@@ -215,7 +233,9 @@ class DashboardScreen extends StatelessWidget {
                             _buildFinancialRow(
                               state.profit >= 0 ? 'Profit' : 'Loss',
                               '₹${state.profit.abs().toStringAsFixed(0)}',
-                              state.profit >= 0 ? AppTheme.successColor : AppTheme.errorColor,
+                              state.profit >= 0
+                                  ? AppTheme.successColor
+                                  : AppTheme.errorColor,
                               isBold: true,
                             ),
                           ],
@@ -234,7 +254,12 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildFinancialRow(String label, String value, Color valueColor, {bool isBold = false}) {
+  Widget _buildFinancialRow(
+    String label,
+    String value,
+    Color valueColor, {
+    bool isBold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -261,4 +286,3 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 }
-

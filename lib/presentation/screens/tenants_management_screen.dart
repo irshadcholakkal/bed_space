@@ -36,7 +36,7 @@ class TenantsManagementScreen extends StatelessWidget {
               color: AppTheme.primaryColor,
             ),
             tooltip: 'Add Tenant',
-            onPressed: () => _showAddTenantDialog(context),
+            onPressed: () => showAddTenantDialog(context),
           ),
         ],
       ),
@@ -103,7 +103,7 @@ class TenantsManagementScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      onPressed: () => _showAddTenantDialog(context),
+                      onPressed: () => showAddTenantDialog(context),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Tenant'),
                       style: ElevatedButton.styleFrom(
@@ -451,7 +451,13 @@ class TenantsManagementScreen extends StatelessWidget {
 
   // No longer needed: _getAvailableBeds handled by BlocState
 
-  void _showAddTenantDialog(BuildContext context) async {
+  static void showAddTenantDialog(
+    BuildContext context, {
+    String? preSelectedBuildingId,
+    String? preSelectedRoomId,
+    String? preSelectedBedId,
+    double? preSelectedRentAmount,
+  }) async {
     final managementBloc = context.read<ManagementBloc>();
     managementBloc.add(const LoadBuildings());
     managementBloc.add(const LoadRooms());
@@ -460,13 +466,15 @@ class TenantsManagementScreen extends StatelessWidget {
 
     final nameController = TextEditingController();
     final phoneController = TextEditingController();
-    final rentController = TextEditingController(text: '0');
+    final rentController = TextEditingController(
+      text: preSelectedRentAmount?.toStringAsFixed(0) ?? '0',
+    );
     final advanceController = TextEditingController(text: '0');
     final dueDayController = TextEditingController(text: '1');
     DateTime selectedDate = DateTime.now();
-    String? selectedBuildingId;
-    String? selectedRoomId;
-    String? selectedBedId;
+    String? selectedBuildingId = preSelectedBuildingId;
+    String? selectedRoomId = preSelectedRoomId;
+    String? selectedBedId = preSelectedBedId;
 
     showDialog(
       context: context,
