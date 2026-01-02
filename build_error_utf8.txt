@@ -1,0 +1,83 @@
+﻿Running Gradle task 'assembleDebug'...                          
+flutter : lib/present
+ation/screens/tenants
+_management_screen.da
+rt:618:11: Error: 
+Expected ';' after 
+this.
+At line:1 char:1
++ flutter build apk 
+--debug --no-pub 
+2>&1 | Out-File 
+-Encoding UTF8 bui 
+...
++ ~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (lib/pre   
+ sentatio...';' a    
+fter this.:Strin    
+g) [], RemoteExc    
+eption
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+          ),
+          ^
+lib/presentation/scre
+ens/tenants_managemen
+t_screen.dart:618:12:
+ Error: Expected an 
+identifier, but got 
+','.
+Try inserting an 
+identifier before 
+','.
+          ),
+           ^
+lib/presentation/scre
+ens/tenants_managemen
+t_screen.dart:618:12:
+ Error: Unexpected 
+token ';'.
+          ),
+           ^
+Target kernel_snapsho
+t_program failed: 
+Exception
+
+
+FAILURE: Build 
+failed with an 
+exception.
+
+* What went wrong:
+Execution failed for 
+task ':app:compileFlu
+tterBuildDebug'.
+> Process 'command 'D
+:\flutter\bin\flutter
+.bat'' finished with 
+non-zero exit value 1
+
+* Try:
+> Run with 
+--stacktrace option 
+to get the stack 
+trace.
+> Run with --info or 
+--debug option to 
+get more log output.
+> Run with --scan to 
+get full insights.
+> Get more help at ht
+tps://help.gradle.org
+.
+
+BUILD FAILED in 6s
+Running Gradle task 'assembleDebug'...                              6.8s
+Gradle task 
+assembleDebug failed 
+with exit code 1

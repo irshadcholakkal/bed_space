@@ -109,6 +109,15 @@ class DeleteTenant extends ManagementEvent {
   List<Object> get props => [tenantId];
 }
 
+class CheckoutTenant extends ManagementEvent {
+  final TenantModel tenant;
+
+  const CheckoutTenant(this.tenant);
+
+  @override
+  List<Object> get props => [tenant];
+}
+
 // Payments
 class LoadPayments extends ManagementEvent {
   const LoadPayments();
@@ -142,3 +151,7 @@ class LoadTenantBalance extends ManagementEvent {
   List<Object> get props => [tenantId];
 }
 
+// Sync
+class TriggerManualSync extends ManagementEvent {
+  const TriggerManualSync();
+}

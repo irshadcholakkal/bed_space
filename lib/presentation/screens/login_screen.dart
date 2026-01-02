@@ -85,12 +85,12 @@ class LoginScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton.icon(
-                        onPressed: authState is AuthLoading
+                        onPressed: (authState is AuthLoading || authState is AuthAuthenticatedWithoutSheet)
                             ? null
                             : () {
                                 context.read<AuthBloc>().add(const AuthSignInRequested());
                               },
-                        icon: authState is AuthLoading
+                        icon: (authState is AuthLoading || authState is AuthAuthenticatedWithoutSheet)
                             ? const SizedBox(
                                 width: 24,
                                 height: 24,
@@ -101,7 +101,9 @@ class LoginScreen extends StatelessWidget {
                               )
                             : const Icon(Icons.login),
                         label: Text(
-                          authState is AuthLoading ? 'Signing in...' : 'Continue with Google',
+                          (authState is AuthLoading || authState is AuthAuthenticatedWithoutSheet) 
+                              ? 'Initializing workspace...' 
+                              : 'Continue with Google',
                           style: const TextStyle(fontSize: 18),
                         ),
                       ),

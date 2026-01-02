@@ -57,5 +57,33 @@ class TenantModel {
       active: json['active']?.toString().toUpperCase() == 'TRUE',
     );
   }
+
+  TenantModel copyWith({
+    String? tenantId,
+    String? tenantName,
+    String? phone,
+    String? buildingId,
+    String? roomId,
+    String? bedId,
+    double? rentAmount,
+    double? advanceAmount,
+    DateTime? joiningDate,
+    int? rentDueDay,
+    bool? active,
+  }) {
+    return TenantModel(
+      tenantId: tenantId ?? this.tenantId,
+      tenantName: tenantName ?? this.tenantName,
+      phone: phone ?? this.phone,
+      buildingId: buildingId ?? this.buildingId,
+      roomId: roomId ?? this.roomId,
+      bedId: bedId ?? this.bedId,
+      rentAmount: rentAmount ?? this.rentAmount,
+      advanceAmount: advanceAmount ?? this.advanceAmount,
+      joiningDate: joiningDate ?? this.joiningDate,
+      rentDueDay: rentDueDay ?? this.rentDueDay,
+      active: active ?? this.active,
+    );
+  }
 }
 

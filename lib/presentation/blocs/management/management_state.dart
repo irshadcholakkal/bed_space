@@ -16,6 +16,7 @@ class ManagementLoaded extends ManagementState {
   final List<RoomModel> rooms;
   final List<TenantModel> tenants;
   final List<PaymentModel> payments;
+  final List<BedModel> beds;
   final Map<String, dynamic> tenantBalance;
 
   const ManagementLoaded({
@@ -25,6 +26,7 @@ class ManagementLoaded extends ManagementState {
     this.rooms = const [],
     this.tenants = const [],
     this.payments = const [],
+    this.beds = const [],
     this.tenantBalance = const {},
   });
 
@@ -35,6 +37,7 @@ class ManagementLoaded extends ManagementState {
     List<RoomModel>? rooms,
     List<TenantModel>? tenants,
     List<PaymentModel>? payments,
+    List<BedModel>? beds,
     Map<String, dynamic>? tenantBalance,
   }) {
     return ManagementLoaded(
@@ -44,12 +47,13 @@ class ManagementLoaded extends ManagementState {
       rooms: rooms ?? this.rooms,
       tenants: tenants ?? this.tenants,
       payments: payments ?? this.payments,
+      beds: beds ?? this.beds,
       tenantBalance: tenantBalance ?? this.tenantBalance,
     );
   }
 
   @override
-  List<Object?> get props => [isLoading, error, buildings, rooms, tenants, payments, tenantBalance];
+  List<Object?> get props => [isLoading, error, buildings, rooms, tenants, payments, beds, tenantBalance];
 }
 
 // Deprecated states retained temporarily if needed, but we will migrate away.

@@ -28,3 +28,15 @@ class SheetSyncRequested extends SheetEvent {
   const SheetSyncRequested();
 }
 
+class SheetLinkRequested extends SheetEvent {
+  final String sheetId;
+  final String userEmail;
+
+  const SheetLinkRequested({
+    required this.sheetId,
+    required this.userEmail,
+  });
+
+  @override
+  List<Object> get props => [sheetId, userEmail];
+}

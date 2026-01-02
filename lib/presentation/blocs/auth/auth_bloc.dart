@@ -34,6 +34,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         final user = await _authService.getCurrentUser();
         if (user != null) {
           final sheetId = await _sheetRepository.getSheetId();
+          // Cache the latest token for offline access/background sync
+          await _sheetRepository.saveToken(accessToken);
+          
           if (sheetId != null) {
             emit(AuthAuthenticated(
               userEmail: user.email,
@@ -47,13 +50,36 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             ));
           }
         } else {
-          emit(AuthUnauthenticated());
+          // Attempt offline fallback if getCurrentUser is null (no network)
+          await _handleOfflineAuthFallback(emit, accessToken);
         }
       } else {
-        emit(AuthUnauthenticated());
+        // Attempt offline fallback if silent sign-in fails (likely offline)
+        await _handleOfflineAuthFallback(emit, null);
       }
     } catch (e) {
-      emit(AuthError(e.toString()));
+      await _handleOfflineAuthFallback(emit, null);
+    }
+  }
+
+  Future<void> _handleOfflineAuthFallback(Emitter<AuthState> emit, String? accessToken) async {
+    final cachedEmail = await _sheetRepository.getUserEmail();
+    final cachedSheetId = await _sheetRepository.getSheetId();
+    final cachedToken = accessToken ?? await _sheetRepository.getToken();
+
+    if (cachedEmail != null && cachedSheetId != null) {
+      emit(AuthAuthenticated(
+        userEmail: cachedEmail,
+        accessToken: cachedToken ?? '', // Provide token if available
+        sheetId: cachedSheetId,
+      ));
+    } else if (cachedEmail != null) {
+       emit(AuthAuthenticatedWithoutSheet(
+        userEmail: cachedEmail,
+        accessToken: cachedToken ?? '',
+      ));
+    } else {
+      emit(AuthUnauthenticated());
     }
   }
 
@@ -67,6 +93,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       if (accessToken != null) {
         final userEmail = await _authService.getCurrentUserEmail();
         if (userEmail != null) {
+          // Cache token
+          await _sheetRepository.saveToken(accessToken);
+
           // Check if sheet exists for this user
           final savedSheetId = await _sheetRepository.getSheetId();
           final isForCurrentUser =
@@ -101,6 +130,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       await _authService.signOut();
+      await _sheetRepository.clearSheetId(); // Optionally clear local session? 
+      // For now just sign out from Google
       emit(AuthUnauthenticated());
     } catch (e) {
       emit(AuthError(e.toString()));

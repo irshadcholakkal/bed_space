@@ -2,8 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
-import '../../../data/services/google_sheets_service.dart';
 import '../../../data/models/tenant_model.dart';
+import '../../../data/repositories/management_repository.dart';
 
 part 'notification_event.dart';
 part 'notification_state.dart';
@@ -11,10 +11,10 @@ part 'notification_state.dart';
 class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final FlutterLocalNotificationsPlugin _notifications =
       FlutterLocalNotificationsPlugin();
-  final GoogleSheetsService? _sheetsService;
+  final ManagementRepository? _repository;
 
-  NotificationBloc({GoogleSheetsService? sheetsService})
-      : _sheetsService = sheetsService,
+  NotificationBloc({ManagementRepository? repository})
+      : _repository = repository,
         super(NotificationInitial()) {
     on<NotificationInitializeRequested>(_onNotificationInitializeRequested);
     on<NotificationScheduleRemindersRequested>(
@@ -53,13 +53,13 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     NotificationScheduleRemindersRequested event,
     Emitter<NotificationState> emit,
   ) async {
-    if (_sheetsService == null) {
-      emit(NotificationError('Sheets service not available'));
+    if (_repository == null) {
+      emit(NotificationError('Repository not available'));
       return;
     }
 
     try {
-      final tenants = await _sheetsService!.getTenants();
+      final tenants = await _repository!.getTenants();
       final activeTenants = tenants.where((t) => t.active).toList();
 
       final now = DateTime.now();
@@ -115,4 +115,3 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     );
   }
 }
-

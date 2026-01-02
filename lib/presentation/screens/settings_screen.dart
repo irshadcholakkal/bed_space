@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/sheet/sheet_bloc.dart';
@@ -122,11 +123,17 @@ class SettingsScreen extends StatelessWidget {
                             'Sheet ID',
                             style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textColor),
                           ),
-                          subtitle: Text(
-                            authState.sheetId,
-                            style: TextStyle(color: AppTheme.secondaryTextColor, fontFamily: 'monospace'),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                          trailing: IconButton(
+                            icon: const Icon(Icons.copy, size: 20, color: AppTheme.primaryColor),
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: authState.sheetId));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Sheet ID copied to clipboard'),
+                                  backgroundColor: AppTheme.successColor,
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],
