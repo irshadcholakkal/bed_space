@@ -1,10 +1,15 @@
+import 'package:bed_space/presentation/blocs/room/room_bloc.dart';
+import 'package:bed_space/presentation/screens/rooms_management_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/dashboard/dashboard_bloc.dart';
 import '../blocs/management/management_bloc.dart';
+import '../blocs/management/management_bloc.dart' as management_bloc;
 import '../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
 import 'buildings_management_screen.dart';
+import 'rooms_screen.dart';
+import 'tenants_management_screen.dart';
 
 /// Dashboard Screen
 /// Shows overview statistics and current month financials
@@ -95,10 +100,22 @@ class DashboardScreen extends StatelessWidget {
                       children: [
                         Expanded(
                           child: StatCard(
+
                             title: 'Buildings',
                             value: state.totalBuildings.toString(),
                             icon: Icons.apartment, // More Airbnb-like icon
                             color: AppTheme.primaryColor,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BlocProvider.value(
+                                    value: context.read<ManagementBloc>(),
+                                    child: const BuildingsManagementScreen(),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                         const SizedBox(width: 16),
@@ -108,6 +125,17 @@ class DashboardScreen extends StatelessWidget {
                             value: state.totalRooms.toString(),
                             icon: Icons.meeting_room,
                             color: AppTheme.secondaryColor,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => BlocProvider.value(
+                                    value: context.read<RoomBloc>(),
+                                    child: const RoomsScreen(),
+                                  ),
+                                ),
+                              );
+                            },
                           ),
                         ),
                       ],
@@ -130,6 +158,20 @@ class DashboardScreen extends StatelessWidget {
                             value: state.occupiedBeds.toString(),
                             icon: Icons.people,
                             color: AppTheme.successColor,
+                            
+                             
+                              
+                            onTap: (){
+                               Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => BlocProvider.value(
+                    value: context.read<management_bloc.ManagementBloc>(),
+                    child: const TenantsManagementScreen(),
+                  ),
+                ),
+              );
+                            },
                           ),
                         ),
                       ],
