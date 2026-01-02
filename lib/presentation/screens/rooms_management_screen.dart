@@ -25,7 +25,10 @@ class RoomsManagementScreen extends StatelessWidget {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+            icon: const Icon(
+              Icons.add_circle_outline,
+              color: AppTheme.primaryColor,
+            ),
             tooltip: 'Add Room',
             onPressed: () => _showAddRoomDialog(context),
           ),
@@ -34,16 +37,22 @@ class RoomsManagementScreen extends StatelessWidget {
       body: BlocBuilder<ManagementBloc, ManagementState>(
         builder: (context, state) {
           if (state is ManagementLoaded) {
-             if (state.isLoading && state.rooms.isEmpty) {
-              return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+            if (state.isLoading && state.rooms.isEmpty) {
+              return const Center(
+                child: CircularProgressIndicator(color: AppTheme.primaryColor),
+              );
             }
 
             if (state.error != null && state.rooms.isEmpty) {
-               return Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppTheme.errorColor,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Error: ${state.error}',
@@ -56,7 +65,9 @@ class RoomsManagementScreen extends StatelessWidget {
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                       ),
                       child: const Text('Retry'),
                     ),
@@ -70,7 +81,11 @@ class RoomsManagementScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.meeting_room_outlined, size: 64, color: AppTheme.softGrey),
+                    const Icon(
+                      Icons.meeting_room_outlined,
+                      size: 64,
+                      color: AppTheme.softGrey,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'No rooms found',
@@ -85,7 +100,9 @@ class RoomsManagementScreen extends StatelessWidget {
                       label: const Text('Add Room'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                       ),
                     ),
                   ],
@@ -107,14 +124,20 @@ class RoomsManagementScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: AppTheme.cardDecoration,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       leading: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.door_front_door, color: AppTheme.primaryColor),
+                        child: const Icon(
+                          Icons.door_front_door,
+                          color: AppTheme.primaryColor,
+                        ),
                       ),
                       title: Text(
                         'Room ${room.roomNumber}',
@@ -129,13 +152,28 @@ class RoomsManagementScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Capacity: ${room.totalCapacity} beds', style: const TextStyle(color: AppTheme.secondaryTextColor)),
+                            Text(
+                              'Capacity: ${room.totalCapacity} beds',
+                              style: const TextStyle(
+                                color: AppTheme.secondaryTextColor,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text('Lower: ${room.lowerBedsCount} | Upper: ${room.upperBedsCount}', style: const TextStyle(color: AppTheme.secondaryTextColor, fontSize: 12)),
+                            Text(
+                              'Lower: ${room.lowerBedsCount} | Upper: ${room.upperBedsCount}',
+                              style: const TextStyle(
+                                color: AppTheme.secondaryTextColor,
+                                fontSize: 12,
+                              ),
+                            ),
                             const SizedBox(height: 4),
                             Text(
                               'Rent: L ₹${room.lowerBedRent.toStringAsFixed(0)} | U ₹${room.upperBedRent.toStringAsFixed(0)}',
-                              style: const TextStyle(color: AppTheme.textColor, fontWeight: FontWeight.w500, fontSize: 13),
+                              style: const TextStyle(
+                                color: AppTheme.textColor,
+                                fontWeight: FontWeight.w500,
+                                fontSize: 13,
+                              ),
                             ),
                           ],
                         ),
@@ -144,12 +182,21 @@ class RoomsManagementScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor, size: 20),
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: AppTheme.primaryColor,
+                              size: 20,
+                            ),
                             onPressed: () => _showEditRoomDialog(context, room),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor, size: 20),
-                            onPressed: () => _showDeleteConfirmation(context, room),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: AppTheme.errorColor,
+                              size: 20,
+                            ),
+                            onPressed: () =>
+                                _showDeleteConfirmation(context, room),
                           ),
                         ],
                       ),
@@ -170,7 +217,7 @@ class RoomsManagementScreen extends StatelessWidget {
     final managementBloc = context.read<ManagementBloc>();
     // Load buildings first
     managementBloc.add(const LoadBuildings());
-    
+
     // Check if context is still valid
     if (!context.mounted) return;
 
@@ -197,52 +244,100 @@ class RoomsManagementScreen extends StatelessWidget {
 
             return StatefulBuilder(
               builder: (context, setState) => AlertDialog(
-                title: const Text('Add Room', style: TextStyle(fontWeight: FontWeight.bold)),
+                title: const Text(
+                  'Add Room',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 content: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       DropdownButtonFormField<String>(
                         value: selectedBuildingId,
-                        decoration: const InputDecoration(labelText: 'Building', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
-                        items: buildings.map((b) => DropdownMenuItem(
-                          value: b.buildingId,
-                          child: Text(b.buildingName),
-                        )).toList(),
-                        onChanged: (value) => setState(() => selectedBuildingId = value),
+                        decoration: const InputDecoration(
+                          labelText: 'Building',
+                          labelStyle: TextStyle(
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
+                        items: buildings
+                            .map(
+                              (b) => DropdownMenuItem(
+                                value: b.buildingId,
+                                child: Text(b.buildingName),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (value) =>
+                            setState(() => selectedBuildingId = value),
                       ),
                       TextField(
                         controller: roomNumberController,
-                        decoration: const InputDecoration(labelText: 'Room Number', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        decoration: const InputDecoration(
+                          labelText: 'Room Number',
+                          labelStyle: TextStyle(
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
                       ),
                       TextField(
                         controller: capacityController,
-                        decoration: const InputDecoration(labelText: 'Total Capacity', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        decoration: const InputDecoration(
+                          labelText: 'Total Capacity',
+                          labelStyle: TextStyle(
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
                         keyboardType: TextInputType.number,
                       ),
                       TextField(
                         controller: lowerBedsController,
-                        decoration: const InputDecoration(labelText: 'Lower Beds Count', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        decoration: const InputDecoration(
+                          labelText: 'Lower Beds Count',
+                          labelStyle: TextStyle(
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
                         keyboardType: TextInputType.number,
                       ),
                       TextField(
                         controller: upperBedsController,
-                        decoration: const InputDecoration(labelText: 'Upper Beds Count', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        decoration: const InputDecoration(
+                          labelText: 'Upper Beds Count',
+                          labelStyle: TextStyle(
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
                         keyboardType: TextInputType.number,
                       ),
                       TextField(
                         controller: lowerRentController,
-                        decoration: const InputDecoration(labelText: 'Lower Bed Rent', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        decoration: const InputDecoration(
+                          labelText: 'Lower Bed Rent',
+                          labelStyle: TextStyle(
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
                         keyboardType: TextInputType.number,
                       ),
                       TextField(
                         controller: upperRentController,
-                        decoration: const InputDecoration(labelText: 'Upper Bed Rent', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        decoration: const InputDecoration(
+                          labelText: 'Upper Bed Rent',
+                          labelStyle: TextStyle(
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
                         keyboardType: TextInputType.number,
                       ),
                       TextField(
                         controller: utilityController,
-                        decoration: const InputDecoration(labelText: 'Utility Cost (Monthly)', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                        decoration: const InputDecoration(
+                          labelText: 'Utility Cost (Monthly)',
+                          labelStyle: TextStyle(
+                            color: AppTheme.secondaryTextColor,
+                          ),
+                        ),
                         keyboardType: TextInputType.number,
                       ),
                     ],
@@ -251,24 +346,39 @@ class RoomsManagementScreen extends StatelessWidget {
                 actions: [
                   TextButton(
                     onPressed: () => Navigator.pop(context),
-                    child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(color: AppTheme.secondaryTextColor),
+                    ),
                   ),
                   ElevatedButton(
-                    onPressed: selectedBuildingId == null ? null : () {
-                      final room = RoomModel(
-                        buildingId: selectedBuildingId!,
-                        roomNumber: roomNumberController.text,
-                        totalCapacity: int.tryParse(capacityController.text) ?? 2,
-                        lowerBedsCount: int.tryParse(lowerBedsController.text) ?? 1,
-                        upperBedsCount: int.tryParse(upperBedsController.text) ?? 1,
-                        lowerBedRent: double.tryParse(lowerRentController.text) ?? 0,
-                        upperBedRent: double.tryParse(upperRentController.text) ?? 0,
-                        utilityCostMonthly: double.tryParse(utilityController.text) ?? 0,
-                      );
-                      managementBloc.add(AddRoom(room));
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+                    onPressed: selectedBuildingId == null
+                        ? null
+                        : () {
+                            final room = RoomModel(
+                              buildingId: selectedBuildingId!,
+                              roomNumber: roomNumberController.text,
+                              totalCapacity:
+                                  int.tryParse(capacityController.text) ?? 2,
+                              lowerBedsCount:
+                                  int.tryParse(lowerBedsController.text) ?? 1,
+                              upperBedsCount:
+                                  int.tryParse(upperBedsController.text) ?? 1,
+                              lowerBedRent:
+                                  double.tryParse(lowerRentController.text) ??
+                                  0,
+                              upperBedRent:
+                                  double.tryParse(upperRentController.text) ??
+                                  0,
+                              utilityCostMonthly:
+                                  double.tryParse(utilityController.text) ?? 0,
+                            );
+                            managementBloc.add(AddRoom(room));
+                            Navigator.pop(context);
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primaryColor,
+                    ),
                     child: const Text('Add'),
                   ),
                 ],
@@ -283,55 +393,91 @@ class RoomsManagementScreen extends StatelessWidget {
   void _showEditRoomDialog(BuildContext context, RoomModel room) {
     final managementBloc = context.read<ManagementBloc>();
     final roomNumberController = TextEditingController(text: room.roomNumber);
-    final capacityController = TextEditingController(text: room.totalCapacity.toString());
-    final lowerBedsController = TextEditingController(text: room.lowerBedsCount.toString());
-    final upperBedsController = TextEditingController(text: room.upperBedsCount.toString());
-    final lowerRentController = TextEditingController(text: room.lowerBedRent.toString());
-    final upperRentController = TextEditingController(text: room.upperBedRent.toString());
-    final utilityController = TextEditingController(text: room.utilityCostMonthly.toString());
+    final capacityController = TextEditingController(
+      text: room.totalCapacity.toString(),
+    );
+    final lowerBedsController = TextEditingController(
+      text: room.lowerBedsCount.toString(),
+    );
+    final upperBedsController = TextEditingController(
+      text: room.upperBedsCount.toString(),
+    );
+    final lowerRentController = TextEditingController(
+      text: room.lowerBedRent.toString(),
+    );
+    final upperRentController = TextEditingController(
+      text: room.upperBedRent.toString(),
+    );
+    final utilityController = TextEditingController(
+      text: room.utilityCostMonthly.toString(),
+    );
 
     showDialog(
       context: context,
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
-          title: const Text('Edit Room', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Edit Room',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: roomNumberController,
-                  decoration: const InputDecoration(labelText: 'Room Number', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  decoration: const InputDecoration(
+                    labelText: 'Room Number',
+                    labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  ),
                 ),
                 TextField(
                   controller: capacityController,
-                  decoration: const InputDecoration(labelText: 'Total Capacity', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  decoration: const InputDecoration(
+                    labelText: 'Total Capacity',
+                    labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: lowerBedsController,
-                  decoration: const InputDecoration(labelText: 'Lower Beds Count', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  decoration: const InputDecoration(
+                    labelText: 'Lower Beds Count',
+                    labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: upperBedsController,
-                  decoration: const InputDecoration(labelText: 'Upper Beds Count', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  decoration: const InputDecoration(
+                    labelText: 'Upper Beds Count',
+                    labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: lowerRentController,
-                  decoration: const InputDecoration(labelText: 'Lower Bed Rent', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  decoration: const InputDecoration(
+                    labelText: 'Lower Bed Rent',
+                    labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: upperRentController,
-                  decoration: const InputDecoration(labelText: 'Upper Bed Rent', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  decoration: const InputDecoration(
+                    labelText: 'Upper Bed Rent',
+                    labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
                 TextField(
                   controller: utilityController,
-                  decoration: const InputDecoration(labelText: 'Utility Cost (Monthly)', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                  decoration: const InputDecoration(
+                    labelText: 'Utility Cost (Monthly)',
+                    labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                  ),
                   keyboardType: TextInputType.number,
                 ),
               ],
@@ -340,7 +486,10 @@ class RoomsManagementScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppTheme.secondaryTextColor),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -353,12 +502,15 @@ class RoomsManagementScreen extends StatelessWidget {
                   upperBedsCount: int.tryParse(upperBedsController.text) ?? 1,
                   lowerBedRent: double.tryParse(lowerRentController.text) ?? 0,
                   upperBedRent: double.tryParse(upperRentController.text) ?? 0,
-                  utilityCostMonthly: double.tryParse(utilityController.text) ?? 0,
+                  utilityCostMonthly:
+                      double.tryParse(utilityController.text) ?? 0,
                 );
                 managementBloc.add(UpdateRoom(updated));
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+              ),
               child: const Text('Update'),
             ),
           ],
@@ -374,12 +526,20 @@ class RoomsManagementScreen extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
-          title: const Text('Delete Room?', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('Are you sure you want to delete Room ${room.roomNumber}?'),
+          title: const Text(
+            'Delete Room?',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Are you sure you want to delete Room ${room.roomNumber}?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppTheme.secondaryTextColor),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -388,7 +548,9 @@ class RoomsManagementScreen extends StatelessWidget {
                 }
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.errorColor,
+              ),
               child: const Text('Delete'),
             ),
           ],

@@ -27,7 +27,7 @@ class LoginScreen extends StatelessWidget {
                 color: AppTheme.primaryColor,
               ),
               const SizedBox(height: 32),
-              
+
               // Big Staggered Heading
               Text(
                 'Welcome to\nBed Space.',
@@ -37,7 +37,7 @@ class LoginScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               Text(
                 'Manage your shared accommodation seamlessly.',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -45,19 +45,19 @@ class LoginScreen extends StatelessWidget {
                   fontWeight: FontWeight.w400,
                 ),
               ),
-              
+
               const Spacer(),
-              
+
               // Sign In Button
               BlocConsumer<AuthBloc, AuthState>(
                 listener: (context, authState) {
                   if (authState is AuthAuthenticatedWithoutSheet) {
                     context.read<SheetBloc>().add(
-                          SheetCreateRequested(
-                            accessToken: authState.accessToken,
-                            userEmail: authState.userEmail,
-                          ),
-                        );
+                      SheetCreateRequested(
+                        accessToken: authState.accessToken,
+                        userEmail: authState.userEmail,
+                      ),
+                    );
                   } else if (authState is AuthError) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -71,7 +71,9 @@ class LoginScreen extends StatelessWidget {
                   return BlocListener<SheetBloc, SheetState>(
                     listener: (context, sheetState) {
                       if (sheetState is SheetCreated) {
-                        context.read<AuthBloc>().add(const AuthCheckRequested());
+                        context.read<AuthBloc>().add(
+                          const AuthCheckRequested(),
+                        );
                       } else if (sheetState is SheetError) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
@@ -85,24 +87,33 @@ class LoginScreen extends StatelessWidget {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton.icon(
-                        onPressed: (authState is AuthLoading || authState is AuthAuthenticatedWithoutSheet)
+                        onPressed:
+                            (authState is AuthLoading ||
+                                authState is AuthAuthenticatedWithoutSheet)
                             ? null
                             : () {
-                                context.read<AuthBloc>().add(const AuthSignInRequested());
+                                context.read<AuthBloc>().add(
+                                  const AuthSignInRequested(),
+                                );
                               },
-                        icon: (authState is AuthLoading || authState is AuthAuthenticatedWithoutSheet)
+                        icon:
+                            (authState is AuthLoading ||
+                                authState is AuthAuthenticatedWithoutSheet)
                             ? const SizedBox(
                                 width: 24,
                                 height: 24,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
                                 ),
                               )
                             : const Icon(Icons.login),
                         label: Text(
-                          (authState is AuthLoading || authState is AuthAuthenticatedWithoutSheet) 
-                              ? 'Initializing workspace...' 
+                          (authState is AuthLoading ||
+                                  authState is AuthAuthenticatedWithoutSheet)
+                              ? 'Initializing workspace...'
                               : 'Continue with Google',
                           style: const TextStyle(fontSize: 18),
                         ),
@@ -112,7 +123,7 @@ class LoginScreen extends StatelessWidget {
                 },
               ),
               const SizedBox(height: 24),
-              
+
               // Footer / Disclaimer
               Center(
                 child: Text(
@@ -127,4 +138,3 @@ class LoginScreen extends StatelessWidget {
     );
   }
 }
-

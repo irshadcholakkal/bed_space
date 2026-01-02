@@ -24,7 +24,10 @@ class BuildingsManagementScreen extends StatelessWidget {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor),
+            icon: const Icon(
+              Icons.add_circle_outline,
+              color: AppTheme.primaryColor,
+            ),
             tooltip: 'Add Building',
             onPressed: () => _showAddBuildingDialog(context),
           ),
@@ -34,7 +37,9 @@ class BuildingsManagementScreen extends StatelessWidget {
         builder: (context, state) {
           if (state is ManagementLoaded) {
             if (state.isLoading && state.buildings.isEmpty) {
-              return const Center(child: CircularProgressIndicator(color: AppTheme.primaryColor));
+              return const Center(
+                child: CircularProgressIndicator(color: AppTheme.primaryColor),
+              );
             }
 
             if (state.error != null && state.buildings.isEmpty) {
@@ -42,7 +47,11 @@ class BuildingsManagementScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.error_outline, size: 64, color: AppTheme.errorColor),
+                    const Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: AppTheme.errorColor,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Error: ${state.error}',
@@ -51,11 +60,15 @@ class BuildingsManagementScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        context.read<ManagementBloc>().add(const LoadBuildings());
+                        context.read<ManagementBloc>().add(
+                          const LoadBuildings(),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                       ),
                       child: const Text('Retry'),
                     ),
@@ -69,7 +82,11 @@ class BuildingsManagementScreen extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.business_outlined, size: 64, color: AppTheme.softGrey),
+                    const Icon(
+                      Icons.business_outlined,
+                      size: 64,
+                      color: AppTheme.softGrey,
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'No buildings found',
@@ -84,7 +101,9 @@ class BuildingsManagementScreen extends StatelessWidget {
                       label: const Text('Add Building'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
                       ),
                     ),
                   ],
@@ -106,14 +125,20 @@ class BuildingsManagementScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: AppTheme.cardDecoration,
                     child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
                       leading: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: AppTheme.primaryColor.withOpacity(0.1),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.business, color: AppTheme.primaryColor),
+                        child: const Icon(
+                          Icons.business,
+                          color: AppTheme.primaryColor,
+                        ),
                       ),
                       title: Text(
                         building.buildingName,
@@ -128,9 +153,20 @@ class BuildingsManagementScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(building.address, style: const TextStyle(color: AppTheme.secondaryTextColor)),
+                            Text(
+                              building.address,
+                              style: const TextStyle(
+                                color: AppTheme.secondaryTextColor,
+                              ),
+                            ),
                             const SizedBox(height: 4),
-                            Text('Total Rooms: ${building.totalRooms}', style: const TextStyle(color: AppTheme.secondaryTextColor, fontSize: 13)),
+                            Text(
+                              'Total Rooms: ${building.totalRooms}',
+                              style: const TextStyle(
+                                color: AppTheme.secondaryTextColor,
+                                fontSize: 13,
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -138,12 +174,20 @@ class BuildingsManagementScreen extends StatelessWidget {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit_outlined, color: AppTheme.primaryColor),
-                            onPressed: () => _showEditBuildingDialog(context, building),
+                            icon: const Icon(
+                              Icons.edit_outlined,
+                              color: AppTheme.primaryColor,
+                            ),
+                            onPressed: () =>
+                                _showEditBuildingDialog(context, building),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
-                            onPressed: () => _showDeleteConfirmation(context, building),
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: AppTheme.errorColor,
+                            ),
+                            onPressed: () =>
+                                _showDeleteConfirmation(context, building),
                           ),
                         ],
                       ),
@@ -171,21 +215,33 @@ class BuildingsManagementScreen extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
-          title: const Text('Add Building', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Add Building',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Building Name', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                decoration: const InputDecoration(
+                  labelText: 'Building Name',
+                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                ),
               ),
               TextField(
                 controller: addressController,
-                decoration: const InputDecoration(labelText: 'Address', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                decoration: const InputDecoration(
+                  labelText: 'Address',
+                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                ),
               ),
               TextField(
                 controller: roomsController,
-                decoration: const InputDecoration(labelText: 'Total Rooms', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                decoration: const InputDecoration(
+                  labelText: 'Total Rooms',
+                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                ),
                 keyboardType: TextInputType.number,
               ),
             ],
@@ -193,7 +249,10 @@ class BuildingsManagementScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppTheme.secondaryTextColor),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -205,7 +264,9 @@ class BuildingsManagementScreen extends StatelessWidget {
                 managementBloc.add(AddBuilding(building));
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+              ),
               child: const Text('Add'),
             ),
           ],
@@ -218,28 +279,42 @@ class BuildingsManagementScreen extends StatelessWidget {
     final managementBloc = context.read<ManagementBloc>();
     final nameController = TextEditingController(text: building.buildingName);
     final addressController = TextEditingController(text: building.address);
-    final roomsController = TextEditingController(text: building.totalRooms.toString());
+    final roomsController = TextEditingController(
+      text: building.totalRooms.toString(),
+    );
 
     showDialog(
       context: context,
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
-          title: const Text('Edit Building', style: TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text(
+            'Edit Building',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(labelText: 'Building Name', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                decoration: const InputDecoration(
+                  labelText: 'Building Name',
+                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                ),
               ),
               TextField(
                 controller: addressController,
-                decoration: const InputDecoration(labelText: 'Address', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                decoration: const InputDecoration(
+                  labelText: 'Address',
+                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                ),
               ),
               TextField(
                 controller: roomsController,
-                decoration: const InputDecoration(labelText: 'Total Rooms', labelStyle: TextStyle(color: AppTheme.secondaryTextColor)),
+                decoration: const InputDecoration(
+                  labelText: 'Total Rooms',
+                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                ),
                 keyboardType: TextInputType.number,
               ),
             ],
@@ -247,7 +322,10 @@ class BuildingsManagementScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppTheme.secondaryTextColor),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -259,7 +337,9 @@ class BuildingsManagementScreen extends StatelessWidget {
                 managementBloc.add(UpdateBuilding(updated));
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.primaryColor,
+              ),
               child: const Text('Update'),
             ),
           ],
@@ -275,12 +355,20 @@ class BuildingsManagementScreen extends StatelessWidget {
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: AlertDialog(
-          title: const Text('Delete Building?', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Text('Are you sure you want to delete ${building.buildingName}?'),
+          title: const Text(
+            'Delete Building?',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: Text(
+            'Are you sure you want to delete ${building.buildingName}?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: AppTheme.secondaryTextColor),
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -289,7 +377,9 @@ class BuildingsManagementScreen extends StatelessWidget {
                 }
                 Navigator.pop(context);
               },
-              style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.errorColor,
+              ),
               child: const Text('Delete'),
             ),
           ],

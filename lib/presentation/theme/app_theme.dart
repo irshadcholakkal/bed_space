@@ -10,11 +10,11 @@ class AppTheme {
   static const Color backgroundColor = Color(0xFFFFFFFF); // Pure White
   static const Color surfaceColor = Color(0xFFFFFFFF); // White
   static const Color scaffoldColor = Color(0xFFFFFFFF); // White
-  
+
   // Text Colors
   static const Color textColor = Color(0xFF222222); // Deep Black
   static const Color subtitleColor = Color(0xFF717171); // Grey
-  
+
   // Status Colors
   static const Color successColor = Color(0xFF008A05); // Green
   static const Color warningColor = Color(0xFFFAAD14); // Amber
@@ -24,7 +24,7 @@ class AppTheme {
 
   static final BoxDecoration cardDecoration = BoxDecoration(
     color: surfaceColor,
-    borderRadius: BorderRadius.circular(16),
+    borderRadius: BorderRadius.circular(10),
     border: Border.all(color: Colors.grey.withOpacity(0.1)),
     boxShadow: [
       BoxShadow(
@@ -40,7 +40,7 @@ class AppTheme {
       useMaterial3: true,
       scaffoldBackgroundColor: scaffoldColor,
       primaryColor: primaryColor,
-      
+
       // Color Scheme
       colorScheme: const ColorScheme.light(
         primary: primaryColor,
@@ -57,22 +57,62 @@ class AppTheme {
       ),
 
       // Typography (Simulating Circular/Inter)
-      fontFamily: 'Roboto', // Default fall-back, assume system font is good enough
+      fontFamily:
+          'Roboto', // Default fall-back, assume system font is good enough
       textTheme: const TextTheme(
         // Headings
-        displayLarge: TextStyle(color: textColor, fontSize: 32, fontWeight: FontWeight.w800, letterSpacing: -0.5),
-        displayMedium: TextStyle(color: textColor, fontSize: 28, fontWeight: FontWeight.w800, letterSpacing: -0.5),
-        displaySmall: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5),
-        
+        displayLarge: TextStyle(
+          color: textColor,
+          fontSize: 32,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+        displayMedium: TextStyle(
+          color: textColor,
+          fontSize: 28,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+        displaySmall: TextStyle(
+          color: textColor,
+          fontSize: 24,
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.5,
+        ),
+
         // Titles
-        headlineMedium: TextStyle(color: textColor, fontSize: 20, fontWeight: FontWeight.w600),
-        titleLarge: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.w600),
-        titleMedium: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w600),
-        
+        headlineMedium: TextStyle(
+          color: textColor,
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: TextStyle(
+          color: textColor,
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+        titleMedium: TextStyle(
+          color: textColor,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+
         // Body
-        bodyLarge: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w400),
-        bodyMedium: TextStyle(color: subtitleColor, fontSize: 14, fontWeight: FontWeight.w400),
-        bodySmall: TextStyle(color: subtitleColor, fontSize: 12, fontWeight: FontWeight.w400),
+        bodyLarge: TextStyle(
+          color: textColor,
+          fontSize: 16,
+          fontWeight: FontWeight.w400,
+        ),
+        bodyMedium: TextStyle(
+          color: subtitleColor,
+          fontSize: 14,
+          fontWeight: FontWeight.w400,
+        ),
+        bodySmall: TextStyle(
+          color: subtitleColor,
+          fontSize: 12,
+          fontWeight: FontWeight.w400,
+        ),
       ),
 
       // AppBar Theme (Clean White)
@@ -105,9 +145,14 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 20,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(30), // Pill shape for inputs preferred or rounded rect
+          borderRadius: BorderRadius.circular(
+            30,
+          ), // Pill shape for inputs preferred or rounded rect
           borderSide: const BorderSide(color: Color(0xFFB0B0B0)),
         ),
         enabledBorder: OutlineInputBorder(
@@ -116,7 +161,10 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(30),
-          borderSide: const BorderSide(color: textColor, width: 2), // Black when focused
+          borderSide: const BorderSide(
+            color: textColor,
+            width: 2,
+          ), // Black when focused
         ),
         labelStyle: const TextStyle(color: subtitleColor),
       ),
@@ -128,10 +176,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-          textStyle: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w700,
-          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(100), // Pill shape
           ),
@@ -148,7 +193,7 @@ class AppTheme {
           ),
         ),
       ),
-      
+
       // Floating Action Button
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
         backgroundColor: primaryColor,
@@ -161,13 +206,19 @@ class AppTheme {
         backgroundColor: Colors.white,
         selectedItemColor: primaryColor,
         unselectedItemColor: Color(0xFFB0B0B0),
-        selectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-        unselectedLabelStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+        selectedLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        unselectedLabelStyle: TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
         showUnselectedLabels: true,
       ),
-      
+
       dividerTheme: const DividerThemeData(
         color: Color(0xFFEEEEEE),
         thickness: 1,
@@ -175,4 +226,3 @@ class AppTheme {
     );
   }
 }
-

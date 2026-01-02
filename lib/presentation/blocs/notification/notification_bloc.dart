@@ -14,11 +14,12 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final ManagementRepository? _repository;
 
   NotificationBloc({ManagementRepository? repository})
-      : _repository = repository,
-        super(NotificationInitial()) {
+    : _repository = repository,
+      super(NotificationInitial()) {
     on<NotificationInitializeRequested>(_onNotificationInitializeRequested);
     on<NotificationScheduleRemindersRequested>(
-        _onNotificationScheduleRemindersRequested);
+      _onNotificationScheduleRemindersRequested,
+    );
   }
 
   Future<void> _onNotificationInitializeRequested(
@@ -26,7 +27,9 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
     Emitter<NotificationState> emit,
   ) async {
     try {
-      const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidSettings = AndroidInitializationSettings(
+        '@mipmap/ic_launcher',
+      );
       const iosSettings = DarwinInitializationSettings(
         requestAlertPermission: true,
         requestBadgePermission: true,
@@ -67,8 +70,11 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
 
       for (final tenant in activeTenants) {
         final dueDay = tenant.rentDueDay;
-        final reminderDate = DateTime(now.year, now.month, dueDay)
-            .subtract(const Duration(days: 3));
+        final reminderDate = DateTime(
+          now.year,
+          now.month,
+          dueDay,
+        ).subtract(const Duration(days: 3));
 
         // Only schedule if reminder is in the future
         if (reminderDate.isAfter(now)) {

@@ -28,7 +28,8 @@ class SettingsScreen extends StatelessWidget {
       ),
       body: BlocBuilder<AuthBloc, AuthState>(
         builder: (context, authState) {
-          if (authState is AuthAuthenticated || authState is AuthAuthenticatedWithoutSheet) {
+          if (authState is AuthAuthenticated ||
+              authState is AuthAuthenticatedWithoutSheet) {
             final userEmail = authState is AuthAuthenticated
                 ? authState.userEmail
                 : (authState as AuthAuthenticatedWithoutSheet).userEmail;
@@ -54,7 +55,9 @@ class SettingsScreen extends StatelessWidget {
                         radius: 30,
                         backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
                         child: Text(
-                          userEmail.isNotEmpty ? userEmail[0].toUpperCase() : 'U',
+                          userEmail.isNotEmpty
+                              ? userEmail[0].toUpperCase()
+                              : 'U',
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -107,26 +110,55 @@ class SettingsScreen extends StatelessWidget {
                     child: Column(
                       children: [
                         ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                          leading: const Icon(Icons.grid_on_outlined, color: AppTheme.primaryColor),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
+                          leading: const Icon(
+                            Icons.grid_on_outlined,
+                            color: AppTheme.primaryColor,
+                          ),
                           title: const Text(
                             'Sheet Name',
-                            style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textColor),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textColor,
+                            ),
                           ),
-                          subtitle: Text('BedSpace_$userEmail', style: TextStyle(color: AppTheme.secondaryTextColor)),
+                          subtitle: Text(
+                            'BedSpace_$userEmail',
+                            style: TextStyle(
+                              color: AppTheme.secondaryTextColor,
+                            ),
+                          ),
                         ),
                         Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
                         ListTile(
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                          leading: const Icon(Icons.link, color: AppTheme.primaryColor),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 8,
+                          ),
+                          leading: const Icon(
+                            Icons.link,
+                            color: AppTheme.primaryColor,
+                          ),
                           title: const Text(
                             'Sheet ID',
-                            style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textColor),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w600,
+                              color: AppTheme.textColor,
+                            ),
                           ),
                           trailing: IconButton(
-                            icon: const Icon(Icons.copy, size: 20, color: AppTheme.primaryColor),
+                            icon: const Icon(
+                              Icons.copy,
+                              size: 20,
+                              color: AppTheme.primaryColor,
+                            ),
                             onPressed: () {
-                              Clipboard.setData(ClipboardData(text: authState.sheetId));
+                              Clipboard.setData(
+                                ClipboardData(text: authState.sheetId),
+                              );
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text('Sheet ID copied to clipboard'),
@@ -155,12 +187,26 @@ class SettingsScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        leading: const Icon(Icons.sync_outlined, color: AppTheme.primaryColor),
-                        title: const Text('Re-sync Sheet', style: TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text('Refresh data from Google Sheets', style: TextStyle(color: AppTheme.secondaryTextColor)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
+                        leading: const Icon(
+                          Icons.sync_outlined,
+                          color: AppTheme.primaryColor,
+                        ),
+                        title: const Text(
+                          'Re-sync Sheet',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        subtitle: Text(
+                          'Refresh data from Google Sheets',
+                          style: TextStyle(color: AppTheme.secondaryTextColor),
+                        ),
                         onTap: () {
-                          context.read<SheetBloc>().add(const SheetSyncRequested());
+                          context.read<SheetBloc>().add(
+                            const SheetSyncRequested(),
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Sheet synced'),
@@ -171,19 +217,43 @@ class SettingsScreen extends StatelessWidget {
                       ),
                       Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        leading: const Icon(Icons.delete_outline, color: AppTheme.errorColor),
-                        title: const Text('Reset Local Data', style: TextStyle(fontWeight: FontWeight.w600, color: AppTheme.textColor)),
-                        subtitle: Text('Clear local sheet reference', style: TextStyle(color: AppTheme.secondaryTextColor)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
+                        leading: const Icon(
+                          Icons.delete_outline,
+                          color: AppTheme.errorColor,
+                        ),
+                        title: const Text(
+                          'Reset Local Data',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textColor,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Clear local sheet reference',
+                          style: TextStyle(color: AppTheme.secondaryTextColor),
+                        ),
                         onTap: () {
                           _showResetConfirmation(context);
                         },
                       ),
                       Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
                       ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-                        leading: const Icon(Icons.logout, color: AppTheme.textColor),
-                        title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.w600)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 8,
+                        ),
+                        leading: const Icon(
+                          Icons.logout,
+                          color: AppTheme.textColor,
+                        ),
+                        title: const Text(
+                          'Logout',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
                         onTap: () {
                           _showLogoutConfirmation(context);
                         },
@@ -199,13 +269,18 @@ class SettingsScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: AppTheme.warningColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppTheme.warningColor.withOpacity(0.3)),
+                    border: Border.all(
+                      color: AppTheme.warningColor.withOpacity(0.3),
+                    ),
                   ),
                   child: Column(
                     children: [
                       Row(
                         children: [
-                          const Icon(Icons.info_outline, color: AppTheme.warningColor),
+                          const Icon(
+                            Icons.info_outline,
+                            color: AppTheme.warningColor,
+                          ),
                           const SizedBox(width: 12),
                           Text(
                             'Disclaimer',
@@ -243,14 +318,20 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Reset Local Sheet?', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Reset Local Sheet?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: const Text(
           'This will clear the local sheet reference. You will need to create a new sheet on next login.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppTheme.secondaryTextColor),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
@@ -263,7 +344,9 @@ class SettingsScreen extends StatelessWidget {
                 ),
               );
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+            ),
             child: const Text('Reset'),
           ),
         ],
@@ -275,19 +358,27 @@ class SettingsScreen extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout?', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Logout?',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel', style: TextStyle(color: AppTheme.secondaryTextColor)),
+            child: const Text(
+              'Cancel',
+              style: TextStyle(color: AppTheme.secondaryTextColor),
+            ),
           ),
           ElevatedButton(
             onPressed: () {
               context.read<AuthBloc>().add(const AuthSignOutRequested());
               Navigator.pop(context);
             },
-            style: ElevatedButton.styleFrom(backgroundColor: AppTheme.errorColor),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.errorColor,
+            ),
             child: const Text('Logout'),
           ),
         ],
@@ -295,4 +386,3 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
-

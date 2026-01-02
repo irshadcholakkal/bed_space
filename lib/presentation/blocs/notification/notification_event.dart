@@ -14,4 +14,3 @@ class NotificationInitializeRequested extends NotificationEvent {
 class NotificationScheduleRemindersRequested extends NotificationEvent {
   const NotificationScheduleRemindersRequested();
 }
-

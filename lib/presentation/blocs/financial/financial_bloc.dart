@@ -11,10 +11,9 @@ part 'financial_state.dart';
 class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
   final ManagementRepository _repository;
 
-  FinancialBloc({
-    required ManagementRepository repository,
-  })  : _repository = repository,
-        super(FinancialInitial()) {
+  FinancialBloc({required ManagementRepository repository})
+    : _repository = repository,
+      super(FinancialInitial()) {
     on<FinancialLoadRequested>(_onFinancialLoadRequested);
     on<FinancialMonthChanged>(_onFinancialMonthChanged);
   }
@@ -44,50 +43,87 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
       onData: (data) {
         final tenants = data['tenants'] as List<TenantModel>;
         final payments = data['payments'] as List<PaymentModel>;
+        final rooms = data['rooms'] as List<RoomModel>;
 
         final activeTenants = tenants.where((t) => t.active).toList();
-        final monthPayments = payments.where((p) => p.paymentMonth == month).toList();
+        final monthPayments = payments
+            .where((p) => p.paymentMonth == month)
+            .toList();
 
         // Create tenant payment status
-        final List<TenantPaymentStatus> tenantPayments = activeTenants.map((tenant) {
-          final payment = monthPayments.firstWhere(
-            (p) => p.tenantId == tenant.tenantId,
-            orElse: () => PaymentModel(
-              tenantId: tenant.tenantId ?? '',
-              amount: 0,
-              paymentMonth: month,
-              paidDate: DateTime.now(),
-            ),
+        final List<TenantPaymentStatus> tenantPayments = activeTenants.map((
+          tenant,
+        ) {
+          // Find ALL payments for this tenant in this month
+          final tenantMonthPayments = monthPayments
+              .where((p) => p.tenantId == tenant.tenantId)
+              .toList();
+
+          // Calculate total paid amount by summing all payments
+          final paidAmount = tenantMonthPayments.fold<double>(
+            0,
+            (sum, p) => sum + p.amount,
           );
+
+          // Find the latest payment date if exists
+          DateTime? lastPaidDate;
+          if (tenantMonthPayments.isNotEmpty) {
+            // Sort by date to get latest? Or just take the last entry?
+            // Safest is to sort or reduce.
+            lastPaidDate = tenantMonthPayments
+                .map((p) => p.paidDate)
+                .reduce((a, b) => a.isAfter(b) ? a : b);
+          }
+
+          final rentAmount = tenant.rentAmount;
+
+          PaymentStatus status;
+          if (paidAmount >= rentAmount) {
+            status = PaymentStatus.paid;
+          } else if (paidAmount > 0) {
+            status = PaymentStatus.partial;
+          } else {
+            status = PaymentStatus.overdue;
+          }
 
           return TenantPaymentStatus(
             tenant: tenant,
-            hasPaid: payment.paymentId != null && payment.amount > 0,
-            amount: payment.amount > 0 ? payment.amount : tenant.rentAmount,
-            paidDate: payment.paymentId != null ? payment.paidDate : null,
+            paidAmount: paidAmount,
+            rentAmount: rentAmount,
+            status: status,
+            paidDate: lastPaidDate,
           );
         }).toList();
 
         // Calculate room-wise totals
         final Map<String, double> roomTotals = {};
-        for (final tenant in activeTenants) {
-          final payment = monthPayments.firstWhere(
-            (p) => p.tenantId == tenant.tenantId,
-            orElse: () => PaymentModel(
-              tenantId: tenant.tenantId ?? '',
-              amount: 0,
-              paymentMonth: month,
-              paidDate: DateTime.now(),
-            ),
-          );
-          final amount = payment.amount > 0 ? payment.amount : tenant.rentAmount;
-          roomTotals[tenant.roomId] = (roomTotals[tenant.roomId] ?? 0) + amount;
+        for (final payment in tenantPayments) {
+          roomTotals[payment.tenant.roomId] =
+              (roomTotals[payment.tenant.roomId] ?? 0) + payment.paidAmount;
         }
+
+        // Calculate Expenses (Sum of utility cost for rooms that have at least one active tenant)
+        // Or simply all rooms? Usually expenses are for the flat regardless.
+        // Let's sum all rooms utility cost.
+        final expenses = rooms.fold<double>(
+          0,
+          (sum, room) => sum + room.utilityCostMonthly,
+        );
+
+        // Calculate Total Collected
+        final totalCollected = tenantPayments.fold<double>(
+          0,
+          (sum, tp) => sum + tp.paidAmount,
+        );
+
+        final profit = totalCollected - expenses;
 
         return FinancialLoaded(
           month: month,
           tenantPayments: tenantPayments,
           roomTotals: roomTotals,
+          expenses: expenses,
+          profit: profit,
         );
       },
       onError: (e, _) => FinancialError(e.toString()),
@@ -95,16 +131,23 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
   }
 }
 
+enum PaymentStatus { paid, partial, overdue }
+
 class TenantPaymentStatus {
   final TenantModel tenant;
-  final bool hasPaid;
-  final double amount;
+  final double paidAmount;
+  final double rentAmount;
+  final PaymentStatus status;
   final DateTime? paidDate;
+
+  // Helper
+  bool get hasPaid => status == PaymentStatus.paid;
 
   TenantPaymentStatus({
     required this.tenant,
-    required this.hasPaid,
-    required this.amount,
+    required this.paidAmount,
+    required this.rentAmount,
+    required this.status,
     this.paidDate,
   });
 }

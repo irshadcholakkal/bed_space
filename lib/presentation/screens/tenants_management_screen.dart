@@ -11,445 +11,12 @@ import '../../data/models/payment_model.dart';
 import '../../data/services/google_sheets_service.dart';
 import '../theme/app_theme.dart';
 
-class TenantsManagementScreen extends StatelessWidget {
+class TenantsManagementScreen extends StatefulWidget {
   const TenantsManagementScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
-      appBar: AppBar(
-        title: Text(
-          'Manage Tenants',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppTheme.textColor,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        backgroundColor: AppTheme.backgroundColor,
-        elevation: 0,
-        centerTitle: false,
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.person_add_outlined,
-              color: AppTheme.primaryColor,
-            ),
-            tooltip: 'Add Tenant',
-            onPressed: () => showAddTenantDialog(context),
-          ),
-        ],
-      ),
-      body: BlocBuilder<ManagementBloc, ManagementState>(
-        builder: (context, state) {
-          if (state is ManagementLoaded) {
-            if (state.isLoading && state.tenants.isEmpty) {
-              return const Center(
-                child: CircularProgressIndicator(color: AppTheme.primaryColor),
-              );
-            }
-
-            if (state.error != null && state.tenants.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: AppTheme.errorColor,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Error: ${state.error}',
-                      style: const TextStyle(color: AppTheme.textColor),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<ManagementBloc>().add(const LoadTenants());
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: const Text('Retry'),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            final activeTenants = state.tenants.where((t) => t.active).toList();
-
-            if (activeTenants.isEmpty) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.people_outline,
-                      size: 64,
-                      color: AppTheme.softGrey,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'No tenants found',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppTheme.softGrey,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton.icon(
-                      onPressed: () => showAddTenantDialog(context),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Add Tenant'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.primaryColor,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return RefreshIndicator(
-              color: AppTheme.primaryColor,
-              onRefresh: () async {
-                context.read<ManagementBloc>().add(const LoadTenants());
-                context.read<ManagementBloc>().add(const LoadBuildings());
-                context.read<ManagementBloc>().add(const LoadRooms());
-                context.read<ManagementBloc>().add(const LoadPayments());
-              },
-              child: ListView.builder(
-                padding: const EdgeInsets.all(24),
-                itemCount: activeTenants.length,
-                itemBuilder: (context, index) {
-                  final tenant = activeTenants[index];
-                  // Find the room to get the room number
-                  final room = state.rooms.firstWhere(
-                    (r) => r.roomId == tenant.roomId,
-                    orElse: () => RoomModel(
-                      buildingId: '',
-                      roomNumber: tenant
-                          .roomId, // Fallback to showing ID if room not found
-                      totalCapacity: 0,
-                      lowerBedsCount: 0,
-                      upperBedsCount: 0,
-                      lowerBedRent: 0,
-                      upperBedRent: 0,
-                      utilityCostMonthly: 0,
-                    ),
-                  );
-
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    decoration: AppTheme.cardDecoration,
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.only(
-                        left: 10,
-                        right: 0,
-                        top: 8,
-                        bottom: 8,
-                      ),
-                      leading: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.person,
-                          color: AppTheme.primaryColor,
-                        ),
-                      ),
-                      title: Text(
-                        tenant.tenantName,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
-                          color: AppTheme.textColor,
-                        ),
-                      ),
-                      subtitle: Padding(
-                        padding: const EdgeInsets.only(top: 8),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Ph:${tenant.phone}",
-                              style: const TextStyle(
-                                color: AppTheme.secondaryTextColor,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Room: ${room.roomNumber} | Due Day: ${tenant.rentDueDay}',
-                              style: const TextStyle(
-                                color: AppTheme.secondaryTextColor,
-                                fontSize: 13,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Row(
-                              children: [
-                                Text(
-                                  'Rent: ₹${tenant.rentAmount.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    color: AppTheme.textColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Text(
-                                  'Adv: ₹${tenant.advanceAmount.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    color: AppTheme.secondaryTextColor,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            _buildPaymentStatusIndicator(
-                              tenant,
-                              state.payments,
-                            ),
-                          ],
-                        ),
-                      ),
-                      trailing: PopupMenuButton<String>(
-                        padding: EdgeInsets.zero,
-
-                        icon: const Icon(
-                          Icons.more_vert,
-                          color: AppTheme.textColor,
-                        ),
-                        onSelected: (value) {
-                          switch (value) {
-                            case 'balance':
-                              _navigateToRentBalance(
-                                context,
-                                tenant.tenantId ?? '',
-                              );
-                              break;
-                            case 'edit':
-                              _showEditTenantDialog(context, tenant);
-                              break;
-                            case 'checkout':
-                              _showCheckoutDialog(
-                                context,
-                                tenant,
-                                state.payments,
-                              );
-                              break;
-                            case 'delete':
-                              _showDeleteConfirmation(context, tenant);
-                              break;
-                          }
-                        },
-                        itemBuilder: (context) => [
-                          const PopupMenuItem(
-                            value: 'balance',
-
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.account_balance_wallet_outlined,
-                                  color: AppTheme.secondaryColor,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 12),
-                                Text('View Balance'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'edit',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.edit_outlined,
-                                  color: AppTheme.primaryColor,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 12),
-                                Text('Edit Tenant'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'checkout',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.exit_to_app,
-                                  color: AppTheme.warningColor,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 12),
-                                Text('Checkout Tenant'),
-                              ],
-                            ),
-                          ),
-                          const PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                Icon(
-                                  Icons.delete_outlined,
-                                  color: AppTheme.errorColor,
-                                  size: 20,
-                                ),
-                                SizedBox(width: 12),
-                                Text('Delete Tenant'),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-          }
-
-          return const SizedBox.shrink();
-        },
-      ),
-    );
-  }
-
-  Widget _buildPaymentStatusIndicator(
-    TenantModel tenant,
-    List<PaymentModel> allPayments,
-  ) {
-    final now = DateTime.now();
-    final currentMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
-
-    // Get all payments for current month
-    final currentMonthPayments = allPayments
-        .where(
-          (p) =>
-              p.tenantId == tenant.tenantId && p.paymentMonth == currentMonth,
-        )
-        .toList();
-
-    // Calculate total paid this month
-    final totalPaid = currentMonthPayments.fold<double>(
-      0,
-      (sum, p) => sum + p.amount,
-    );
-    final expectedRent = tenant.rentAmount;
-    final balance = expectedRent - totalPaid;
-
-    // Fully paid or overpaid
-    if (balance <= 0) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.check_circle,
-            color: AppTheme.successColor,
-            size: 14,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            totalPaid > expectedRent ? 'Overpaid' : 'Paid',
-            style: const TextStyle(
-              color: AppTheme.successColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Partially paid
-    if (totalPaid > 0) {
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(
-            Icons.warning_amber_rounded,
-            color: AppTheme.warningColor,
-            size: 14,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            'Partial - ₹${balance.toStringAsFixed(0)} due',
-            style: const TextStyle(
-              color: AppTheme.warningColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Not paid - check if overdue
-    final dueDay = tenant.rentDueDay;
-    final currentDay = now.day;
-
-    if (currentDay > dueDay) {
-      // Overdue (red)
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 14),
-          const SizedBox(width: 4),
-          Text(
-            'Overdue - ₹${expectedRent.toStringAsFixed(0)}',
-            style: const TextStyle(
-              color: AppTheme.errorColor,
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      );
-    }
-
-    // Pending but not yet due (orange/grey)
-    final daysUntilDue = dueDay - currentDay;
-    final statusText = daysUntilDue == 0
-        ? 'Due Today'
-        : 'Due in $daysUntilDue day${daysUntilDue == 1 ? '' : 's'}';
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(
-          Icons.access_time,
-          color: daysUntilDue <= 3
-              ? AppTheme.warningColor
-              : AppTheme.secondaryTextColor,
-          size: 14,
-        ),
-        const SizedBox(width: 4),
-        Text(
-          statusText,
-          style: TextStyle(
-            color: daysUntilDue <= 3
-                ? AppTheme.warningColor
-                : AppTheme.secondaryTextColor,
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
-    );
-  }
-
-  // No longer needed: _getAvailableBeds handled by BlocState
+  State<TenantsManagementScreen> createState() =>
+      _TenantsManagementScreenState();
 
   static void showAddTenantDialog(
     BuildContext context, {
@@ -830,6 +397,545 @@ class TenantsManagementScreen extends StatelessWidget {
           },
         ),
       ),
+    );
+  }
+}
+
+class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
+      appBar: AppBar(
+        title: Text(
+          'Manage Tenants',
+          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            color: AppTheme.textColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: AppTheme.backgroundColor,
+        elevation: 0,
+        centerTitle: false,
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.person_add_outlined,
+              color: AppTheme.primaryColor,
+            ),
+            tooltip: 'Add Tenant',
+            onPressed: () =>
+                TenantsManagementScreen.showAddTenantDialog(context),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Search Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value.toLowerCase();
+                  });
+                },
+                decoration: InputDecoration(
+                  hintText: 'Search by name, phone or room...',
+                  prefixIcon: const Icon(
+                    Icons.search,
+                    color: AppTheme.softGrey,
+                  ),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(
+                            Icons.clear,
+                            color: AppTheme.softGrey,
+                          ),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {
+                              _searchQuery = '';
+                            });
+                          },
+                        )
+                      : null,
+                  border: InputBorder.none,
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 15,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Expanded(
+            child: BlocBuilder<ManagementBloc, ManagementState>(
+              builder: (context, state) {
+                if (state is ManagementLoaded) {
+                  if (state.isLoading && state.tenants.isEmpty) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: AppTheme.primaryColor,
+                      ),
+                    );
+                  }
+
+                  if (state.error != null && state.tenants.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: AppTheme.errorColor,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Error: ${state.error}',
+                            style: const TextStyle(color: AppTheme.textColor),
+                          ),
+                          const SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: () {
+                              context.read<ManagementBloc>().add(
+                                const LoadTenants(),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primaryColor,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(25),
+                              ),
+                            ),
+                            child: const Text('Retry'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  // Filter active tenants based on search query
+                  final activeTenants = state.tenants.where((t) {
+                    if (!t.active) return false;
+                    if (_searchQuery.isEmpty) return true;
+
+                    final room = state.rooms.firstWhere(
+                      (r) => r.roomId == t.roomId,
+                      orElse: () => RoomModel(
+                        buildingId: '',
+                        roomNumber: t.roomId,
+                        totalCapacity: 0,
+                        lowerBedsCount: 0,
+                        upperBedsCount: 0,
+                        lowerBedRent: 0,
+                        upperBedRent: 0,
+                        utilityCostMonthly: 0,
+                      ),
+                    );
+
+                    return t.tenantName.toLowerCase().contains(_searchQuery) ||
+                        t.phone.toLowerCase().contains(_searchQuery) ||
+                        room.roomNumber.toLowerCase().contains(_searchQuery);
+                  }).toList();
+
+                  if (activeTenants.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            _searchQuery.isEmpty
+                                ? Icons.people_outline
+                                : Icons.search_off,
+                            size: 64,
+                            color: AppTheme.softGrey,
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            _searchQuery.isEmpty
+                                ? 'No tenants found'
+                                : 'No matches found',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(color: AppTheme.softGrey),
+                          ),
+                          const SizedBox(height: 16),
+                          if (_searchQuery.isEmpty)
+                            ElevatedButton.icon(
+                              onPressed: () =>
+                                  TenantsManagementScreen.showAddTenantDialog(
+                                    context,
+                                  ),
+                              icon: const Icon(Icons.add),
+                              label: const Text('Add Tenant'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppTheme.primaryColor,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return RefreshIndicator(
+                    color: AppTheme.primaryColor,
+                    onRefresh: () async {
+                      context.read<ManagementBloc>().add(const LoadTenants());
+                      context.read<ManagementBloc>().add(const LoadBuildings());
+                      context.read<ManagementBloc>().add(const LoadRooms());
+                      context.read<ManagementBloc>().add(const LoadPayments());
+                    },
+                    child: ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
+                      itemCount: activeTenants.length,
+                      itemBuilder: (context, index) {
+                        final tenant = activeTenants[index];
+                        // Find the room to get the room number
+                        final room = state.rooms.firstWhere(
+                          (r) => r.roomId == tenant.roomId,
+                          orElse: () => RoomModel(
+                            buildingId: '',
+                            roomNumber: tenant
+                                .roomId, // Fallback to showing ID if room not found
+                            totalCapacity: 0,
+                            lowerBedsCount: 0,
+                            upperBedsCount: 0,
+                            lowerBedRent: 0,
+                            upperBedRent: 0,
+                            utilityCostMonthly: 0,
+                          ),
+                        );
+
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 16),
+                          decoration: AppTheme.cardDecoration,
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.only(
+                              left: 10,
+                              right: 0,
+                              top: 8,
+                              bottom: 8,
+                            ),
+                            leading: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primaryColor.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.person,
+                                color: AppTheme.primaryColor,
+                              ),
+                            ),
+                            title: Text(
+                              tenant.tenantName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                                color: AppTheme.textColor,
+                              ),
+                            ),
+                            subtitle: Padding(
+                              padding: const EdgeInsets.only(top: 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    "Ph:${tenant.phone}",
+                                    style: const TextStyle(
+                                      color: AppTheme.secondaryTextColor,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    'Room: ${room.roomNumber} | Due Day: ${tenant.rentDueDay}',
+                                    style: const TextStyle(
+                                      color: AppTheme.secondaryTextColor,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Row(
+                                    children: [
+                                      Text(
+                                        'Rent: ₹${tenant.rentAmount.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          color: AppTheme.textColor,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        'Adv: ₹${tenant.advanceAmount.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          color: AppTheme.secondaryTextColor,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 6),
+                                  _TenantsManagementScreenState._buildPaymentStatusIndicator(
+                                    tenant,
+                                    state.payments,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            trailing: PopupMenuButton<String>(
+                              padding: EdgeInsets.zero,
+
+                              icon: const Icon(
+                                Icons.more_vert,
+                                color: AppTheme.textColor,
+                              ),
+                              onSelected: (value) {
+                                switch (value) {
+                                  case 'balance':
+                                    _navigateToRentBalance(
+                                      context,
+                                      tenant.tenantId ?? '',
+                                    );
+                                    break;
+                                  case 'edit':
+                                    _showEditTenantDialog(context, tenant);
+                                    break;
+                                  case 'checkout':
+                                    _showCheckoutDialog(
+                                      context,
+                                      tenant,
+                                      state.payments,
+                                    );
+                                    break;
+                                  case 'delete':
+                                    _showDeleteConfirmation(context, tenant);
+                                    break;
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                  value: 'balance',
+
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.account_balance_wallet_outlined,
+                                        color: AppTheme.secondaryColor,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('View Balance'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'edit',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.edit_outlined,
+                                        color: AppTheme.primaryColor,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Edit Tenant'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'checkout',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.exit_to_app,
+                                        color: AppTheme.warningColor,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Checkout Tenant'),
+                                    ],
+                                  ),
+                                ),
+                                const PopupMenuItem(
+                                  value: 'delete',
+                                  child: Row(
+                                    children: [
+                                      Icon(
+                                        Icons.delete_outlined,
+                                        color: AppTheme.errorColor,
+                                        size: 20,
+                                      ),
+                                      SizedBox(width: 12),
+                                      Text('Delete Tenant'),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget _buildPaymentStatusIndicator(
+    TenantModel tenant,
+    List<PaymentModel> allPayments,
+  ) {
+    final now = DateTime.now();
+    final currentMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+
+    // Get all payments for current month
+    final currentMonthPayments = allPayments
+        .where(
+          (p) =>
+              p.tenantId == tenant.tenantId && p.paymentMonth == currentMonth,
+        )
+        .toList();
+
+    // Calculate total paid this month
+    final totalPaid = currentMonthPayments.fold<double>(
+      0,
+      (sum, p) => sum + p.amount,
+    );
+    final expectedRent = tenant.rentAmount;
+    final balance = expectedRent - totalPaid;
+
+    // Fully paid or overpaid
+    if (balance <= 0) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.check_circle,
+            color: AppTheme.successColor,
+            size: 14,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            totalPaid > expectedRent ? 'Overpaid' : 'Paid',
+            style: const TextStyle(
+              color: AppTheme.successColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Partially paid
+    if (totalPaid > 0) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: AppTheme.warningColor,
+            size: 14,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            'Partial - ₹${balance.toStringAsFixed(0)} due',
+            style: const TextStyle(
+              color: AppTheme.warningColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Not paid - check if overdue
+    final dueDay = tenant.rentDueDay;
+    final currentDay = now.day;
+
+    if (currentDay > dueDay) {
+      // Overdue (red)
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 14),
+          const SizedBox(width: 4),
+          Text(
+            'Overdue - ₹${expectedRent.toStringAsFixed(0)}',
+            style: const TextStyle(
+              color: AppTheme.errorColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // Pending but not yet due (orange/grey)
+    final daysUntilDue = dueDay - currentDay;
+    final statusText = daysUntilDue == 0
+        ? 'Due Today'
+        : 'Due in $daysUntilDue day${daysUntilDue == 1 ? '' : 's'}';
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.access_time,
+          color: daysUntilDue <= 3
+              ? AppTheme.warningColor
+              : AppTheme.secondaryTextColor,
+          size: 14,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          statusText,
+          style: TextStyle(
+            color: daysUntilDue <= 3
+                ? AppTheme.warningColor
+                : AppTheme.secondaryTextColor,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 
@@ -1580,181 +1686,199 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
                   );
                 },
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.zero, // Padding moved to internal column
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Balance Summary
-                      Container(
+                      if (state.isLoading)
+                        const LinearProgressIndicator(
+                          color: AppTheme.primaryColor,
+                          backgroundColor: Colors.transparent,
+                          minHeight: 2,
+                        ),
+
+                      Padding(
                         padding: const EdgeInsets.all(24),
-                        decoration: AppTheme.cardDecoration,
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
-                              children: [
-                                CircleAvatar(
-                                  backgroundColor: AppTheme.primaryColor
-                                      .withOpacity(0.1),
-                                  child: Text(
-                                    tenant.tenantName[0].toUpperCase(),
-                                    style: const TextStyle(
-                                      color: AppTheme.primaryColor,
-                                      fontWeight: FontWeight.bold,
-                                    ),
+                            // Balance Summary
+                            Container(
+                              padding: const EdgeInsets.all(24),
+                              decoration: AppTheme.cardDecoration,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        backgroundColor: AppTheme.primaryColor
+                                            .withOpacity(0.1),
+                                        child: Text(
+                                          tenant.tenantName[0].toUpperCase(),
+                                          style: const TextStyle(
+                                            color: AppTheme.primaryColor,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      Text(
+                                        tenant.tenantName,
+                                        style: const TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppTheme.textColor,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                                const SizedBox(width: 16),
-                                Text(
-                                  tenant.tenantName,
-                                  style: const TextStyle(
-                                    fontSize: 20,
+                                  const SizedBox(height: 24),
+                                  _buildBalanceRow(
+                                    'Total Due',
+                                    '₹${totalDue.toStringAsFixed(0)}',
+                                    AppTheme.textColor,
+                                  ),
+                                  _buildBalanceRow(
+                                    'Total Paid',
+                                    '₹${totalPaid.toStringAsFixed(0)}',
+                                    AppTheme.successColor,
+                                  ),
+                                  Divider(
+                                    height: 32,
+                                    color: Colors.grey.withOpacity(0.1),
+                                  ),
+                                  _buildBalanceRow(
+                                    rentBalance > 0
+                                        ? 'Amount Owed'
+                                        : rentBalance < 0
+                                        ? 'Credit'
+                                        : 'Settled',
+                                    '₹${rentBalance.abs().toStringAsFixed(0)}',
+                                    rentBalance > 0
+                                        ? AppTheme.errorColor
+                                        : rentBalance < 0
+                                        ? AppTheme.successColor
+                                        : AppTheme.textColor,
+                                    isBold: true,
+                                  ),
+                                  if (rentBalance > 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text(
+                                        'Outstanding (Overdue)',
+                                        style: TextStyle(
+                                          color: AppTheme.errorColor
+                                              .withOpacity(0.8),
+                                          fontSize: 12,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ),
+                                  if (rentBalance < 0)
+                                    Padding(
+                                      padding: const EdgeInsets.only(top: 8),
+                                      child: Text(
+                                        'Advance/Overpayment',
+                                        style: TextStyle(
+                                          color: AppTheme.successColor
+                                              .withOpacity(0.8),
+                                          fontSize: 12,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+
+                            // Monthly Breakdown
+                            Text(
+                              'Monthly Breakdown',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
                                     fontWeight: FontWeight.bold,
                                     color: AppTheme.textColor,
                                   ),
-                                ),
-                              ],
                             ),
-                            const SizedBox(height: 24),
-                            _buildBalanceRow(
-                              'Total Due',
-                              '₹${totalDue.toStringAsFixed(0)}',
-                              AppTheme.textColor,
+                            const SizedBox(height: 16),
+                            ..._buildMonthlyBreakdown(tenant, payments),
+                            const SizedBox(height: 32),
+
+                            // Payment History
+                            Text(
+                              'Payment History',
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.textColor,
+                                  ),
                             ),
-                            _buildBalanceRow(
-                              'Total Paid',
-                              '₹${totalPaid.toStringAsFixed(0)}',
-                              AppTheme.successColor,
-                            ),
-                            Divider(
-                              height: 32,
-                              color: Colors.grey.withOpacity(0.1),
-                            ),
-                            _buildBalanceRow(
-                              rentBalance > 0
-                                  ? 'Amount Owed'
-                                  : rentBalance < 0
-                                  ? 'Credit'
-                                  : 'Settled',
-                              '₹${rentBalance.abs().toStringAsFixed(0)}',
-                              rentBalance > 0
-                                  ? AppTheme.errorColor
-                                  : rentBalance < 0
-                                  ? AppTheme.successColor
-                                  : AppTheme.textColor,
-                              isBold: true,
-                            ),
-                            if (rentBalance > 0)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  'Outstanding (Overdue)',
-                                  style: TextStyle(
-                                    color: AppTheme.errorColor.withOpacity(0.8),
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
+                            const SizedBox(height: 16),
+                            if (payments.isEmpty)
+                              Container(
+                                padding: const EdgeInsets.all(24),
+                                decoration: AppTheme.cardDecoration,
+                                child: const Center(
+                                  child: Text(
+                                    'No payments recorded',
+                                    style: TextStyle(
+                                      color: AppTheme.secondaryTextColor,
+                                    ),
                                   ),
                                 ),
-                              ),
-                            if (rentBalance < 0)
-                              Padding(
-                                padding: const EdgeInsets.only(top: 8),
-                                child: Text(
-                                  'Advance/Overpayment',
-                                  style: TextStyle(
-                                    color: AppTheme.successColor.withOpacity(
-                                      0.8,
+                              )
+                            else
+                              ...payments.map(
+                                (payment) => Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  decoration: AppTheme.cardDecoration,
+                                  child: ListTile(
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 8,
                                     ),
-                                    fontSize: 12,
-                                    fontStyle: FontStyle.italic,
+                                    leading: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: AppTheme.successColor
+                                            .withOpacity(0.1),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(
+                                        Icons.check,
+                                        color: AppTheme.successColor,
+                                        size: 20,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      '₹${payment.amount.toStringAsFixed(0)}',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    subtitle: Text(
+                                      'Month: ${payment.paymentMonth}',
+                                      style: const TextStyle(
+                                        color: AppTheme.secondaryTextColor,
+                                      ),
+                                    ),
+                                    trailing: Text(
+                                      DateFormat(
+                                        'dd MMM yyyy',
+                                      ).format(payment.paidDate),
+                                      style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppTheme.secondaryTextColor,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 32),
-
-                      // Monthly Breakdown
-                      Text(
-                        'Monthly Breakdown',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      ..._buildMonthlyBreakdown(tenant, payments),
-                      const SizedBox(height: 32),
-
-                      // Payment History
-                      Text(
-                        'Payment History',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      if (payments.isEmpty)
-                        Container(
-                          padding: const EdgeInsets.all(24),
-                          decoration: AppTheme.cardDecoration,
-                          child: const Center(
-                            child: Text(
-                              'No payments recorded',
-                              style: TextStyle(
-                                color: AppTheme.secondaryTextColor,
-                              ),
-                            ),
-                          ),
-                        )
-                      else
-                        ...payments.map(
-                          (payment) => Container(
-                            margin: const EdgeInsets.only(bottom: 12),
-                            decoration: AppTheme.cardDecoration,
-                            child: ListTile(
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 20,
-                                vertical: 8,
-                              ),
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: AppTheme.successColor.withOpacity(0.1),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.check,
-                                  color: AppTheme.successColor,
-                                  size: 20,
-                                ),
-                              ),
-                              title: Text(
-                                '₹${payment.amount.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              subtitle: Text(
-                                'Month: ${payment.paymentMonth}',
-                                style: const TextStyle(
-                                  color: AppTheme.secondaryTextColor,
-                                ),
-                              ),
-                              trailing: Text(
-                                DateFormat(
-                                  'dd MMM yyyy',
-                                ).format(payment.paidDate),
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppTheme.secondaryTextColor,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
                     ],
                   ),
                 ),
@@ -1972,9 +2096,11 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
     DateTime selectedDate = DateTime.now();
     String selectedMonth =
         '${selectedDate.year}-${selectedDate.month.toString().padLeft(2, '0')}';
+    bool isSubmitting = false;
 
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => BlocProvider.value(
         value: managementBloc,
         child: StatefulBuilder(
@@ -1993,6 +2119,7 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
                     labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
                   ),
                   keyboardType: TextInputType.number,
+                  enabled: !isSubmitting,
                 ),
                 const SizedBox(height: 16),
                 ListTile(
@@ -2009,61 +2136,93 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
                     Icons.calendar_today,
                     color: AppTheme.primaryColor,
                   ),
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(2020),
-                      lastDate: DateTime.now(),
-                      builder: (context, child) {
-                        return Theme(
-                          data: Theme.of(context).copyWith(
-                            colorScheme: const ColorScheme.light(
-                              primary: AppTheme.primaryColor,
-                              onPrimary: Colors.white,
-                              onSurface: AppTheme.textColor,
-                            ),
-                          ),
-                          child: child!,
-                        );
-                      },
-                    );
-                    if (date != null) {
-                      setState(() {
-                        selectedDate = date;
-                        selectedMonth =
-                            '${date.year}-${date.month.toString().padLeft(2, '0')}';
-                      });
-                    }
-                  },
+                  onTap: isSubmitting
+                      ? null
+                      : () async {
+                          final date = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDate,
+                            firstDate: DateTime(2020),
+                            lastDate: DateTime.now(),
+                            builder: (context, child) {
+                              return Theme(
+                                data: Theme.of(context).copyWith(
+                                  colorScheme: const ColorScheme.light(
+                                    primary: AppTheme.primaryColor,
+                                    onPrimary: Colors.white,
+                                    onSurface: AppTheme.textColor,
+                                  ),
+                                ),
+                                child: child!,
+                              );
+                            },
+                          );
+                          if (date != null) {
+                            setState(() {
+                              selectedDate = date;
+                              selectedMonth =
+                                  '${date.year}-${date.month.toString().padLeft(2, '0')}';
+                            });
+                          }
+                        },
                 ),
               ],
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: isSubmitting ? null : () => Navigator.pop(context),
                 child: const Text(
                   'Cancel',
                   style: TextStyle(color: AppTheme.secondaryTextColor),
                 ),
               ),
               ElevatedButton(
-                onPressed: () {
-                  final payment = PaymentModel(
-                    tenantId: widget.tenantId,
-                    amount: double.tryParse(amountController.text) ?? 0,
-                    paymentMonth: selectedMonth,
-                    paidDate: selectedDate,
-                  );
-                  managementBloc.add(AddPayment(payment));
-                  Navigator.pop(context);
-                  // Reload balance
-                  managementBloc.add(LoadTenantBalance(widget.tenantId));
-                },
+                onPressed: isSubmitting
+                    ? null
+                    : () async {
+                        if (amountController.text.isEmpty) return;
+
+                        setState(() {
+                          isSubmitting = true;
+                        });
+
+                        final payment = PaymentModel(
+                          tenantId: widget.tenantId,
+                          amount: double.tryParse(amountController.text) ?? 0,
+                          paymentMonth: selectedMonth,
+                          paidDate: selectedDate,
+                        );
+
+                        // Since we made repo non-blocking, this returns instantly
+                        managementBloc.add(AddPayment(payment));
+
+                        // Small UI delay nicely shows the spinner
+                        await Future.delayed(const Duration(milliseconds: 500));
+
+                        if (context.mounted) {
+                          Navigator.pop(context);
+                          // Reload balance to refresh UI
+                          managementBloc.add(
+                            LoadTenantBalance(widget.tenantId),
+                          );
+                        }
+                      },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primaryColor,
+                  disabledBackgroundColor: AppTheme.primaryColor.withOpacity(
+                    0.6,
+                  ),
                 ),
-                child: const Text('Add Payment'),
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Add Payment'),
               ),
             ],
           ),

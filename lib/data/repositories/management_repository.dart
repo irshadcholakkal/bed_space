@@ -29,8 +29,12 @@ class ManagementRepository {
   }
 
   void _initConnectivityListener() {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((results) {
-      final hasConnection = results.any((result) => result != ConnectivityResult.none);
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      results,
+    ) {
+      final hasConnection = results.any(
+        (result) => result != ConnectivityResult.none,
+      );
       if (hasConnection) {
         _processQueue();
       }
@@ -135,16 +139,17 @@ class ManagementRepository {
   // --- Mutation Helpers (OFFLINE FIRST) ---
 
   Future<void> addBuilding(BuildingModel building) async {
-    final buildingWithId = building.buildingId == null || building.buildingId!.isEmpty
+    final buildingWithId =
+        building.buildingId == null || building.buildingId!.isEmpty
         ? building.copyWith(buildingId: const Uuid().v4())
         : building;
-    
+
     await _localService.upsertBuilding(buildingWithId);
     _dataChangeController.add(null);
 
     try {
       await _sheetsService.addBuilding(buildingWithId);
-      await _syncSheetsToLocal(); 
+      await _syncSheetsToLocal();
     } catch (e) {
       await _enqueue('ADD_BUILDING', buildingWithId);
     }
@@ -259,7 +264,8 @@ class ManagementRepository {
   }
 
   Future<void> addPayment(PaymentModel payment) async {
-    final paymentWithId = payment.paymentId == null || payment.paymentId!.isEmpty
+    final paymentWithId =
+        payment.paymentId == null || payment.paymentId!.isEmpty
         ? PaymentModel(
             paymentId: const Uuid().v4(),
             tenantId: payment.tenantId,
@@ -272,10 +278,16 @@ class ManagementRepository {
     await _localService.upsertPayment(paymentWithId);
     _dataChangeController.add(null);
 
+    // Background sync: Do not await this.
+    // If it fails, we handle it in the background or queue it.
+    _syncPaymentToSheets(paymentWithId);
+  }
+
+  Future<void> _syncPaymentToSheets(PaymentModel payment) async {
     try {
-      await _sheetsService.addPayment(paymentWithId);
+      await _sheetsService.addPayment(payment);
     } catch (e) {
-      await _enqueue('ADD_PAYMENT', paymentWithId);
+      await _enqueue('ADD_PAYMENT', payment);
     }
   }
 
@@ -307,7 +319,10 @@ class ManagementRepository {
     try {
       await _sheetsService.updateBedStatus(bedId, status);
     } catch (e) {
-      await _enqueue('UPDATE_BED_STATUS', {'bedId': bedId, 'status': status.toString()});
+      await _enqueue('UPDATE_BED_STATUS', {
+        'bedId': bedId,
+        'status': status.toString(),
+      });
     }
   }
 
@@ -376,12 +391,17 @@ class ManagementRepository {
   Future<Map<String, dynamic>> getTenantRentBalance(String tenantId) async {
     final tenant = await getTenantById(tenantId);
     if (tenant == null) {
-      return {'totalDue': 0.0, 'totalPaid': 0.0, 'balance': 0.0, 'payments': []};
+      return {
+        'totalDue': 0.0,
+        'totalPaid': 0.0,
+        'balance': 0.0,
+        'payments': [],
+      };
     }
 
     final allPayments = await _localService.getPayments();
     final payments = allPayments.where((p) => p.tenantId == tenantId).toList();
-    
+
     final now = DateTime.now();
     final joiningDate = tenant.joiningDate;
     final startMonth = DateTime(joiningDate.year, joiningDate.month);
@@ -389,7 +409,8 @@ class ManagementRepository {
 
     int monthsCount = 0;
     DateTime month = startMonth;
-    while (month.isBefore(currentMonth) || month.isAtSameMomentAs(currentMonth)) {
+    while (month.isBefore(currentMonth) ||
+        month.isAtSameMomentAs(currentMonth)) {
       monthsCount++;
       month = DateTime(month.year, month.month + 1);
     }
@@ -412,7 +433,7 @@ class ManagementRepository {
       final localBeds = await _localService.getBeds();
       if (localBeds.isNotEmpty) return localBeds;
     }
-    
+
     final beds = await _sheetsService.getBeds();
     await _localService.saveBeds(beds);
     return beds;

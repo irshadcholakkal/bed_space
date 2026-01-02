@@ -13,32 +13,31 @@ part 'management_state.dart';
 class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
   final ManagementRepository _repository;
 
-  ManagementBloc({
-    required ManagementRepository repository,
-  })  : _repository = repository,
-        super(ManagementInitial()) {
+  ManagementBloc({required ManagementRepository repository})
+    : _repository = repository,
+      super(ManagementInitial()) {
     on<LoadAllManagementData>(_onLoadAllManagementData);
-    
+
     on<LoadBuildings>(_onLoadBuildings);
     on<AddBuilding>(_onAddBuilding);
     on<UpdateBuilding>(_onUpdateBuilding);
     on<DeleteBuilding>(_onDeleteBuilding);
-    
+
     on<LoadRooms>(_onLoadRooms);
     on<AddRoom>(_onAddRoom);
     on<UpdateRoom>(_onUpdateRoom);
     on<DeleteRoom>(_onDeleteRoom);
-    
+
     on<LoadTenants>(_onLoadTenants);
     on<AddTenant>(_onAddTenant);
     on<UpdateTenant>(_onUpdateTenant);
     on<DeleteTenant>(_onDeleteTenant);
     on<CheckoutTenant>(_onCheckoutTenant);
-    
+
     on<LoadPayments>(_onLoadPayments);
     on<AddPayment>(_onAddPayment);
     on<DeletePayment>(_onDeletePayment);
-    
+
     on<LoadTenantBalance>(_onLoadTenantBalance);
     on<TriggerManualSync>(_onTriggerManualSync);
   }
@@ -52,10 +51,10 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
       // 1. Mark tenant inactive
       final inactiveTenant = event.tenant.copyWith(active: false);
       await _repository.updateTenant(inactiveTenant);
-      
+
       // 2. Mark bed as vacant
       await _repository.updateBedStatus(event.tenant.bedId, BedStatus.vacant);
-      
+
       // The stream in repository will automatically notify UI of these changes
       emit(_currentState.copyWith(isLoading: false));
     } catch (e) {
@@ -77,7 +76,7 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     Emitter<ManagementState> emit,
   ) async {
     emit(_currentState.copyWith(isLoading: true));
-    
+
     // Use the stream from repository for local-first loading
     await emit.forEach<Map<String, dynamic>>(
       _repository.getAllDataStream(),
@@ -88,11 +87,15 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
           tenants: data['tenants'] as List<TenantModel>,
           payments: data['payments'] as List<PaymentModel>,
           beds: data['beds'] as List<BedModel>,
-          isLoading: false, // Serve instantly, don't keep loading state if we have local data
+          isLoading:
+              false, // Serve instantly, don't keep loading state if we have local data
         );
       },
       onError: (error, stackTrace) {
-        return _currentState.copyWith(error: error.toString(), isLoading: false);
+        return _currentState.copyWith(
+          error: error.toString(),
+          isLoading: false,
+        );
       },
     );
   }
@@ -166,39 +169,42 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     }
   }
 
-  Future<void> _onAddRoom(
-    AddRoom event,
-    Emitter<ManagementState> emit,
-  ) async {
+  Future<void> _onAddRoom(AddRoom event, Emitter<ManagementState> emit) async {
     emit(_currentState.copyWith(isLoading: true));
     try {
       await _repository.addRoom(event.room);
       // Background: get rooms to ensure we have the generated ID for bed creation
       // Actually, my repository handles sync internally now.
       // For immediate bed creation, we might still need the ID if it's local-first.
-      // But repo.addRoom returns nothing. 
+      // But repo.addRoom returns nothing.
       // I'll keep the logic but rely on repository to be consistent.
-      
+
       final rooms = await _repository.getRooms();
       final createdRoom = rooms.firstWhere(
-        (r) => r.roomNumber == event.room.roomNumber && r.buildingId == event.room.buildingId,
+        (r) =>
+            r.roomNumber == event.room.roomNumber &&
+            r.buildingId == event.room.buildingId,
         orElse: () => event.room,
       );
-      
+
       if (createdRoom.roomId != null && createdRoom.roomId!.isNotEmpty) {
         for (int i = 0; i < event.room.lowerBedsCount; i++) {
-          await _repository.addBed(BedModel(
-            roomId: createdRoom.roomId!,
-            bedType: BedType.lower,
-            status: BedStatus.vacant,
-          ));
+          await _repository.addBed(
+            BedModel(
+              roomId: createdRoom.roomId!,
+              bedType: BedType.lower,
+              status: BedStatus.vacant,
+            ),
+          );
         }
         for (int i = 0; i < event.room.upperBedsCount; i++) {
-          await _repository.addBed(BedModel(
-            roomId: createdRoom.roomId!,
-            bedType: BedType.upper,
-            status: BedStatus.vacant,
-          ));
+          await _repository.addBed(
+            BedModel(
+              roomId: createdRoom.roomId!,
+              bedType: BedType.upper,
+              status: BedStatus.vacant,
+            ),
+          );
         }
       }
     } catch (e) {
@@ -268,7 +274,10 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
       final oldTenant = await _repository.getTenantById(event.tenant.tenantId!);
       if (oldTenant != null && oldTenant.bedId != event.tenant.bedId) {
         await _repository.updateBedStatus(oldTenant.bedId, BedStatus.vacant);
-        await _repository.updateBedStatus(event.tenant.bedId, BedStatus.occupied);
+        await _repository.updateBedStatus(
+          event.tenant.bedId,
+          BedStatus.occupied,
+        );
       }
       await _repository.updateTenant(event.tenant);
     } catch (e) {

@@ -15,15 +15,25 @@ class FinancialLoaded extends FinancialState {
   final String month;
   final List<TenantPaymentStatus> tenantPayments;
   final Map<String, double> roomTotals;
+  final double expenses;
+  final double profit;
 
   const FinancialLoaded({
     required this.month,
     required this.tenantPayments,
     required this.roomTotals,
+    this.expenses = 0.0,
+    this.profit = 0.0,
   });
 
   @override
-  List<Object> get props => [month, tenantPayments, roomTotals];
+  List<Object> get props => [
+    month,
+    tenantPayments,
+    roomTotals,
+    expenses,
+    profit,
+  ];
 }
 
 class FinancialError extends FinancialState {
@@ -34,4 +44,3 @@ class FinancialError extends FinancialState {
   @override
   List<Object> get props => [message];
 }
-
