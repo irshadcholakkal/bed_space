@@ -22,8 +22,8 @@ class ManagementRepository {
   ManagementRepository({
     required GoogleSheetsService sheetsService,
     LocalDatabaseService? localService,
-  }) : _sheetsService = sheetsService,
-       _localService = localService ?? LocalDatabaseService() {
+  })  : _sheetsService = sheetsService,
+        _localService = localService ?? LocalDatabaseService() {
     _initConnectivityListener();
     _processQueue(); // Process any pending mutations on startup
   }
@@ -141,8 +141,8 @@ class ManagementRepository {
   Future<void> addBuilding(BuildingModel building) async {
     final buildingWithId =
         building.buildingId == null || building.buildingId!.isEmpty
-        ? building.copyWith(buildingId: const Uuid().v4())
-        : building;
+            ? building.copyWith(buildingId: const Uuid().v4())
+            : building;
 
     await _localService.upsertBuilding(buildingWithId);
     _dataChangeController.add(null);
@@ -266,14 +266,14 @@ class ManagementRepository {
   Future<void> addPayment(PaymentModel payment) async {
     final paymentWithId =
         payment.paymentId == null || payment.paymentId!.isEmpty
-        ? PaymentModel(
-            paymentId: const Uuid().v4(),
-            tenantId: payment.tenantId,
-            amount: payment.amount,
-            paymentMonth: payment.paymentMonth,
-            paidDate: payment.paidDate,
-          )
-        : payment;
+            ? PaymentModel(
+                paymentId: const Uuid().v4(),
+                tenantId: payment.tenantId,
+                amount: payment.amount,
+                paymentMonth: payment.paymentMonth,
+                paidDate: payment.paidDate,
+              )
+            : payment;
 
     await _localService.upsertPayment(paymentWithId);
     _dataChangeController.add(null);
@@ -369,11 +369,20 @@ class ManagementRepository {
   }
 
   Future<void> addBed(BedModel bed) async {
-    await _localService.upsertBed(bed);
+    final bedWithId = bed.bedId == null || bed.bedId!.isEmpty
+        ? BedModel(
+            bedId: const Uuid().v4(),
+            roomId: bed.roomId,
+            bedType: bed.bedType,
+            status: bed.status,
+          )
+        : bed;
+
+    await _localService.upsertBed(bedWithId);
     _dataChangeController.add(null);
 
     try {
-      await _sheetsService.addBed(bed);
+      await _sheetsService.addBed(bedWithId);
     } catch (e) {
       print('Add Bed Sync Error: $e');
     }
@@ -409,8 +418,8 @@ class ManagementRepository {
 
     int monthsCount = 0;
     DateTime month = startMonth;
-    while (month.isBefore(currentMonth) ||
-        month.isAtSameMomentAs(currentMonth)) {
+    while (
+        month.isBefore(currentMonth) || month.isAtSameMomentAs(currentMonth)) {
       monthsCount++;
       month = DateTime(month.year, month.month + 1);
     }
