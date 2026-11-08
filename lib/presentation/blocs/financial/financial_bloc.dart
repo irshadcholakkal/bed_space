@@ -1,90 +1,176 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/models/payment_model.dart';
 import '../../../data/models/tenant_model.dart';
 import '../../../data/models/room_model.dart';
 import '../../../data/models/building_model.dart';
+import '../../../data/models/expense_model.dart';
 import '../../../data/repositories/management_repository.dart';
+import 'package:intl/intl.dart';
 
 part 'financial_event.dart';
 part 'financial_state.dart';
 
 class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
   final ManagementRepository _repository;
+  StreamSubscription? _dataSubscription;
 
   FinancialBloc({required ManagementRepository repository})
-    : _repository = repository,
-      super(FinancialInitial()) {
+      : _repository = repository,
+        super(FinancialInitial()) {
     on<FinancialLoadRequested>(_onFinancialLoadRequested);
     on<FinancialMonthChanged>(_onFinancialMonthChanged);
+    on<FinancialDataUpdated>(_onFinancialDataUpdated);
+  }
+
+  @override
+  Future<void> close() {
+    _dataSubscription?.cancel();
+    return super.close();
   }
 
   Future<void> _onFinancialLoadRequested(
     FinancialLoadRequested event,
     Emitter<FinancialState> emit,
   ) async {
-    emit(FinancialLoading());
-    await _loadFinancialData(emit, event.month);
+    // Show loading only if we don't have a state yet
+    if (state is! FinancialLoaded) {
+      emit(FinancialLoading());
+    }
+
+    // Background sync - don't wait for it
+    unawaited(_repository.syncWithSheets());
+
+    _startDataSubscription(event.month);
   }
 
   Future<void> _onFinancialMonthChanged(
     FinancialMonthChanged event,
     Emitter<FinancialState> emit,
   ) async {
-    emit(FinancialLoading());
-    await _loadFinancialData(emit, event.month);
+    // Only show full-screen loading if switching to a month we haven't loaded yet
+    if (state is! FinancialLoaded ||
+        (state as FinancialLoaded).month != event.month) {
+      emit(FinancialLoading());
+    }
+
+    // Background sync - don't wait for it
+    unawaited(_repository.syncWithSheets());
+
+    _startDataSubscription(event.month);
   }
 
-  Future<void> _loadFinancialData(
+  void _onFinancialDataUpdated(
+    FinancialDataUpdated event,
     Emitter<FinancialState> emit,
-    String month,
-  ) async {
-    await emit.forEach<Map<String, dynamic>>(
-      _repository.getAllDataStream(),
-      onData: (data) {
+  ) {
+    emit(FinancialLoaded(
+      month: event.month,
+      tenantPayments: event.tenantPayments,
+      roomTotals: event.roomTotals,
+      expenses: event.expenses,
+      totalRefunds: event.totalRefunds,
+      profit: event.profit,
+      monthExpenses: event.monthExpenses,
+    ));
+  }
+
+  void _startDataSubscription(String month) {
+    _dataSubscription?.cancel();
+    _dataSubscription = _repository.getAllDataStream().listen(
+      (data) {
         final tenants = data['tenants'] as List<TenantModel>;
         final payments = data['payments'] as List<PaymentModel>;
         final rooms = data['rooms'] as List<RoomModel>;
         final buildings = data['buildings'] as List<BuildingModel>;
 
-        final activeTenants = tenants.where((t) => t.active).toList();
-        final monthPayments = payments
-            .where((p) => p.paymentMonth == month)
-            .toList();
-
-        // Map room IDs to Room Numbers for easy lookup
-        final roomMap = {for (var r in rooms) r.roomId!: r.roomNumber};
-        // Map building IDs to Building Names
+        final roomMap = {for (var r in rooms) r.roomId!: r.displayName(rooms)};
         final buildingMap = {
           for (var b in buildings) b.buildingId!: b.buildingName,
         };
 
-        // Create tenant payment status
-        final List<TenantPaymentStatus> tenantPayments = activeTenants.map((
-          tenant,
-        ) {
-          // Find ALL payments for this tenant in this month
+        // Parse month for range checks
+        final parts = month.split('-');
+        final year = int.parse(parts[0]);
+        final mon = int.parse(parts[1]);
+        final firstOfMonth = DateTime(year, mon, 1);
+        final firstOfNextMonth = DateTime(year, mon + 1, 1);
+
+        // All tenants who were present in this month OR had a payment this month
+        final monthPayments =
+            payments.where((p) => p.paymentMonth == month).toList();
+        final payingTenantIds = monthPayments.map((p) => p.tenantId).toSet();
+
+        final relevantTenants = tenants.where((t) {
+          // 1. If they have payments this month, they are relevant
+          if (payingTenantIds.contains(t.tenantId)) return true;
+
+          // 2. If they joined AFTER this month, they are NOT relevant
+          if (t.joiningDate.isAfter(firstOfNextMonth) ||
+              t.joiningDate.isAtSameMomentAs(firstOfNextMonth)) {
+            return false;
+          }
+
+          // 3. If they are active, they are relevant (since they joined before end of month)
+          if (t.active) return true;
+
+          // 4. If they are inactive but checked out DURING or AFTER this month, they are relevant
+          if (t.checkoutDate != null) {
+            final checkout = t.checkoutDate!;
+            if (checkout.isAfter(firstOfMonth) ||
+                checkout.isAtSameMomentAs(firstOfMonth)) {
+              return true;
+            }
+          }
+
+          return false;
+        }).toList();
+
+        final List<TenantPaymentStatus> tenantPaymentsStatuses =
+            relevantTenants.map((tenant) {
           final tenantMonthPayments = monthPayments
               .where((p) => p.tenantId == tenant.tenantId)
               .toList();
 
-          // Calculate total paid amount by summing all payments
           final paidAmount = tenantMonthPayments.fold<double>(
             0,
             (sum, p) => sum + p.amount,
           );
 
-          // Find the latest payment date if exists
           DateTime? lastPaidDate;
           if (tenantMonthPayments.isNotEmpty) {
-            // Sort by date to get latest? Or just take the last entry?
-            // Safest is to sort or reduce.
             lastPaidDate = tenantMonthPayments
                 .map((p) => p.paidDate)
                 .reduce((a, b) => a.isAfter(b) ? a : b);
           }
 
-          final rentAmount = tenant.rentAmount;
+          // Calculate prorated expected rent for this month
+          double targetRent = tenant.rentAmount;
+
+          // If they joined mid-month
+          if (tenant.joiningDate.year == year &&
+              tenant.joiningDate.month == mon) {
+            final daysInMonth = DateTime(year, mon + 1, 0).day;
+            final stayDays = daysInMonth - tenant.joiningDate.day + 1;
+            targetRent = (tenant.rentAmount / 30) * stayDays;
+          }
+
+          // If they checked out mid-month
+          if (tenant.checkoutDate != null &&
+              tenant.checkoutDate!.year == year &&
+              tenant.checkoutDate!.month == mon) {
+            // Recalculate based on stay days in this month
+            // If they also joined in this same month, we calculate from joining to checkout
+            final startDay = (tenant.joiningDate.year == year &&
+                    tenant.joiningDate.month == mon)
+                ? tenant.joiningDate.day
+                : 1;
+            final stayDays = tenant.checkoutDate!.day - startDay + 1;
+            targetRent = (tenant.rentAmount / 30) * stayDays;
+          }
+
+          final rentAmount = targetRent;
 
           PaymentStatus status;
           if (paidAmount >= rentAmount) {
@@ -109,38 +195,61 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
           );
         }).toList();
 
-        // Calculate room-wise totals
         final Map<String, double> roomTotals = {};
-        for (final payment in tenantPayments) {
-          roomTotals[payment.tenant.roomId] =
-              (roomTotals[payment.tenant.roomId] ?? 0) + payment.paidAmount;
+        for (final payment in monthPayments) {
+          final tenant = tenants.firstWhere(
+            (t) => t.tenantId == payment.tenantId,
+            orElse: () => TenantModel(
+              tenantName: 'Unknown',
+              phone: '',
+              joiningDate: DateTime.now(),
+              rentAmount: 0,
+              advanceAmount: 0,
+              roomId: 'Unknown',
+              buildingId: '',
+              bedId: '',
+              rentDueDay: 1,
+              active: false,
+            ),
+          );
+          roomTotals[tenant.roomId] =
+              (roomTotals[tenant.roomId] ?? 0) + payment.amount;
         }
 
-        // Calculate Expenses (Sum of utility cost for rooms that have at least one active tenant)
-        // Or simply all rooms? Usually expenses are for the flat regardless.
-        // Let's sum all rooms utility cost.
-        final expenses = rooms.fold<double>(
+        final monthExpensesList = data['expenses'] as List<ExpenseModel>;
+        final relevantExpenses = monthExpensesList
+            .where((e) => DateFormat('yyyy-MM').format(e.date) == month)
+            .toList();
+
+        final expensesTotal = relevantExpenses
+            .where((e) => e.expenseType != ExpenseType.refund)
+            .fold<double>(0, (sum, e) => sum + e.amount);
+
+        final totalRefunds = relevantExpenses
+            .where((e) => e.expenseType == ExpenseType.refund)
+            .fold<double>(0, (sum, e) => sum + e.amount);
+
+        final grossCollected = monthPayments.fold<double>(
           0,
-          (sum, room) => sum + room.utilityCostMonthly,
+          (sum, p) => sum + p.amount,
         );
 
-        // Calculate Total Collected
-        final totalCollected = tenantPayments.fold<double>(
-          0,
-          (sum, tp) => sum + tp.paidAmount,
-        );
+        // Profit = Gross - Expenses - Refunds
+        final profit = grossCollected - expensesTotal - totalRefunds;
 
-        final profit = totalCollected - expenses;
-
-        return FinancialLoaded(
+        add(FinancialDataUpdated(
           month: month,
-          tenantPayments: tenantPayments,
+          tenantPayments: tenantPaymentsStatuses,
           roomTotals: roomTotals,
-          expenses: expenses,
+          expenses: expensesTotal,
+          totalRefunds: totalRefunds,
           profit: profit,
-        );
+          monthExpenses: relevantExpenses,
+        ));
       },
-      onError: (e, _) => FinancialError(e.toString()),
+      onError: (e) {
+        // Error handled silently as data will eventually sync
+      },
     );
   }
 }
@@ -156,7 +265,6 @@ class TenantPaymentStatus {
   final String? roomNumber;
   final String? buildingName;
 
-  // Helper
   bool get hasPaid => status == PaymentStatus.paid;
 
   TenantPaymentStatus({

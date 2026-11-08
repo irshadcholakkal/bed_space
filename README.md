@@ -2,6 +2,12 @@
 
 A Flutter application for managing shared accommodation / bed spaces using Google Sign-In and Google Sheets as the database.
 
+## Installable web app (PWA)
+
+Build with `./scripts/build_pwa.ps1` and host `build/web` over HTTPS.
+See [PWA setup](docs/PWA.md) for Google web sign-in configuration, installation,
+offline behavior, and deployment instructions.
+
 ## ⚠️ IMPORTANT DISCLAIMER
 
 **This app:**
@@ -124,6 +130,20 @@ The app automatically creates a Google Sheet with the following tabs:
 - `payment_id`, `tenant_id`, `amount`, `payment_month`, `paid_date`
 
 ## Usage
+
+### Rooms with subrooms
+
+In **Manage Rooms**, use the **Add Subroom** icon on a main room, or choose
+**Inside room (optional)** while adding a room. Each subroom has its own beds,
+rent, tenants and expenses. For example, `Room 101 / Subroom A` and
+`Room 102 / Subroom A` are separate spaces. Use zero capacity and zero beds for
+a main room that only contains subrooms. Existing room beds are not moved when
+you add a subroom. To change the parent later, open the room's finance screen
+and choose **Edit**. Remove subrooms before deleting their parent.
+
+The app supports one level of subrooms. Existing rooms stay as main rooms;
+the local database upgrades automatically and Google Sheets stores the parent
+link in column K (`parent_room_id`) of the Rooms tab.
 
 1. **Sign In**: Click "Sign in with Google" on the login screen
 2. **First Time**: The app will automatically create a Google Sheet named `BedSpace_<your_email>`

@@ -34,9 +34,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
         title: Text(
           'Rooms',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppTheme.textColor,
-            fontWeight: FontWeight.bold,
-          ),
+                color: AppTheme.textColor,
+                fontWeight: FontWeight.bold,
+              ),
         ),
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
@@ -90,7 +90,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -139,6 +139,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
               builder: (context, state) {
                 final buildings = state.buildings;
                 final roomsByBuilding = state.roomsByBuilding;
+                final allRooms = roomsByBuilding.values
+                    .expand((rooms) => rooms)
+                    .map((item) => item.room)
+                    .toList();
 
                 if (state is RoomLoading && buildings.isEmpty) {
                   return const Center(
@@ -168,8 +172,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
                         ElevatedButton(
                           onPressed: () {
                             context.read<RoomBloc>().add(
-                              const RoomLoadRequested(),
-                            );
+                                  const RoomLoadRequested(),
+                                );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppTheme.primaryColor,
@@ -197,7 +201,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
                         const SizedBox(height: 16),
                         Text(
                           'No buildings found',
-                          style: Theme.of(context).textTheme.titleLarge
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
                               ?.copyWith(color: AppTheme.softGrey),
                         ),
                       ],
@@ -213,16 +219,18 @@ class _RoomsScreenState extends State<RoomsScreen> {
                       .toLowerCase()
                       .contains(_searchQuery);
                   final addressMatch = building.address.toLowerCase().contains(
-                    _searchQuery,
-                  );
+                        _searchQuery,
+                      );
 
                   if (nameMatch || addressMatch) return true;
 
                   // Check if any room in this building matches
                   final rooms = roomsByBuilding[building.buildingId] ?? [];
                   return rooms.any(
-                    (r) =>
-                        r.room.roomNumber.toLowerCase().contains(_searchQuery),
+                    (r) => r.room
+                        .displayName(allRooms)
+                        .toLowerCase()
+                        .contains(_searchQuery),
                   );
                 }).toList();
 
@@ -239,7 +247,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
                         const SizedBox(height: 16),
                         Text(
                           'No matches found',
-                          style: Theme.of(context).textTheme.titleLarge
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
                               ?.copyWith(color: AppTheme.softGrey),
                         ),
                       ],
@@ -263,18 +273,21 @@ class _RoomsScreenState extends State<RoomsScreen> {
                       if (_searchQuery.isNotEmpty) {
                         final buildingMatch =
                             building.buildingName.toLowerCase().contains(
-                              _searchQuery,
-                            ) ||
-                            building.address.toLowerCase().contains(
-                              _searchQuery,
-                            );
+                                      _searchQuery,
+                                    ) ||
+                                building.address.toLowerCase().contains(
+                                      _searchQuery,
+                                    );
 
                         if (!buildingMatch) {
                           rooms = rooms
                               .where(
-                                (r) => r.room.roomNumber.toLowerCase().contains(
-                                  _searchQuery,
-                                ),
+                                (r) => r.room
+                                    .displayName(allRooms)
+                                    .toLowerCase()
+                                    .contains(
+                                      _searchQuery,
+                                    ),
                               )
                               .toList();
                         }
@@ -294,13 +307,13 @@ class _RoomsScreenState extends State<RoomsScreen> {
                               horizontal: 24,
                               vertical: 8,
                             ),
-                            initiallyExpanded:
-                                _searchQuery.isNotEmpty ||
+                            initiallyExpanded: _searchQuery.isNotEmpty ||
                                 buildings.length == 1,
                             leading: Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: AppTheme.primaryColor.withOpacity(0.1),
+                                color: AppTheme.primaryColor
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
@@ -338,24 +351,26 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                 : rooms.map((roomWithStats) {
                                     final hasVacancy =
                                         roomWithStats.vacantLowerBeds > 0 ||
-                                        roomWithStats.vacantUpperBeds > 0;
+                                            roomWithStats.vacantUpperBeds > 0;
 
                                     return Container(
                                       decoration: BoxDecoration(
                                         border: Border(
                                           top: BorderSide(
-                                            color: Colors.grey.withOpacity(0.1),
+                                            color: Colors.grey
+                                                .withValues(alpha: 0.1),
                                           ),
                                         ),
                                       ),
                                       child: ListTile(
                                         contentPadding:
                                             const EdgeInsets.symmetric(
-                                              horizontal: 24,
-                                              vertical: 8,
-                                            ),
+                                          horizontal: 24,
+                                          vertical: 8,
+                                        ),
                                         title: Text(
-                                          'Room ${roomWithStats.room.roomNumber}',
+                                          roomWithStats.room
+                                              .displayName(allRooms),
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w600,
                                             fontSize: 16,
@@ -409,12 +424,12 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                             ? Container(
                                                 padding:
                                                     const EdgeInsets.symmetric(
-                                                      horizontal: 12,
-                                                      vertical: 6,
-                                                    ),
+                                                  horizontal: 12,
+                                                  vertical: 6,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: AppTheme.secondaryColor
-                                                      .withOpacity(0.1),
+                                                      .withValues(alpha: 0.1),
                                                   borderRadius:
                                                       BorderRadius.circular(20),
                                                 ),
@@ -459,96 +474,124 @@ extension on RoomsScreen {
     final roomBloc = context.read<RoomBloc>();
     roomBloc.add(RoomDetailRequested(roomWithStats.room.roomId ?? ''));
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (dialogContext) => BlocProvider.value(
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => BlocProvider.value(
         value: roomBloc,
         child: BlocBuilder<RoomBloc, RoomState>(
           builder: (context, state) {
             final isLoading = state is RoomsLoaded && state.isDetailsLoading;
-            final details = state is RoomsLoaded
-                ? state.selectedRoomDetails
-                : null;
+            final details =
+                state is RoomsLoaded ? state.selectedRoomDetails : null;
 
-            return AlertDialog(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+            return Container(
+              padding: const EdgeInsets.all(24),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    'Room ${roomWithStats.room.roomNumber}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
                   ),
-                  if (isLoading)
-                    const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppTheme.primaryColor,
-                      ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                          child: Text(
+                        roomWithStats.room.displayName(state
+                            .roomsByBuilding.values
+                            .expand((rooms) => rooms)
+                            .map((item) => item.room)),
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textColor,
+                        ),
+                      )),
+                      if (isLoading)
+                        const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  _detailRow(
+                    'Total Capacity',
+                    '${roomWithStats.room.totalCapacity} Beds',
+                  ),
+                  _detailRow(
+                    'Lower Bed Rent',
+                    'د.إ${roomWithStats.room.lowerBedRent.toStringAsFixed(0)}',
+                  ),
+                  _detailRow(
+                    'Upper Bed Rent',
+                    'د.إ${roomWithStats.room.upperBedRent.toStringAsFixed(0)}',
+                  ),
+                  const Divider(height: 32),
+                  const Text(
+                    'Bed Availability',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: AppTheme.primaryColor,
                     ),
-                ],
-              ),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _detailRow(
-                      'Capacity',
-                      '${roomWithStats.room.totalCapacity}',
-                    ),
-                    const Divider(),
-                    _detailRow(
-                      'Lower Rent',
-                      '₹${roomWithStats.room.lowerBedRent.toStringAsFixed(0)}',
-                    ),
-                    _detailRow(
-                      'Upper Rent',
-                      '₹${roomWithStats.room.upperBedRent.toStringAsFixed(0)}',
-                    ),
-                    _detailRow(
-                      'Utility',
-                      '₹${roomWithStats.room.utilityCostMonthly.toStringAsFixed(0)}/month',
-                    ),
-                    const Divider(),
-                    const Text(
-                      'Beds Status',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: AppTheme.primaryColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    if (details == null && !isLoading)
-                      const Text(
+                  ),
+                  const SizedBox(height: 16),
+                  if (details == null && !isLoading)
+                    const Center(
+                      child: Text(
                         'Failed to load bed details',
                         style: TextStyle(color: AppTheme.errorColor),
-                      )
-                    else if (details != null)
-                      ...details.map(
-                        (bedDetail) => Container(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: bedDetail.bed.status == BedStatus.vacant
-                                ? AppTheme.secondaryColor.withOpacity(0.05)
-                                : AppTheme.primaryColor.withOpacity(0.05),
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                              color:
-                                  (bedDetail.bed.status == BedStatus.vacant
-                                          ? AppTheme.secondaryColor
-                                          : AppTheme.primaryColor)
-                                      .withOpacity(0.1),
-                            ),
+                      ),
+                    )
+                  else if (details != null)
+                    ...details.map(
+                      (bedDetail) => Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: bedDetail.bed.status == BedStatus.vacant
+                              ? AppTheme.secondaryColor.withValues(alpha: 0.05)
+                              : AppTheme.primaryColor.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: (bedDetail.bed.status == BedStatus.vacant
+                                    ? AppTheme.secondaryColor
+                                    : AppTheme.primaryColor)
+                                .withValues(alpha: 0.1),
                           ),
-                          child: Row(
-                            children: [
-                              Icon(
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: (bedDetail.bed.status == BedStatus.vacant
+                                        ? AppTheme.secondaryColor
+                                        : AppTheme.primaryColor)
+                                    .withValues(alpha: 0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
                                 bedDetail.bed.bedType == BedType.lower
                                     ? Icons.south
                                     : Icons.north,
@@ -557,65 +600,61 @@ extension on RoomsScreen {
                                     ? AppTheme.secondaryColor
                                     : AppTheme.primaryColor,
                               ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      '${bedDetail.bed.bedType == BedType.lower ? "Lower" : "Upper"} Bed',
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                    Text(
-                                      bedDetail.bed.status == BedStatus.vacant
-                                          ? 'Vacant'
-                                          : 'Occupied by ${bedDetail.tenantName ?? "Unknown"}',
-                                      style: TextStyle(
-                                        color:
-                                            bedDetail.bed.status ==
-                                                BedStatus.vacant
-                                            ? AppTheme.secondaryColor
-                                            : AppTheme.textColor,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      )
-                    else
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16.0),
-                          child: Text(
-                            'Fetching bed assignments...',
-                            style: TextStyle(
-                              color: AppTheme.secondaryTextColor,
                             ),
-                          ),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    '${bedDetail.bed.bedType == BedType.lower ? "Lower" : "Upper"} Bed',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                  Text(
+                                    bedDetail.bed.status == BedStatus.vacant
+                                        ? 'Available'
+                                        : 'Occupied by ${bedDetail.tenantName ?? "Unknown"}',
+                                    style: TextStyle(
+                                      color: bedDetail.bed.status ==
+                                              BedStatus.vacant
+                                          ? AppTheme.secondaryColor
+                                          : AppTheme.secondaryTextColor,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext),
-                  child: const Text(
-                    'Close',
-                    style: TextStyle(
-                      color: AppTheme.primaryColor,
-                      fontWeight: FontWeight.bold,
+                    )
+                  else
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: CircularProgressIndicator(
+                          color: AppTheme.primaryColor,
+                        ),
+                      ),
                     ),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Close'),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 16),
+                ],
+              ),
             );
           },
         ),

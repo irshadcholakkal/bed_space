@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
-import '../../../data/models/tenant_model.dart';
 import '../../../data/repositories/management_repository.dart';
 
 part 'notification_event.dart';
@@ -14,8 +13,8 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
   final ManagementRepository? _repository;
 
   NotificationBloc({ManagementRepository? repository})
-    : _repository = repository,
-      super(NotificationInitial()) {
+      : _repository = repository,
+        super(NotificationInitial()) {
     on<NotificationInitializeRequested>(_onNotificationInitializeRequested);
     on<NotificationScheduleRemindersRequested>(
       _onNotificationScheduleRemindersRequested,
@@ -82,7 +81,7 @@ class NotificationBloc extends Bloc<NotificationEvent, NotificationState> {
             id: notificationId++,
             title: 'Rent Reminder',
             body:
-                '${tenant.tenantName} - Room ${tenant.roomId} - Rent: ₹${tenant.rentAmount.toStringAsFixed(0)}',
+                '${tenant.tenantName} - Room ${tenant.roomId} - Rent: د.إ${tenant.rentAmount.toStringAsFixed(0)}',
             scheduledDate: reminderDate,
           );
         }

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import '../blocs/dashboard/dashboard_bloc.dart';
 import 'dashboard_screen.dart';
 import 'rooms_screen.dart';
 import 'financials_screen.dart';
 import 'settings_screen.dart';
-import '../theme/app_theme.dart';
 
 /// Home Screen with Bottom Navigation
 class HomeScreen extends StatefulWidget {

@@ -1,4 +1,6 @@
+import 'dart:developer' as developer;
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import '../models/building_model.dart';
@@ -6,6 +8,7 @@ import '../models/room_model.dart';
 import '../models/tenant_model.dart';
 import '../models/payment_model.dart';
 import '../models/bed_model.dart';
+import '../models/expense_model.dart';
 
 class LocalDatabaseService {
   static final LocalDatabaseService _instance =
@@ -23,16 +26,21 @@ class LocalDatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    String path = join(await getDatabasesPath(), 'bed_space.db');
+    final path = kIsWeb
+        ? 'bed_space.db'
+        : join(await getDatabasesPath(), 'bed_space.db');
     return await openDatabase(
       path,
-      version: 3, // Increment version
+      version: 7,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2 && oldVersion < 7) {
+      await db.execute('ALTER TABLE rooms ADD COLUMN parent_room_id TEXT');
+    }
     if (oldVersion < 2) {
       await db.execute('DROP TABLE IF EXISTS buildings');
       await db.execute('DROP TABLE IF EXISTS rooms');
@@ -40,6 +48,7 @@ class LocalDatabaseService {
       await db.execute('DROP TABLE IF EXISTS payments');
       await db.execute('DROP TABLE IF EXISTS beds');
       await _onCreate(db, newVersion);
+      return;
     } else if (oldVersion < 3) {
       await db.execute('''
         CREATE TABLE mutation_queue(
@@ -50,6 +59,46 @@ class LocalDatabaseService {
           retry_count INTEGER
         )
       ''');
+    }
+
+    if (oldVersion < 4) {
+      // Add expenses table
+      await db.execute('''
+        CREATE TABLE expenses(
+          id TEXT PRIMARY KEY,
+          room_id TEXT,
+          expense_type TEXT,
+          amount REAL,
+          date TEXT,
+          description TEXT
+        )
+      ''');
+
+      // Add monthly_rent to rooms
+      try {
+        await db.execute(
+            'ALTER TABLE rooms ADD COLUMN monthly_rent REAL DEFAULT 0.0');
+      } catch (e) {
+        developer.log('Error adding monthly_rent column: $e');
+      }
+    }
+
+    if (oldVersion < 5) {
+      // Add checkout_date to tenants
+      try {
+        await db.execute('ALTER TABLE tenants ADD COLUMN checkout_date TEXT');
+      } catch (e) {
+        developer.log('Error adding checkout_date column to tenants: $e');
+      }
+    }
+
+    if (oldVersion < 6) {
+      // Add tenant_id to expenses
+      try {
+        await db.execute('ALTER TABLE expenses ADD COLUMN tenant_id TEXT');
+      } catch (e) {
+        developer.log('Error adding tenant_id column to expenses: $e');
+      }
     }
   }
 
@@ -73,7 +122,9 @@ class LocalDatabaseService {
         upper_beds_count INTEGER,
         lower_bed_rent REAL,
         upper_bed_rent REAL,
-        utility_cost_monthly REAL
+        utility_cost_monthly REAL,
+        monthly_rent REAL,
+        parent_room_id TEXT
       )
     ''');
 
@@ -89,7 +140,8 @@ class LocalDatabaseService {
         advance_amount REAL,
         joining_date TEXT,
         rent_due_day INTEGER,
-        active TEXT
+        active TEXT,
+        checkout_date TEXT
       )
     ''');
 
@@ -121,6 +173,18 @@ class LocalDatabaseService {
         retry_count INTEGER
       )
     ''');
+
+    await db.execute('''
+      CREATE TABLE expenses(
+        id TEXT PRIMARY KEY,
+        room_id TEXT,
+        tenant_id TEXT,
+        expense_type TEXT,
+        amount REAL,
+        date TEXT,
+        description TEXT
+      )
+    ''');
   }
 
   // --- Buildings ---
@@ -129,7 +193,11 @@ class LocalDatabaseService {
     await db.transaction((txn) async {
       await txn.delete('buildings');
       for (var building in buildings) {
-        await txn.insert('buildings', building.toJson());
+        await txn.insert(
+          'buildings',
+          building.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
     });
   }
@@ -160,7 +228,11 @@ class LocalDatabaseService {
     await db.transaction((txn) async {
       await txn.delete('rooms');
       for (var room in rooms) {
-        await txn.insert('rooms', room.toJson());
+        await txn.insert(
+          'rooms',
+          room.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
     });
   }
@@ -191,7 +263,11 @@ class LocalDatabaseService {
     await db.transaction((txn) async {
       await txn.delete('tenants');
       for (var tenant in tenants) {
-        await txn.insert('tenants', tenant.toJson());
+        await txn.insert(
+          'tenants',
+          tenant.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
     });
   }
@@ -222,7 +298,11 @@ class LocalDatabaseService {
     await db.transaction((txn) async {
       await txn.delete('payments');
       for (var payment in payments) {
-        await txn.insert('payments', payment.toJson());
+        await txn.insert(
+          'payments',
+          payment.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
     });
   }
@@ -253,7 +333,11 @@ class LocalDatabaseService {
     await db.transaction((txn) async {
       await txn.delete('beds');
       for (var bed in beds) {
-        await txn.insert('beds', bed.toJson());
+        await txn.insert(
+          'beds',
+          bed.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
       }
     });
   }
@@ -271,6 +355,46 @@ class LocalDatabaseService {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query('beds');
     return List.generate(maps.length, (i) => BedModel.fromJson(maps[i]));
+  }
+
+  Future<void> deleteBedLocal(String id) async {
+    final db = await database;
+    await db.delete('beds', where: 'bed_id = ?', whereArgs: [id]);
+  }
+
+  // --- Expenses ---
+  Future<void> saveExpenses(List<ExpenseModel> expenses) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.delete('expenses');
+      for (var expense in expenses) {
+        await txn.insert(
+          'expenses',
+          expense.toJson(),
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+    });
+  }
+
+  Future<List<ExpenseModel>> getExpenses() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query('expenses');
+    return List.generate(maps.length, (i) => ExpenseModel.fromJson(maps[i]));
+  }
+
+  Future<void> upsertExpense(ExpenseModel expense) async {
+    final db = await database;
+    await db.insert(
+      'expenses',
+      expense.toJson(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteExpenseLocal(String id) async {
+    final db = await database;
+    await db.delete('expenses', where: 'id = ?', whereArgs: [id]);
   }
 
   // --- Mutation Queue ---
@@ -311,6 +435,7 @@ class LocalDatabaseService {
       await txn.delete('tenants');
       await txn.delete('payments');
       await txn.delete('beds');
+      await txn.delete('expenses');
       await txn.delete('mutation_queue');
     });
   }

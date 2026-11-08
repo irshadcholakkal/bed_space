@@ -1,15 +1,16 @@
 /// Google Sign-In Authentication Service
-/// 
+///
 /// IMPORTANT DISCLAIMER:
 /// This service provides client-only authentication.
 /// No backend validation is performed.
 /// Suitable for internal/personal use only.
-/// 
+///
 /// This app:
 /// - Is client-only
 /// - Does not guarantee uniqueness across devices
 /// - Is not suitable for high-security financial data
 /// - Is designed for internal / prototype usage
+library;
 
 import 'package:google_sign_in/google_sign_in.dart';
 
@@ -23,6 +24,9 @@ class GoogleAuthService {
   ];
 
   final GoogleSignIn _googleSignIn = GoogleSignIn(
+    clientId: const String.fromEnvironment('GOOGLE_CLIENT_ID').isEmpty
+        ? null
+        : const String.fromEnvironment('GOOGLE_CLIENT_ID'),
     scopes: _scopes,
   );
 
@@ -70,7 +74,7 @@ class GoogleAuthService {
 
   /// Get current access token
   Future<String?> getAccessToken() async {
-    final GoogleSignInAccount? account = await _googleSignIn.currentUser;
+    final GoogleSignInAccount? account = _googleSignIn.currentUser;
     if (account == null) return null;
 
     final GoogleSignInAuthentication auth = await account.authentication;
@@ -83,4 +87,3 @@ class GoogleAuthService {
     return account?.email;
   }
 }
-

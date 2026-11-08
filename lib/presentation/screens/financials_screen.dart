@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../blocs/financial/financial_bloc.dart';
 import '../blocs/management/management_bloc.dart';
 import '../../data/models/payment_model.dart';
+import '../../data/models/expense_model.dart';
 import '../theme/app_theme.dart';
 import 'tenants_management_screen.dart';
 
@@ -23,6 +24,14 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     super.initState();
     final now = DateTime.now();
     _selectedMonth = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+    // Trigger load on entry to avoid stale data from other months
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context
+            .read<FinancialBloc>()
+            .add(FinancialLoadRequested(month: _selectedMonth));
+      }
+    });
   }
 
   @override
@@ -33,10 +42,9 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
         child: BlocBuilder<FinancialBloc, FinancialState>(
           builder: (context, state) {
             if (state is FinancialInitial) {
-              context.read<FinancialBloc>().add(
-                FinancialLoadRequested(month: _selectedMonth),
+              return const Center(
+                child: CircularProgressIndicator(color: AppTheme.primaryColor),
               );
-              return const Center(child: CircularProgressIndicator());
             }
 
             if (state is FinancialLoading) {
@@ -72,9 +80,11 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
 
               return RefreshIndicator(
                 onRefresh: () async {
-                  context.read<FinancialBloc>().add(
-                    FinancialLoadRequested(month: _selectedMonth),
-                  );
+                  context
+                      .read<FinancialBloc>()
+                      .add(FinancialLoadRequested(month: _selectedMonth));
+                  // Wait a brief moment to show the spinner, but don't block forever
+                  await Future.delayed(const Duration(seconds: 1));
                 },
                 child: CustomScrollView(
                   slivers: [
@@ -88,9 +98,10 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                             _buildMonthSelector(state.month),
                             const SizedBox(height: 24),
                             _buildRevenueSummary(
-                              totalCollected,
+                              totalCollected - state.totalRefunds,
                               totalRentalIncome,
                               state.expenses,
+                              state.totalRefunds,
                               state.profit,
                             ),
                             const SizedBox(height: 32),
@@ -128,6 +139,8 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                         paidTenants,
                         PaymentStatus.paid,
                       ),
+                    if (state.monthExpenses.isNotEmpty)
+                      _buildExpensesSection(state.monthExpenses),
                     const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
                   ],
                 ),
@@ -181,7 +194,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
 
   Widget _buildMonthSelector(String currentMonth) {
     return GestureDetector(
-      onTap: _selectMonth,
+      onTap: () => _selectMonth(currentMonth),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
@@ -189,7 +202,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -228,6 +241,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     double collected,
     double expected,
     double expenses,
+    double refunds,
     double profit,
   ) {
     return Container(
@@ -236,7 +250,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
         gradient: LinearGradient(
           colors: [
             AppTheme.primaryColor,
-            AppTheme.primaryColor.withOpacity(0.8),
+            AppTheme.primaryColor.withValues(alpha: 0.8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -244,7 +258,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.3),
+            color: AppTheme.primaryColor.withValues(alpha: 0.3),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -260,12 +274,12 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Collected Revenue',
+                    'Net Revenue',
                     style: TextStyle(color: Colors.white70, fontSize: 14),
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '₹${collected.toStringAsFixed(0)}',
+                    'د.إ${collected.toStringAsFixed(0)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
@@ -283,7 +297,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '₹${profit.toStringAsFixed(0)}',
+                    'د.إ${profit.toStringAsFixed(0)}',
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 28,
@@ -295,11 +309,15 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
             ],
           ),
           const SizedBox(height: 24),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              _buildSummaryChip('Expected', '₹${expected.toStringAsFixed(0)}'),
-              const Spacer(),
-              _buildSummaryChip('Expenses', '₹${expenses.toStringAsFixed(0)}'),
+              _buildSummaryChip(
+                  'Expected', 'د.إ${expected.toStringAsFixed(0)}'),
+              _buildSummaryChip(
+                  'Expenses', 'د.إ${expenses.toStringAsFixed(0)}'),
+              _buildSummaryChip('Refunds', 'د.إ${refunds.toStringAsFixed(0)}'),
             ],
           ),
           const SizedBox(height: 16),
@@ -308,7 +326,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
             borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: expected > 0 ? collected / expected : 0,
-              backgroundColor: Colors.white.withOpacity(0.2),
+              backgroundColor: Colors.white.withValues(alpha: 0.2),
               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
               minHeight: 6,
             ),
@@ -336,7 +354,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
+        color: Colors.white.withValues(alpha: 0.2),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -364,8 +382,9 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
 
   Widget _buildChartsSection(List paid, List partial, List overdue) {
     // Safety check if all empty
-    if (paid.isEmpty && partial.isEmpty && overdue.isEmpty)
+    if (paid.isEmpty && partial.isEmpty && overdue.isEmpty) {
       return const SizedBox.shrink();
+    }
 
     return SizedBox(
       height: 200,
@@ -513,18 +532,18 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.grey.withOpacity(0.1)),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
             ),
             child: InkWell(
               onTap: status == PaymentStatus.paid
                   ? null // No action if already fully paid
                   : () => _showAddPaymentDialog(
-                      context,
-                      item.tenant.tenantId!,
-                      item.tenant.tenantName,
-                      _selectedMonth,
-                      dueAmount,
-                    ),
+                        context,
+                        item.tenant.tenantId!,
+                        item.tenant.tenantName,
+                        _selectedMonth,
+                        dueAmount,
+                      ),
               borderRadius: BorderRadius.circular(16),
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(
@@ -532,11 +551,11 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                   vertical: 8,
                 ),
                 leading: CircleAvatar(
-                  backgroundColor: statusColor.withOpacity(0.1),
+                  backgroundColor: statusColor.withValues(alpha: 0.1),
                   child: Icon(statusIcon, color: statusColor, size: 18),
                 ),
                 title: Text(
-                  item.tenant.tenantName,
+                  '${item.tenant.tenantName}${!item.tenant.active ? " (Checked Out)" : ""}',
                   style: const TextStyle(
                     fontWeight: FontWeight.w600,
                     color: AppTheme.textColor,
@@ -553,16 +572,15 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                       ),
                     ),
                     Text(
-                      'Room :${item.roomNumber ?? item.tenant.roomId}',
+                      item.roomNumber ?? 'Room ${item.tenant.roomId}',
                       style: const TextStyle(
                         color: AppTheme.secondaryTextColor,
                         fontSize: 13,
                       ),
                     ),
-
                     if (status == PaymentStatus.partial)
                       Text(
-                        'Paid: ₹${item.paidAmount.toStringAsFixed(0)} / ₹${item.rentAmount.toStringAsFixed(0)}',
+                        'Paid: د.إ${item.paidAmount.toStringAsFixed(0)} / د.إ${item.rentAmount.toStringAsFixed(0)}',
                         style: const TextStyle(
                           color: Colors.orange,
                           fontSize: 12,
@@ -576,7 +594,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '₹${item.rentAmount.toStringAsFixed(0)}',
+                      'د.إ${item.rentAmount.toStringAsFixed(0)}',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -594,7 +612,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                       )
                     else if (status == PaymentStatus.partial)
                       Text(
-                        'Due: ₹${dueAmount.toStringAsFixed(0)}',
+                        'Due: د.إ${dueAmount.toStringAsFixed(0)}',
                         style: const TextStyle(
                           color: AppTheme.errorColor,
                           fontSize: 10,
@@ -611,6 +629,78 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     );
   }
 
+  SliverList _buildExpensesSection(List<ExpenseModel> expenses) {
+    return SliverList(
+      delegate: SliverChildBuilderDelegate((context, index) {
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
+            child: Text(
+              'EXPENSES & REFUNDS',
+              style: TextStyle(
+                color: AppTheme.secondaryTextColor,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2,
+              ),
+            ),
+          );
+        }
+        final expense = expenses[index - 1];
+        final isRefund = expense.expenseType == ExpenseType.refund;
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 8,
+              ),
+              leading: CircleAvatar(
+                backgroundColor:
+                    (isRefund ? AppTheme.warningColor : AppTheme.errorColor)
+                        .withValues(alpha: 0.1),
+                child: Icon(
+                  isRefund ? Icons.keyboard_return : Icons.money_off,
+                  color: isRefund ? AppTheme.warningColor : AppTheme.errorColor,
+                  size: 18,
+                ),
+              ),
+              title: Text(
+                isRefund ? 'Money Returned (Refund)' : expense.description!,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textColor,
+                ),
+              ),
+              subtitle: Text(
+                DateFormat('dd MMM yyyy').format(expense.date),
+                style: const TextStyle(
+                  color: AppTheme.secondaryTextColor,
+                  fontSize: 13,
+                ),
+              ),
+              trailing: Text(
+                'د.إ${expense.amount.toStringAsFixed(0)}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  color: isRefund ? AppTheme.warningColor : AppTheme.errorColor,
+                ),
+              ),
+            ),
+          ),
+        );
+      }, childCount: expenses.length + 1),
+    );
+  }
+
   void _showAddPaymentDialog(
     BuildContext context,
     String tenantId,
@@ -624,113 +714,169 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     );
     DateTime selectedDate = DateTime.now();
 
-    // Parse month string to get correct year/month for the payment
-    try {
-      // Validate month format just in case
-      month.split('-');
-      // If we are paying for a past month, default date to end of that month or today?
-      // Usually payment date is TODAY even if it's for a past month.
-      // So selectedDate = DateTime.now() is correct for "Paid Date".
-    } catch (_) {}
-
     bool isSubmitting = false;
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: false,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+        builder: (context, setState) => Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          title: Text(
-            'Add Payment for $tenantName',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          content: Column(
+          child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TextField(
-                controller: amountController,
-                decoration: const InputDecoration(
-                  labelText: 'Amount',
-                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
-                  prefixText: '₹ ',
-                ),
-                keyboardType: TextInputType.number,
-                enabled: !isSubmitting,
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text(
-                  'Payment Month',
-                  style: TextStyle(color: AppTheme.secondaryTextColor),
-                ),
-                subtitle: Text(
-                  _formatMonth(month),
-                  style: const TextStyle(
-                    color: AppTheme.textColor,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.calendar_today,
-                  color: AppTheme.primaryColor,
+              Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Add Payment',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Recording payment for $tenantName',
+                      style:
+                          const TextStyle(color: AppTheme.secondaryTextColor),
+                    ),
+                    const SizedBox(height: 24),
+                    TextField(
+                      controller: amountController,
+                      decoration: const InputDecoration(
+                        labelText: 'Payment Amount',
+                        prefixIcon: Icon(Icons.currency_rupee),
+                      ),
+                      keyboardType: TextInputType.number,
+                      enabled: !isSubmitting,
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_month,
+                            color: AppTheme.primaryColor,
+                          ),
+                          const SizedBox(width: 12),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Payment Month',
+                                style: TextStyle(
+                                  color: AppTheme.secondaryTextColor,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              Text(
+                                _formatMonth(month),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 32),
+                    ElevatedButton(
+                      onPressed: isSubmitting
+                          ? null
+                          : () async {
+                              if (amountController.text.isEmpty) return;
+
+                              setState(() {
+                                isSubmitting = true;
+                              });
+
+                              final payment = PaymentModel(
+                                tenantId: tenantId,
+                                amount:
+                                    double.tryParse(amountController.text) ?? 0,
+                                paymentMonth: month,
+                                paidDate: selectedDate,
+                              );
+
+                              managementBloc.add(AddPayment(payment));
+
+                              await Future.delayed(
+                                  const Duration(milliseconds: 500));
+
+                              if (context.mounted) {
+                                Navigator.pop(context);
+                                context.read<FinancialBloc>().add(
+                                      FinancialLoadRequested(
+                                          month: _selectedMonth),
+                                    );
+                              }
+                            },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: isSubmitting
+                          ? const SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: Colors.white,
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Text('Confirm Payment'),
+                    ),
+                    const SizedBox(height: 12),
+                    OutlinedButton(
+                      onPressed:
+                          isSubmitting ? null : () => Navigator.pop(context),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                 ),
               ),
             ],
           ),
-          actions: [
-            TextButton(
-              onPressed: isSubmitting ? null : () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: isSubmitting
-                  ? null
-                  : () async {
-                      if (amountController.text.isEmpty) return;
-
-                      setState(() {
-                        isSubmitting = true;
-                      });
-
-                      final payment = PaymentModel(
-                        tenantId: tenantId,
-                        amount: double.tryParse(amountController.text) ?? 0,
-                        paymentMonth: month, // The month of the report
-                        paidDate: selectedDate, // The actual date paid
-                      );
-
-                      managementBloc.add(AddPayment(payment));
-
-                      await Future.delayed(const Duration(milliseconds: 500));
-
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                        // Refresh Financial Data
-                        context.read<FinancialBloc>().add(
-                          FinancialLoadRequested(month: _selectedMonth),
-                        );
-                      }
-                    },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                disabledBackgroundColor: AppTheme.primaryColor.withOpacity(0.6),
-              ),
-              child: isSubmitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Text('Add Payment'),
-            ),
-          ],
         ),
       ),
     );
@@ -748,37 +894,178 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
     }
   }
 
-  Future<void> _selectMonth() async {
-    final now = DateTime.now();
-    final firstDate = DateTime(now.year - 1, 1);
-    final lastDate = DateTime(now.year + 1, 12, 31);
+  Future<void> _selectMonth(String currentMonth) async {
+    final financialBloc = context.read<FinancialBloc>();
+    final parts = currentMonth.split('-');
+    int selectedYear = int.parse(parts[0]);
+    int selectedMonth = int.parse(parts[1]);
 
-    final picked = await showDatePicker(
+    await showModalBottomSheet(
       context: context,
-      initialDate: DateTime.now(),
-      firstDate: firstDate,
-      lastDate: lastDate,
-      initialDatePickerMode: DatePickerMode.year,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: AppTheme.primaryColor,
-              onPrimary: Colors.white,
-              onSurface: AppTheme.textColor,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useRootNavigator: true,
+      builder: (sheetContext) => BlocProvider.value(
+        value: financialBloc,
+        child: StatefulBuilder(
+          builder: (stateContext, setModalState) {
+            return Container(
+              padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    margin: const EdgeInsets.only(bottom: 24),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Text(
+                    'Select Month',
+                    style:
+                        Theme.of(stateContext).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textColor,
+                            ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Year Selector
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primaryColor.withValues(alpha: 0.05),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.chevron_left,
+                              color: AppTheme.primaryColor),
+                          onPressed: () => setModalState(() => selectedYear--),
+                        ),
+                        Text(
+                          '$selectedYear',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppTheme.primaryColor,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.chevron_right,
+                              color: AppTheme.primaryColor),
+                          onPressed: () => setModalState(() => selectedYear++),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  // Month Grid
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 16,
+                      crossAxisSpacing: 16,
+                      childAspectRatio: 1.8,
+                    ),
+                    itemCount: 12,
+                    itemBuilder: (gridContext, index) {
+                      final monthIndex = index + 1;
+                      final isSelected = selectedMonth == monthIndex;
+                      final monthName =
+                          DateFormat('MMMM').format(DateTime(2022, monthIndex));
 
-    if (picked != null) {
-      setState(() {
-        _selectedMonth =
-            '${picked.year}-${picked.month.toString().padLeft(2, '0')}';
-      });
-      context.read<FinancialBloc>().add(FinancialMonthChanged(_selectedMonth));
-    }
+                      // Check if the month is in the future
+                      final now = DateTime.now();
+                      final isFuture = selectedYear > now.year ||
+                          (selectedYear == now.year && monthIndex > now.month);
+
+                      return InkWell(
+                        onTap: isFuture
+                            ? null
+                            : () async {
+                                setModalState(() => selectedMonth = monthIndex);
+                                final newMonthStr =
+                                    '$selectedYear-${monthIndex.toString().padLeft(2, '0')}';
+
+                                setState(() {
+                                  _selectedMonth = newMonthStr;
+                                });
+
+                                // Use the captured bloc directly
+                                // financialBloc.add(FinancialMonthChanged(newMonthStr));
+                                financialBloc.add(
+                                    FinancialLoadRequested(month: newMonthStr));
+                                await Future.delayed(
+                                    const Duration(milliseconds: 500));
+                                if (!sheetContext.mounted) return;
+                                Navigator.pop(sheetContext);
+                              },
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? AppTheme.primaryColor
+                                : isFuture
+                                    ? Colors.grey.shade50
+                                    : Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isSelected
+                                  ? AppTheme.primaryColor
+                                  : isFuture
+                                      ? Colors.grey.shade100
+                                      : Colors.grey.shade200,
+                              width: 1.5,
+                            ),
+                            boxShadow: (isSelected && !isFuture)
+                                ? [
+                                    BoxShadow(
+                                      color: AppTheme.primaryColor
+                                          .withValues(alpha: 0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 4),
+                                    )
+                                  ]
+                                : null,
+                          ),
+                          child: Text(
+                            monthName,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Colors.white
+                                  : isFuture
+                                      ? Colors.grey.shade400
+                                      : AppTheme.textColor,
+                              fontWeight: isSelected
+                                  ? FontWeight.bold
+                                  : FontWeight.w500,
+                              fontSize: 14,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 }

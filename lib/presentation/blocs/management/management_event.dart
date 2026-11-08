@@ -110,11 +110,17 @@ class DeleteTenant extends ManagementEvent {
 
 class CheckoutTenant extends ManagementEvent {
   final TenantModel tenant;
+  final DateTime checkoutDate;
+  final double? refundAmount;
 
-  const CheckoutTenant(this.tenant);
+  const CheckoutTenant(
+    this.tenant, {
+    required this.checkoutDate,
+    this.refundAmount,
+  });
 
   @override
-  List<Object> get props => [tenant];
+  List<Object> get props => [tenant, checkoutDate, refundAmount ?? 0];
 }
 
 // Payments
@@ -138,6 +144,25 @@ class DeletePayment extends ManagementEvent {
 
   @override
   List<Object> get props => [paymentId];
+}
+
+// Expenses
+class AddExpense extends ManagementEvent {
+  final ExpenseModel expense;
+
+  const AddExpense(this.expense);
+
+  @override
+  List<Object> get props => [expense];
+}
+
+class DeleteExpense extends ManagementEvent {
+  final String expenseId;
+
+  const DeleteExpense(this.expenseId);
+
+  @override
+  List<Object> get props => [expenseId];
 }
 
 // Balance

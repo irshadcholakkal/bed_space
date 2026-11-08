@@ -44,7 +44,7 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
     emit(SheetLoading());
     try {
       final sheetName = 'BedSpace_${event.userEmail}';
-      
+
       // 1. Try to find existing sheet first
       String? sheetId = await GoogleSheetsService.findSheetByTitle(
         event.accessToken,
@@ -52,14 +52,12 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
       );
 
       // 2. If not found, create new
-      if (sheetId == null) {
-        sheetId = await GoogleSheetsService.createSheet(
-          event.accessToken,
-          sheetName,
-        );
-      }
+      sheetId ??= await GoogleSheetsService.createSheet(
+        event.accessToken,
+        sheetName,
+      );
 
-      await _sheetRepository.saveSheetId(sheetId!, event.userEmail);
+      await _sheetRepository.saveSheetId(sheetId, event.userEmail);
 
       emit(SheetCreated(sheetId: sheetId));
     } catch (e) {
@@ -94,4 +92,3 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
     }
   }
 }
-

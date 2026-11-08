@@ -1,5 +1,5 @@
 /// Bed Space Management App
-/// 
+///
 /// IMPORTANT DISCLAIMER:
 /// This app:
 /// - Is client-only (no backend, no Firebase)
@@ -8,12 +8,14 @@
 /// - Does not guarantee uniqueness across devices
 /// - Is not suitable for high-security financial data
 /// - Is designed for internal / prototype usage
-/// 
+///
 /// One Google user → one Google Sheet per device
 /// Sheet ID is stored locally in SharedPreferences
 /// On app reinstall, a new sheet may be created
+library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -32,6 +34,7 @@ import 'presentation/screens/buildings_management_screen.dart';
 import 'presentation/screens/rooms_management_screen.dart';
 import 'presentation/screens/tenants_management_screen.dart';
 import 'data/services/google_auth_service.dart';
+import 'data/services/database_platform.dart';
 import 'data/services/google_sheets_service.dart';
 import 'data/repositories/sheet_repository.dart';
 import 'data/repositories/management_repository.dart';
@@ -47,26 +50,25 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Workmanager for background sync
-  await Workmanager().initialize(
-    callbackDispatcher,
-    isInDebugMode: true, // Set to false in production
-  );
+  initializeDatabasePlatform();
 
-  // Register periodic background sync task (runs every 15 mins minimum)
-  await Workmanager().registerPeriodicTask(
-    "sync-task",
-    "background-sync",
-    frequency: const Duration(minutes: 15),
-    constraints: Constraints(
-      networkType: NetworkType.connected,
-    ),
-  );
+  // Workmanager supports Android and iOS, and accesses dart:io on creation.
+  if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS)) {
+    await Workmanager().initialize(callbackDispatcher);
+
+    await Workmanager().registerPeriodicTask(
+      'sync-task',
+      'background-sync',
+      frequency: const Duration(minutes: 15),
+      constraints: Constraints(networkType: NetworkType.connected),
+    );
+  }
 
   // Initialize timezone for notifications
   tz.initializeTimeZones();
-  
+
   runApp(const BedSpaceApp());
 }
 
@@ -124,12 +126,13 @@ class AuthWrapper extends StatelessWidget {
     );
   }
 
-  Widget _buildAuthenticatedApp(BuildContext context, AuthAuthenticated authState) {
+  Widget _buildAuthenticatedApp(
+      BuildContext context, AuthAuthenticated authState) {
     final sheetsService = GoogleSheetsService(
       accessToken: authState.accessToken,
       sheetId: authState.sheetId,
     );
-    
+
     return Provider<ManagementRepository>(
       create: (context) => ManagementRepository(sheetsService: sheetsService),
       dispose: (context, repository) => repository.dispose(),

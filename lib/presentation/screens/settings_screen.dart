@@ -18,9 +18,9 @@ class SettingsScreen extends StatelessWidget {
         title: Text(
           'Settings',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppTheme.textColor,
-            fontWeight: FontWeight.bold,
-          ),
+                color: AppTheme.textColor,
+                fontWeight: FontWeight.bold,
+              ),
         ),
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
@@ -41,9 +41,9 @@ class SettingsScreen extends StatelessWidget {
                 Text(
                   'Account',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textColor,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textColor,
+                      ),
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -53,7 +53,8 @@ class SettingsScreen extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: 30,
-                        backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                        backgroundColor:
+                            AppTheme.primaryColor.withValues(alpha: 0.1),
                         child: Text(
                           userEmail.isNotEmpty
                               ? userEmail[0].toUpperCase()
@@ -99,9 +100,9 @@ class SettingsScreen extends StatelessWidget {
                   Text(
                     'Data Source',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: AppTheme.textColor,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textColor,
+                        ),
                   ),
                   const SizedBox(height: 16),
                   Container(
@@ -132,7 +133,9 @@ class SettingsScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
+                        Divider(
+                            height: 1,
+                            color: Colors.grey.withValues(alpha: 0.1)),
                         ListTile(
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 24,
@@ -177,9 +180,9 @@ class SettingsScreen extends StatelessWidget {
                 Text(
                   'Actions',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textColor,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textColor,
+                      ),
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -205,8 +208,8 @@ class SettingsScreen extends StatelessWidget {
                         ),
                         onTap: () {
                           context.read<SheetBloc>().add(
-                            const SheetSyncRequested(),
-                          );
+                                const SheetSyncRequested(),
+                              );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
                               content: Text('Sheet synced'),
@@ -215,7 +218,8 @@ class SettingsScreen extends StatelessWidget {
                           );
                         },
                       ),
-                      Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
+                      Divider(
+                          height: 1, color: Colors.grey.withValues(alpha: 0.1)),
                       ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -240,7 +244,8 @@ class SettingsScreen extends StatelessWidget {
                           _showResetConfirmation(context);
                         },
                       ),
-                      Divider(height: 1, color: Colors.grey.withOpacity(0.1)),
+                      Divider(
+                          height: 1, color: Colors.grey.withValues(alpha: 0.1)),
                       ListTile(
                         contentPadding: const EdgeInsets.symmetric(
                           horizontal: 24,
@@ -267,10 +272,10 @@ class SettingsScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
-                    color: AppTheme.warningColor.withOpacity(0.1),
+                    color: AppTheme.warningColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: AppTheme.warningColor.withOpacity(0.3),
+                      color: AppTheme.warningColor.withValues(alpha: 0.3),
                     ),
                   ),
                   child: Column(
@@ -297,7 +302,7 @@ class SettingsScreen extends StatelessWidget {
                         'This application does not guarantee data uniqueness across devices and is intended for prototyping purposes. Not for high-security financial data.',
                         style: TextStyle(
                           fontSize: 13,
-                          color: AppTheme.textColor.withOpacity(0.8),
+                          color: AppTheme.textColor.withValues(alpha: 0.8),
                           height: 1.5,
                         ),
                       ),
@@ -315,75 +320,169 @@ class SettingsScreen extends StatelessWidget {
   }
 
   void _showResetConfirmation(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        title: const Text(
-          'Reset Local Sheet?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        content: const Text(
-          'This will clear the local sheet reference. You will need to create a new sheet on next login.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppTheme.secondaryTextColor),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<SheetBloc>().add(const SheetResetRequested());
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Local sheet reference cleared'),
-                  backgroundColor: AppTheme.warningColor,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
                 ),
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
+              ),
             ),
-            child: const Text('Reset'),
-          ),
-        ],
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Icon(Icons.warning_amber_rounded,
+                    color: AppTheme.errorColor),
+                const SizedBox(width: 12),
+                const Text(
+                  'Reset Local Sheet?',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'This will clear the local sheet reference. You will need to create or select a sheet again on your next login. Your data on Google Sheets will remain safe.',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.secondaryTextColor,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                context.read<SheetBloc>().add(const SheetResetRequested());
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Local sheet reference cleared'),
+                    backgroundColor: AppTheme.warningColor,
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.errorColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Reset Sheet Reference'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }
 
   void _showLogoutConfirmation(BuildContext context) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        title: const Text(
-          'Logout?',
-          style: TextStyle(fontWeight: FontWeight.bold),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppTheme.secondaryTextColor),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
             ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<AuthBloc>().add(const AuthSignOutRequested());
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.errorColor,
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                const Icon(Icons.logout, color: AppTheme.textColor),
+                const SizedBox(width: 12),
+                const Text(
+                  'Logout',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textColor,
+                  ),
+                ),
+              ],
             ),
-            child: const Text('Logout'),
-          ),
-        ],
+            const SizedBox(height: 16),
+            const Text(
+              'Are you sure you want to logout from your account?',
+              style: TextStyle(
+                fontSize: 16,
+                color: AppTheme.secondaryTextColor,
+              ),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () {
+                context.read<AuthBloc>().add(const AuthSignOutRequested());
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppTheme.textColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Logout'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: () => Navigator.pop(context),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text('Cancel'),
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
       ),
     );
   }

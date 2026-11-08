@@ -5,6 +5,7 @@ import '../../../data/models/room_model.dart';
 import '../../../data/models/tenant_model.dart';
 import '../../../data/models/payment_model.dart';
 import '../../../data/models/bed_model.dart';
+import '../../../data/models/expense_model.dart';
 import '../../../data/repositories/management_repository.dart';
 
 part 'management_event.dart';
@@ -14,8 +15,8 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
   final ManagementRepository _repository;
 
   ManagementBloc({required ManagementRepository repository})
-    : _repository = repository,
-      super(ManagementInitial()) {
+      : _repository = repository,
+        super(ManagementInitial()) {
     on<LoadAllManagementData>(_onLoadAllManagementData);
 
     on<LoadBuildings>(_onLoadBuildings);
@@ -38,6 +39,9 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     on<AddPayment>(_onAddPayment);
     on<DeletePayment>(_onDeletePayment);
 
+    on<AddExpense>(_onAddExpense);
+    on<DeleteExpense>(_onDeleteExpense);
+
     on<LoadTenantBalance>(_onLoadTenantBalance);
     on<TriggerManualSync>(_onTriggerManualSync);
   }
@@ -48,15 +52,36 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
   ) async {
     emit(_currentState.copyWith(isLoading: true));
     try {
-      // 1. Mark tenant inactive
-      final inactiveTenant = event.tenant.copyWith(active: false);
-      await _repository.updateTenant(inactiveTenant);
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      final chDate = event.checkoutDate;
+      final checkoutDateOnly = DateTime(chDate.year, chDate.month, chDate.day);
 
-      // 2. Mark bed as vacant
-      await _repository.updateBedStatus(event.tenant.bedId, BedStatus.vacant);
+      final isFuture = checkoutDateOnly.isAfter(today);
 
-      // The stream in repository will automatically notify UI of these changes
-      emit(_currentState.copyWith(isLoading: false));
+      if (isFuture) {
+        // Scheduled checkout: Update checkout date but keep tenant active
+        final updatedTenant = event.tenant.copyWith(
+          checkoutDate: checkoutDateOnly,
+        );
+        await _repository.updateTenant(updatedTenant);
+      } else {
+        // Immediate checkout (Today or Past)
+        await _repository.checkoutTenant(
+          tenant: event.tenant,
+          checkoutDate: checkoutDateOnly,
+          refundAmount: event.refundAmount,
+        );
+      }
+
+      // Force a manual refresh to update UI immediately
+      final tenants = await _repository.getTenants(forceRefresh: true);
+      final beds = await _repository.getBeds(forceRefresh: true);
+      emit(_currentState.copyWith(
+        tenants: tenants,
+        beds: beds,
+        isLoading: false,
+      ));
     } catch (e) {
       emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
@@ -87,6 +112,7 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
           tenants: data['tenants'] as List<TenantModel>,
           payments: data['payments'] as List<PaymentModel>,
           beds: data['beds'] as List<BedModel>,
+          expenses: data['expenses'] as List<ExpenseModel>,
           isLoading:
               false, // Serve instantly, don't keep loading state if we have local data
         );
@@ -172,20 +198,7 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
   Future<void> _onAddRoom(AddRoom event, Emitter<ManagementState> emit) async {
     emit(_currentState.copyWith(isLoading: true));
     try {
-      await _repository.addRoom(event.room);
-      // Background: get rooms to ensure we have the generated ID for bed creation
-      // Actually, my repository handles sync internally now.
-      // For immediate bed creation, we might still need the ID if it's local-first.
-      // But repo.addRoom returns nothing.
-      // I'll keep the logic but rely on repository to be consistent.
-
-      final rooms = await _repository.getRooms();
-      final createdRoom = rooms.firstWhere(
-        (r) =>
-            r.roomNumber == event.room.roomNumber &&
-            r.buildingId == event.room.buildingId,
-        orElse: () => event.room,
-      );
+      final createdRoom = await _repository.addRoom(event.room);
 
       if (createdRoom.roomId != null && createdRoom.roomId!.isNotEmpty) {
         for (int i = 0; i < event.room.lowerBedsCount; i++) {
@@ -230,6 +243,20 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
   ) async {
     emit(_currentState.copyWith(isLoading: true));
     try {
+      final rooms = await _repository.getRooms();
+      if (rooms.any((room) => room.parentRoomId == event.roomId)) {
+        throw StateError('Remove the subrooms before deleting this room.');
+      }
+      // Cascade delete: Delete associated beds first
+      final allBeds = await _repository.getBeds();
+      final roomBeds = allBeds.where((b) => b.roomId == event.roomId).toList();
+
+      for (final bed in roomBeds) {
+        if (bed.bedId != null) {
+          await _repository.deleteBed(bed.bedId!);
+        }
+      }
+
       await _repository.deleteRoom(event.roomId);
     } catch (e) {
       emit(_currentState.copyWith(error: e.toString(), isLoading: false));
@@ -336,6 +363,32 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     emit(_currentState.copyWith(isLoading: true));
     try {
       await _repository.deletePayment(event.paymentId);
+    } catch (e) {
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
+    }
+  }
+
+  // --- Expenses ---
+
+  Future<void> _onAddExpense(
+    AddExpense event,
+    Emitter<ManagementState> emit,
+  ) async {
+    emit(_currentState.copyWith(isLoading: true));
+    try {
+      await _repository.addExpense(event.expense);
+    } catch (e) {
+      emit(_currentState.copyWith(error: e.toString(), isLoading: false));
+    }
+  }
+
+  Future<void> _onDeleteExpense(
+    DeleteExpense event,
+    Emitter<ManagementState> emit,
+  ) async {
+    emit(_currentState.copyWith(isLoading: true));
+    try {
+      await _repository.deleteExpense(event.expenseId);
     } catch (e) {
       emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }

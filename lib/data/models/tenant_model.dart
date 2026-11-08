@@ -11,6 +11,7 @@ class TenantModel {
   final DateTime joiningDate;
   final int rentDueDay;
   final bool active;
+  final DateTime? checkoutDate;
 
   TenantModel({
     this.tenantId,
@@ -24,6 +25,7 @@ class TenantModel {
     required this.joiningDate,
     required this.rentDueDay,
     required this.active,
+    this.checkoutDate,
   });
 
   Map<String, dynamic> toJson() {
@@ -39,6 +41,7 @@ class TenantModel {
       'joining_date': joiningDate.toIso8601String().split('T')[0],
       'rent_due_day': rentDueDay,
       'active': active ? 'TRUE' : 'FALSE',
+      'checkout_date': checkoutDate?.toIso8601String().split('T')[0] ?? '',
     };
   }
 
@@ -50,11 +53,15 @@ class TenantModel {
       buildingId: json['building_id']?.toString() ?? '',
       roomId: json['room_id']?.toString() ?? '',
       bedId: json['bed_id']?.toString() ?? '',
-      rentAmount: double.tryParse(json['rent_amount']?.toString() ?? '0') ?? 0.0,
-      advanceAmount: double.tryParse(json['advance_amount']?.toString() ?? '0') ?? 0.0,
-      joiningDate: DateTime.tryParse(json['joining_date']?.toString() ?? '') ?? DateTime.now(),
+      rentAmount:
+          double.tryParse(json['rent_amount']?.toString() ?? '0') ?? 0.0,
+      advanceAmount:
+          double.tryParse(json['advance_amount']?.toString() ?? '0') ?? 0.0,
+      joiningDate: DateTime.tryParse(json['joining_date']?.toString() ?? '') ??
+          DateTime.now(),
       rentDueDay: int.tryParse(json['rent_due_day']?.toString() ?? '1') ?? 1,
       active: json['active']?.toString().toUpperCase() == 'TRUE',
+      checkoutDate: DateTime.tryParse(json['checkout_date']?.toString() ?? ''),
     );
   }
 
@@ -70,6 +77,7 @@ class TenantModel {
     DateTime? joiningDate,
     int? rentDueDay,
     bool? active,
+    DateTime? checkoutDate,
   }) {
     return TenantModel(
       tenantId: tenantId ?? this.tenantId,
@@ -83,7 +91,7 @@ class TenantModel {
       joiningDate: joiningDate ?? this.joiningDate,
       rentDueDay: rentDueDay ?? this.rentDueDay,
       active: active ?? this.active,
+      checkoutDate: checkoutDate ?? this.checkoutDate,
     );
   }
 }
-

@@ -15,9 +15,9 @@ class BuildingsManagementScreen extends StatelessWidget {
         title: Text(
           'Manage Buildings',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppTheme.textColor,
-            fontWeight: FontWeight.bold,
-          ),
+                color: AppTheme.textColor,
+                fontWeight: FontWeight.bold,
+              ),
         ),
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
@@ -61,8 +61,8 @@ class BuildingsManagementScreen extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {
                         context.read<ManagementBloc>().add(
-                          const LoadBuildings(),
-                        );
+                              const LoadBuildings(),
+                            );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
@@ -91,8 +91,8 @@ class BuildingsManagementScreen extends StatelessWidget {
                     Text(
                       'No buildings found',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: AppTheme.softGrey,
-                      ),
+                            color: AppTheme.softGrey,
+                          ),
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
@@ -133,7 +133,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                       leading: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryColor.withOpacity(0.1),
+                          color: AppTheme.primaryColor.withValues(alpha: 0.1),
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -190,71 +190,93 @@ class BuildingsManagementScreen extends StatelessWidget {
     final addressController = TextEditingController();
     final roomsController = TextEditingController(text: '0');
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => BlocProvider.value(
         value: managementBloc,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          title: const Text(
-            'Add Building',
-            style: TextStyle(fontWeight: FontWeight.bold),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 10,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Building Name',
-
-                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
                 ),
-              ),
-              TextField(
-                controller: addressController,
-                decoration: const InputDecoration(
-                  labelText: 'Address',
-                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                const SizedBox(height: 24),
+                const Text(
+                  'Add Building',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textColor,
+                  ),
                 ),
-              ),
-              TextField(
-                controller: roomsController,
-                decoration: const InputDecoration(
-                  labelText: 'Total Rooms',
-                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Building Name',
+                    prefixIcon: Icon(Icons.business_outlined),
+                  ),
                 ),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: AppTheme.secondaryTextColor),
-              ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: addressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Address',
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: roomsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Total Rooms',
+                    prefixIcon: Icon(Icons.meeting_room_outlined),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    final building = BuildingModel(
+                      buildingName: nameController.text,
+                      address: addressController.text,
+                      totalRooms: int.tryParse(roomsController.text) ?? 0,
+                    );
+                    managementBloc.add(AddBuilding(building));
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Add Building'),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                final building = BuildingModel(
-                  buildingName: nameController.text,
-                  address: addressController.text,
-                  totalRooms: int.tryParse(roomsController.text) ?? 0,
-                );
-                managementBloc.add(AddBuilding(building));
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-              ),
-              child: const Text('Add'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -268,93 +290,108 @@ class BuildingsManagementScreen extends StatelessWidget {
       text: building.totalRooms.toString(),
     );
 
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (context) => BlocProvider.value(
         value: managementBloc,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          title: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Edit Building',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-
-
-              Builder(
-                builder: (context) {
-                  return IconButton(
-                    icon: const Icon(
-                      Icons.delete_outline,
-                      color: AppTheme.errorColor,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
                     ),
-                    onPressed: () {
-                      if (Navigator.canPop(context)) {
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Edit Building',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textColor,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        color: AppTheme.errorColor,
+                      ),
+                      onPressed: () {
                         Navigator.pop(context);
-                      }
-                      _showDeleteConfirmation(context, building);
-                    },
-                  );
-                },
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            spacing: 10,
-            children: [
-              TextField(
-                controller: nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Building Name',
-                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                        _showDeleteConfirmation(context, building);
+                      },
+                    ),
+                  ],
                 ),
-              ),
-              TextField(
-                controller: addressController,
-                decoration: const InputDecoration(
-                  labelText: 'Address',
-                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                const SizedBox(height: 24),
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Building Name',
+                    prefixIcon: Icon(Icons.business_outlined),
+                  ),
                 ),
-              ),
-              TextField(
-                controller: roomsController,
-                decoration: const InputDecoration(
-                  labelText: 'Total Rooms',
-                  labelStyle: TextStyle(color: AppTheme.secondaryTextColor),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: addressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Address',
+                    prefixIcon: Icon(Icons.location_on_outlined),
+                  ),
                 ),
-                keyboardType: TextInputType.number,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: AppTheme.secondaryTextColor),
-              ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: roomsController,
+                  decoration: const InputDecoration(
+                    labelText: 'Total Rooms',
+                    prefixIcon: Icon(Icons.meeting_room_outlined),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 32),
+                ElevatedButton(
+                  onPressed: () {
+                    final updated = building.copyWith(
+                      buildingName: nameController.text,
+                      address: addressController.text,
+                      totalRooms: int.tryParse(roomsController.text) ?? 0,
+                    );
+                    managementBloc.add(UpdateBuilding(updated));
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Save Changes'),
+                ),
+                const SizedBox(height: 16),
+              ],
             ),
-            ElevatedButton(
-              onPressed: () {
-                final updated = building.copyWith(
-                  buildingName: nameController.text,
-                  address: addressController.text,
-                  totalRooms: int.tryParse(roomsController.text) ?? 0,
-                );
-                managementBloc.add(UpdateBuilding(updated));
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-              ),
-              child: const Text('Update'),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -362,41 +399,89 @@ class BuildingsManagementScreen extends StatelessWidget {
 
   void _showDeleteConfirmation(BuildContext context, BuildingModel building) {
     final managementBloc = context.read<ManagementBloc>();
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      builder: (context) => BlocProvider.value(
-        value: managementBloc,
-        child: AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          title: const Text(
-            'Delete Building?',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          content: Text(
-            'Are you sure you want to delete ${building.buildingName}?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: AppTheme.secondaryTextColor),
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade300,
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                if (building.buildingId != null) {
-                  managementBloc.add(DeleteBuilding(building.buildingId!));
-                }
-                Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.errorColor,
+            const SizedBox(height: 24),
+            const Text(
+              'Delete Building?',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.errorColor,
               ),
-              child: const Text('Delete'),
             ),
+            const SizedBox(height: 16),
+            Text(
+              'Are you sure you want to delete ${building.buildingName}? This action cannot be undone.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppTheme.secondaryTextColor,
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 32),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text('Cancel'),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (building.buildingId != null) {
+                        managementBloc
+                            .add(DeleteBuilding(building.buildingId!));
+                      }
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.errorColor,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Delete',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),

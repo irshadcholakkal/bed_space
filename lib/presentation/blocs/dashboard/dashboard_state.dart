@@ -9,7 +9,6 @@ abstract class DashboardState extends Equatable {
 
 class DashboardInitial extends DashboardState {}
 
-
 class DashboardLoading extends DashboardState {}
 
 class DashboardLoaded extends DashboardState {
@@ -19,7 +18,7 @@ class DashboardLoaded extends DashboardState {
   final int occupiedBeds;
   final int vacantBeds;
   final double rentCollected;
-  final double utilityExpenses;
+  final double totalExpenses;
   final double profit;
 
   const DashboardLoaded({
@@ -29,7 +28,7 @@ class DashboardLoaded extends DashboardState {
     required this.occupiedBeds,
     required this.vacantBeds,
     required this.rentCollected,
-    required this.utilityExpenses,
+    required this.totalExpenses,
     required this.profit,
   });
 
@@ -41,7 +40,7 @@ class DashboardLoaded extends DashboardState {
         occupiedBeds,
         vacantBeds,
         rentCollected,
-        utilityExpenses,
+        totalExpenses,
         profit,
       ];
 }
@@ -54,4 +53,3 @@ class DashboardError extends DashboardState {
   @override
   List<Object> get props => [message];
 }
-

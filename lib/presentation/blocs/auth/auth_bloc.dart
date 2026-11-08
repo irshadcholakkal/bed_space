@@ -2,7 +2,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/services/google_auth_service.dart';
 import '../../../data/repositories/sheet_repository.dart';
-import '../../../data/services/google_sheets_service.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -29,14 +28,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       // Try silent sign-in to restore session
       final accessToken = await _authService.signInSilently();
-      
+
       if (accessToken != null) {
         final user = await _authService.getCurrentUser();
         if (user != null) {
           final sheetId = await _sheetRepository.getSheetId();
           // Cache the latest token for offline access/background sync
           await _sheetRepository.saveToken(accessToken);
-          
+
           if (sheetId != null) {
             emit(AuthAuthenticated(
               userEmail: user.email,
@@ -62,7 +61,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _handleOfflineAuthFallback(Emitter<AuthState> emit, String? accessToken) async {
+  Future<void> _handleOfflineAuthFallback(
+      Emitter<AuthState> emit, String? accessToken) async {
     final cachedEmail = await _sheetRepository.getUserEmail();
     final cachedSheetId = await _sheetRepository.getSheetId();
     final cachedToken = accessToken ?? await _sheetRepository.getToken();
@@ -74,7 +74,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         sheetId: cachedSheetId,
       ));
     } else if (cachedEmail != null) {
-       emit(AuthAuthenticatedWithoutSheet(
+      emit(AuthAuthenticatedWithoutSheet(
         userEmail: cachedEmail,
         accessToken: cachedToken ?? '',
       ));
@@ -130,7 +130,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     try {
       await _authService.signOut();
-      await _sheetRepository.clearSheetId(); // Optionally clear local session? 
+      await _sheetRepository.clearSheetId(); // Optionally clear local session?
       // For now just sign out from Google
       emit(AuthUnauthenticated());
     } catch (e) {
@@ -138,4 +138,3 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 }
-

@@ -1,4 +1,5 @@
-import 'package:bed_space/presentation/blocs/room/room_bloc.dart';
+import 'package:bed_space/presentation/blocs/management/management_bloc.dart'
+    as management_bloc;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,7 +8,7 @@ import '../blocs/management/management_bloc.dart';
 import '../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
 import 'buildings_management_screen.dart';
-import 'rooms_screen.dart';
+import 'rooms_management_screen.dart';
 import 'tenants_management_screen.dart';
 import 'vacant_beds_screen.dart';
 
@@ -66,8 +67,8 @@ class DashboardScreen extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () {
                       context.read<DashboardBloc>().add(
-                        const DashboardLoadRequested(),
-                      );
+                            const DashboardLoadRequested(),
+                          );
                     },
                     child: const Text('Retry'),
                   ),
@@ -90,11 +91,11 @@ class DashboardScreen extends StatelessWidget {
                     // Overview Stats
                     Text(
                       'Overview',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textColor,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textColor,
+                              ),
                     ),
                     const SizedBox(height: 24),
                     const Row(
@@ -132,22 +133,33 @@ class DashboardScreen extends StatelessWidget {
                             icon: Icons.meeting_room,
                             color: AppTheme.secondaryColor,
                             onTap: () {
+                              final bloc = context
+                                  .read<management_bloc.ManagementBloc>();
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => MultiBlocProvider(
-                                    providers: [
-                                      BlocProvider.value(
-                                        value: context.read<RoomBloc>(),
-                                      ),
-                                      BlocProvider.value(
-                                        value: context.read<ManagementBloc>(),
-                                      ),
-                                    ],
-                                    child: const RoomsScreen(),
+                                  builder: (_) => BlocProvider.value(
+                                    value: bloc,
+                                    child: const RoomsManagementScreen(),
                                   ),
                                 ),
                               );
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (_) => MultiBlocProvider(
+                              //       providers: [
+                              //         BlocProvider.value(
+                              //           value: context.read<RoomBloc>(),
+                              //         ),
+                              //         BlocProvider.value(
+                              //           value: context.read<ManagementBloc>(),
+                              //         ),
+                              //       ],
+                              //       child: const RoomsScreen(),
+                              //     ),
+                              //   ),
+                              // );
                             },
                           ),
                         ),
@@ -171,7 +183,6 @@ class DashboardScreen extends StatelessWidget {
                             value: state.occupiedBeds.toString(),
                             icon: Icons.people,
                             color: AppTheme.successColor,
-
                             onTap: () {
                               Navigator.push(
                                 context,
@@ -211,11 +222,11 @@ class DashboardScreen extends StatelessWidget {
                     // Current Month Financials
                     Text(
                       'Financials',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            fontWeight: FontWeight.w700,
-                            color: AppTheme.textColor,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textColor,
+                              ),
                     ),
                     const SizedBox(height: 16),
                     Card(
@@ -225,19 +236,19 @@ class DashboardScreen extends StatelessWidget {
                           children: [
                             _buildFinancialRow(
                               'Rent Collected',
-                              '₹${state.rentCollected.toStringAsFixed(0)}',
+                              'د.إ${state.rentCollected.toStringAsFixed(0)}',
                               AppTheme.successColor,
                             ),
                             const Divider(),
                             _buildFinancialRow(
-                              'Utility Expenses',
-                              '₹${state.utilityExpenses.toStringAsFixed(0)}',
+                              'Total Expenses',
+                              'د.إ${state.totalExpenses.toStringAsFixed(0)}',
                               AppTheme.textColor,
                             ),
                             const Divider(),
                             _buildFinancialRow(
                               state.profit >= 0 ? 'Profit' : 'Loss',
-                              '₹${state.profit.abs().toStringAsFixed(0)}',
+                              'د.إ${state.profit.abs().toStringAsFixed(0)}',
                               state.profit >= 0
                                   ? AppTheme.successColor
                                   : AppTheme.errorColor,

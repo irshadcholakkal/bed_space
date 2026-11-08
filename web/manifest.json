@@ -1,12 +1,13 @@
 {
-    "name": "bed_space",
-    "short_name": "bed_space",
-    "start_url": ".",
+    "id": "./",
+    "name": "Bed Space Management",
+    "short_name": "Bed Space",
+    "start_url": "./",
+    "scope": "./",
     "display": "standalone",
-    "background_color": "#hex_code",
-    "theme_color": "#hex_code",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#ffffff",
+    "theme_color": "#ff385c",
+    "description": "Manage buildings, rooms, tenants, rent payments and expenses.",
     "prefer_related_applications": false,
     "icons": [
         {
@@ -18,18 +19,6 @@
             "src": "icons/Icon-512.png",
             "sizes": "512x512",
             "type": "image/png"
-        },
-        {
-            "src": "icons/Icon-maskable-192.png",
-            "sizes": "192x192",
-            "type": "image/png",
-            "purpose": "maskable"
-        },
-        {
-            "src": "icons/Icon-maskable-512.png",
-            "sizes": "512x512",
-            "type": "image/png",
-            "purpose": "maskable"
         }
     ]
 }

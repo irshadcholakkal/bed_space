@@ -1,15 +1,16 @@
 /// Sheet Repository
 /// Handles local sheet ID storage and retrieval
-/// 
+///
 /// IMPORTANT DISCLAIMER:
 /// This repository stores sheet ID locally per device.
 /// No global synchronization across devices is possible.
-/// 
+///
 /// This app:
 /// - Is client-only
 /// - Does not guarantee uniqueness across devices
 /// - Is not suitable for high-security financial data
 /// - Is designed for internal / prototype usage
+library;
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,10 +19,11 @@ class SheetRepository {
   static const String _userEmailKey = 'user_email';
   static const String _accessTokenKey = 'access_token';
 
-    Future<void> saveToken(String token) async {
+  Future<void> saveToken(String token) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_accessTokenKey, token);
   }
+
   Future<String?> getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_accessTokenKey);
@@ -59,4 +61,3 @@ class SheetRepository {
     return savedEmail == userEmail;
   }
 }
-

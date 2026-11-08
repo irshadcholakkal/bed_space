@@ -25,10 +25,10 @@ class AppTheme {
   static final BoxDecoration cardDecoration = BoxDecoration(
     color: surfaceColor,
     borderRadius: BorderRadius.circular(10),
-    border: Border.all(color: Colors.grey.withOpacity(0.1)),
+    border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
     boxShadow: [
       BoxShadow(
-        color: Colors.black.withOpacity(0.05),
+        color: Colors.black.withValues(alpha: 0.05),
         blurRadius: 10,
         offset: const Offset(0, 4),
       ),
@@ -46,12 +46,10 @@ class AppTheme {
         primary: primaryColor,
         secondary: secondaryColor,
         surface: surfaceColor,
-        background: backgroundColor,
         error: errorColor,
         onPrimary: Colors.white,
         onSecondary: Colors.white,
         onSurface: textColor,
-        onBackground: textColor,
         onError: Colors.white,
         outline: Color(0xFFDDDDDD),
       ),
@@ -133,7 +131,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         color: surfaceColor,
         elevation: 4,
-        shadowColor: Colors.black.withOpacity(0.08),
+        shadowColor: Colors.black.withValues(alpha: 0.08),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: const BorderSide(color: Color(0xFFDDDDDD), width: 1),

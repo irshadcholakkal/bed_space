@@ -32,9 +32,9 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
         title: Text(
           'Available Beds',
           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-            color: AppTheme.textColor,
-            fontWeight: FontWeight.bold,
-          ),
+                color: AppTheme.textColor,
+                fontWeight: FontWeight.bold,
+              ),
         ),
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
@@ -51,7 +51,7 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                 borderRadius: BorderRadius.circular(30),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -111,50 +111,47 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                   final vacantBedsWithInfo = state.beds
                       .where((b) => b.status == BedStatus.vacant)
                       .map((bed) {
-                        final room = state.rooms.firstWhere(
-                          (r) => r.roomId == bed.roomId,
-                          orElse: () => RoomModel(
-                            buildingId: '',
-                            roomNumber: 'Unknown',
-                            totalCapacity: 0,
-                            lowerBedsCount: 0,
-                            upperBedsCount: 0,
-                            lowerBedRent: 0,
-                            upperBedRent: 0,
-                            utilityCostMonthly: 0,
-                          ),
-                        );
+                    final room = state.rooms.firstWhere(
+                      (r) => r.roomId == bed.roomId,
+                      orElse: () => RoomModel(
+                        buildingId: '',
+                        roomNumber: 'Unknown',
+                        totalCapacity: 0,
+                        lowerBedsCount: 0,
+                        upperBedsCount: 0,
+                        lowerBedRent: 0,
+                        upperBedRent: 0,
+                        utilityCostMonthly: 0,
+                      ),
+                    );
 
-                        final building = state.buildings.firstWhere(
-                          (b) => b.buildingId == room.buildingId,
-                          orElse: () => BuildingModel(
-                            buildingName: 'Unknown',
-                            address: '',
-                            totalRooms: 0,
-                          ),
-                        );
+                    final building = state.buildings.firstWhere(
+                      (b) => b.buildingId == room.buildingId,
+                      orElse: () => BuildingModel(
+                        buildingName: 'Unknown',
+                        address: '',
+                        totalRooms: 0,
+                      ),
+                    );
 
-                        return {'bed': bed, 'room': room, 'building': building};
-                      })
-                      .where((info) {
-                        if (_searchQuery.isEmpty) return true;
+                    return {'bed': bed, 'room': room, 'building': building};
+                  }).where((info) {
+                    if (_searchQuery.isEmpty) return true;
 
-                        final building = info['building'] as BuildingModel;
-                        final room = info['room'] as RoomModel;
-                        final bed = info['bed'] as BedModel;
-                        final bedTypeStr = bed.bedType == BedType.lower
-                            ? 'lower'
-                            : 'upper';
+                    final building = info['building'] as BuildingModel;
+                    final room = info['room'] as RoomModel;
+                    final bed = info['bed'] as BedModel;
+                    final bedTypeStr =
+                        bed.bedType == BedType.lower ? 'lower' : 'upper';
 
-                        return building.buildingName.toLowerCase().contains(
+                    return building.buildingName.toLowerCase().contains(
                               _searchQuery,
                             ) ||
-                            room.roomNumber.toLowerCase().contains(
+                        room.displayName(state.rooms).toLowerCase().contains(
                               _searchQuery,
                             ) ||
-                            bedTypeStr.contains(_searchQuery);
-                      })
-                      .toList();
+                        bedTypeStr.contains(_searchQuery);
+                  }).toList();
 
                   if (vacantBedsWithInfo.isEmpty) {
                     return Center(
@@ -173,7 +170,9 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                             _searchQuery.isEmpty
                                 ? 'No vacant beds available'
                                 : 'No matches found',
-                            style: Theme.of(context).textTheme.titleLarge
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
                                 ?.copyWith(color: AppTheme.softGrey),
                           ),
                         ],
@@ -202,7 +201,8 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                           leading: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: AppTheme.secondaryColor.withOpacity(0.1),
+                              color: AppTheme.secondaryColor
+                                  .withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Icon(
@@ -213,7 +213,7 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                             ),
                           ),
                           title: Text(
-                            '${building.buildingName} - Room ${room.roomNumber}',
+                            '${building.buildingName} - ${room.displayName(state.rooms)}',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 16,
@@ -232,7 +232,7 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Rent: ₹${rentAmount.toStringAsFixed(0)}',
+                                'Rent: د.إ${rentAmount.toStringAsFixed(0)}',
                                 style: const TextStyle(
                                   color: AppTheme.secondaryColor,
                                   fontWeight: FontWeight.bold,
