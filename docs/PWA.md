@@ -1,5 +1,40 @@
 # Bed Space PWA
 
+## Deploy on Vercel
+
+1. Push the project to your Git repository and import it in Vercel.
+2. Set **Root Directory** to the folder containing `pubspec.yaml` and
+   `vercel.json` (use `bed_space` if the repository contains this app in that folder).
+3. Choose the **Other** framework preset. The checked-in configuration sets
+   the build command to `bash scripts/vercel-build.sh` and output to `build/web`.
+   No Node package installation is required.
+4. Add `GOOGLE_CLIENT_ID` in **Settings > Environment Variables**, using a
+   Google OAuth **Web application** client ID. Enable it for Production and,
+   if needed, Preview. This is a public client ID, not a client secret.
+5. Deploy. The script installs Flutter 3.47.2, restores locked dependencies,
+   builds the web app and generates its PWA cache manifest. Optionally set
+   `FLUTTER_VERSION` to another exact stable version after testing it locally.
+6. In Google Cloud Console, add `https://YOUR-PROJECT.vercel.app` and your
+   custom domain, if any, under the OAuth client's **Authorized JavaScript
+   origins**. Each origin is exact; arbitrary preview URLs will not inherit
+   authorization. Use your stable production domain for installed PWAs.
+
+Vercel serves the deployment over HTTPS. The configuration revalidates static
+files, prevents service-worker caching by the HTTP cache, sets the WASM MIME
+type and routes extensionless app URLs to `index.html`. Missing `.js`, `.wasm`
+and other file requests remain 404s rather than receiving HTML.
+
+After deployment, open the production URL in Chrome/Edge and select **Install
+app**, or use Safari's **Share > Add to Home Screen**. Check Google sign-in,
+then reload offline after the first visit finishes caching. To receive an
+update, close all app windows/tabs and reopen. Browser printing may load its
+PDF renderer online; PDF downloads use the bundled generator.
+
+The configuration prepares hosting; connecting the repository, setting the
+OAuth client ID and deploying are done in your Vercel account.
+
+## Local release build
+
 Build the installable release from the project root (Flutter and Node.js required):
 
 ```powershell

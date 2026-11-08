@@ -1,0 +1,12 @@
+.git
+.dart_tool
+.vercel
+build
+coverage
+android
+ios
+linux
+macos
+windows
+test
+*.log
