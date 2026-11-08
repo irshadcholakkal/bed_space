@@ -26,8 +26,15 @@ class StatusMessageService {
     final tenant = bill.tenant;
     final date = tenant.checkoutDate;
     final today = now ?? DateTime.now();
-    final scheduled = tenant.active && date != null && DateTime(date.year, date.month, date.day).isAfter(DateTime(today.year, today.month, today.day));
-    final status = !tenant.active ? 'Checked out' : scheduled ? 'Checkout scheduled' : 'Active tenancy';
+    final scheduled = tenant.active &&
+        date != null &&
+        DateTime(date.year, date.month, date.day)
+            .isAfter(DateTime(today.year, today.month, today.day));
+    final status = !tenant.active
+        ? 'Checked out'
+        : scheduled
+            ? 'Checkout scheduled'
+            : 'Active tenancy';
     return 'Hello ${tenant.tenantName},\n\nTenancy status: $status\n'
         '${bill.buildingName}\n${bill.roomName}\n'
         '${date == null ? 'No checkout date is scheduled.' : 'Checkout date: ${DateFormat('dd MMM yyyy').format(date)}'}\n'
@@ -42,8 +49,13 @@ class StatusMessageService {
       'Amount received: ${money(payment.amount)}\n'
       'Paid on: ${DateFormat('dd MMM yyyy').format(payment.paidDate)}';
 
-  static String vacancy({required String building, required String address,
-    required String room, required String bedType, required double rent, int count = 1}) =>
+  static String vacancy(
+          {required String building,
+          required String address,
+          required String room,
+          required String bedType,
+          required double rent,
+          int count = 1}) =>
       'Bed space available\n\n$building${address.trim().isEmpty ? '' : '\n$address'}\n'
       '$room\n$bedType bed${count == 1 ? '' : 's'} available: $count\n'
       'Monthly rent: ${money(rent)} per bed\n\nContact management for details and viewing.';
@@ -55,15 +67,19 @@ class StatusMessageService {
     }
     var digits = input.replaceAll(RegExp(r'\D'), '');
     if (digits.startsWith('00')) digits = digits.substring(2);
-    if (RegExp(r'^05\d{8}$').hasMatch(digits)) digits = '971${digits.substring(1)}';
+    if (RegExp(r'^05\d{8}$').hasMatch(digits)) {
+      digits = '971${digits.substring(1)}';
+    }
     if (RegExp(r'^5\d{8}$').hasMatch(digits)) digits = '971$digits';
     if (!RegExp(r'^[1-9]\d{7,14}$').hasMatch(digits)) {
-      throw ArgumentError('Enter an international number, for example +971501234567.');
+      throw ArgumentError(
+          'Enter an international number, for example +971501234567.');
     }
     return digits;
   }
 
   static Uri whatsappUri(String message, {String? phone}) => Uri.https(
-      'wa.me', phone == null || phone.trim().isEmpty ? '/' : '/${normalizePhone(phone)}',
+      'wa.me',
+      phone == null || phone.trim().isEmpty ? '/' : '/${normalizePhone(phone)}',
       {'text': message});
 }

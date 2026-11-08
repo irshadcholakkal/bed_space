@@ -8,6 +8,7 @@ import '../../data/models/payment_model.dart';
 import '../../data/models/expense_model.dart';
 import '../theme/app_theme.dart';
 import 'tenants_management_screen.dart';
+import '../widgets/sharing_actions.dart';
 
 class FinancialsScreen extends StatefulWidget {
   const FinancialsScreen({super.key});
@@ -589,38 +590,45 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
                       ),
                   ],
                 ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      'د.إ${item.rentAmount.toStringAsFixed(0)}',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                        color: AppTheme.textColor,
-                      ),
-                    ),
-                    if (status == PaymentStatus.overdue)
-                      const Text(
-                        'Tap to Pay',
-                        style: TextStyle(
-                          color: AppTheme.primaryColor,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      )
-                    else if (status == PaymentStatus.partial)
+                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Text(
-                        'Due: د.إ${dueAmount.toStringAsFixed(0)}',
-                        style: const TextStyle(
-                          color: AppTheme.errorColor,
-                          fontSize: 10,
+                        'د.إ${item.rentAmount.toStringAsFixed(0)}',
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: AppTheme.textColor,
                         ),
                       ),
-                  ],
-                ),
+                      if (status == PaymentStatus.overdue)
+                        const Text(
+                          'Tap to Pay',
+                          style: TextStyle(
+                            color: AppTheme.primaryColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        )
+                      else if (status == PaymentStatus.partial)
+                        Text(
+                          'Due: د.إ${dueAmount.toStringAsFixed(0)}',
+                          style: const TextStyle(
+                            color: AppTheme.errorColor,
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                    ],
+                  ),
+                  IconButton(
+                      tooltip: 'WhatsApp, invoice & receipts',
+                      icon: const Icon(Icons.share_outlined),
+                      onPressed: () => openTenantSharing(context, item.tenant,
+                          month: _selectedMonth)),
+                ]),
               ),
             ),
           ),

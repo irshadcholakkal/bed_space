@@ -50,6 +50,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/NotoSans-Regular.ttf
 
 # App Launcher Icon Configuration
 flutter_launcher_icons:

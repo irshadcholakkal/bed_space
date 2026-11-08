@@ -131,6 +131,23 @@ The app automatically creates a Google Sheet with the following tabs:
 
 ## Usage
 
+### WhatsApp, invoices and receipts
+
+- **Financials:** use the share icon on any paid, partial or unpaid tenant row
+  for the selected month's payment message, reminder, invoice and receipts.
+- **Tenants:** choose **WhatsApp, invoice & receipts** from the tenant menu.
+  The monthly balance cards also have a share action for historical invoices.
+- **Payment history:** tap the receipt icon to download/share or print the
+  receipt for that individual payment.
+- **Vacant Beds:** use the share icon to prepare a vacancy message with the
+  building, room/subroom, bed type and monthly rent.
+
+Messages can be edited and copied before opening WhatsApp. A recipient may be
+changed or left blank to choose a chat. WhatsApp requires the final Send action;
+PDF attachments must be shared or attached separately. On the web, PDF Share
+downloads the file. Printing uses the device/browser print dialog. These are
+rent invoices and payment acknowledgements; deposits and refunds remain separate.
+
 ### Rooms with subrooms
 
 In **Manage Rooms**, use the **Add Subroom** icon on a main room, or choose

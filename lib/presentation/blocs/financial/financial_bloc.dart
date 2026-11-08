@@ -1,3 +1,4 @@
+import '../../../data/models/billing_snapshot.dart';
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
@@ -145,32 +146,7 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
                 .reduce((a, b) => a.isAfter(b) ? a : b);
           }
 
-          // Calculate prorated expected rent for this month
-          double targetRent = tenant.rentAmount;
-
-          // If they joined mid-month
-          if (tenant.joiningDate.year == year &&
-              tenant.joiningDate.month == mon) {
-            final daysInMonth = DateTime(year, mon + 1, 0).day;
-            final stayDays = daysInMonth - tenant.joiningDate.day + 1;
-            targetRent = (tenant.rentAmount / 30) * stayDays;
-          }
-
-          // If they checked out mid-month
-          if (tenant.checkoutDate != null &&
-              tenant.checkoutDate!.year == year &&
-              tenant.checkoutDate!.month == mon) {
-            // Recalculate based on stay days in this month
-            // If they also joined in this same month, we calculate from joining to checkout
-            final startDay = (tenant.joiningDate.year == year &&
-                    tenant.joiningDate.month == mon)
-                ? tenant.joiningDate.day
-                : 1;
-            final stayDays = tenant.checkoutDate!.day - startDay + 1;
-            targetRent = (tenant.rentAmount / 30) * stayDays;
-          }
-
-          final rentAmount = targetRent;
+          final rentAmount = BillingSnapshot.rentForMonth(tenant, firstOfMonth);
 
           PaymentStatus status;
           if (paidAmount >= rentAmount) {

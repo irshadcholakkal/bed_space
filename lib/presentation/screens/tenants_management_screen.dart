@@ -9,6 +9,8 @@ import '../../data/models/tenant_model.dart';
 import '../../data/models/payment_model.dart';
 import '../../data/models/expense_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/sharing_actions.dart';
+import '../../data/models/billing_snapshot.dart';
 
 class TenantsManagementScreen extends StatefulWidget {
   const TenantsManagementScreen({super.key});
@@ -807,6 +809,9 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                               ),
                               onSelected: (value) {
                                 switch (value) {
+                                  case 'share':
+                                    openTenantSharing(context, tenant);
+                                    break;
                                   case 'balance':
                                     _navigateToRentBalance(
                                       context,
@@ -829,6 +834,10 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                 }
                               },
                               itemBuilder: (context) => [
+                                const PopupMenuItem(
+                                    value: 'share',
+                                    child:
+                                        Text('WhatsApp, invoice & receipts')),
                                 const PopupMenuItem(
                                   value: 'balance',
                                   child: Row(
@@ -923,7 +932,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
       0,
       (sum, p) => sum + p.amount,
     );
-    final expectedRent = tenant.rentAmount;
+    final expectedRent = BillingSnapshot.rentForMonth(tenant, now);
     final balance = expectedRent - totalPaid;
 
     // Fully paid or overpaid
@@ -2108,7 +2117,7 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
       final monthName = DateFormat('MMMM yyyy').format(month);
 
       // Calculate expected rent for this month
-      final expectedRent = tenant.rentAmount;
+      final expectedRent = BillingSnapshot.rentForMonth(tenant, month);
 
       // Calculate total paid for this month
       final monthPayments =
@@ -2154,6 +2163,11 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
                       color: AppTheme.textColor,
                     ),
                   ),
+                  IconButton(
+                      tooltip: 'WhatsApp, invoice & receipts',
+                      icon: const Icon(Icons.share_outlined),
+                      onPressed: () =>
+                          openTenantSharing(context, tenant, month: monthKey)),
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -2307,6 +2321,17 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: AppTheme.cardDecoration,
       child: ListTile(
+        onTap: () {
+          final state = context.read<ManagementBloc>().state;
+          if (state is ManagementLoaded) {
+            final tenant = state.tenants
+                .where((tenant) => tenant.tenantId == payment.tenantId)
+                .firstOrNull;
+            if (tenant != null) {
+              openTenantSharing(context, tenant, payment: payment);
+            }
+          }
+        },
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 20,
           vertical: 8,
@@ -2335,13 +2360,29 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
             color: AppTheme.secondaryTextColor,
           ),
         ),
-        trailing: Text(
-          DateFormat('dd MMM yyyy').format(payment.paidDate),
-          style: const TextStyle(
-            fontSize: 12,
-            color: AppTheme.secondaryTextColor,
+        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+          Text(
+            DateFormat('dd MMM yyyy').format(payment.paidDate),
+            style: const TextStyle(
+              fontSize: 12,
+              color: AppTheme.secondaryTextColor,
+            ),
           ),
-        ),
+          IconButton(
+              tooltip: 'Payment receipt',
+              icon: const Icon(Icons.receipt_long_outlined),
+              onPressed: () {
+                final state = context.read<ManagementBloc>().state;
+                if (state is ManagementLoaded) {
+                  final tenant = state.tenants
+                      .where((tenant) => tenant.tenantId == payment.tenantId)
+                      .firstOrNull;
+                  if (tenant != null) {
+                    openTenantSharing(context, tenant, payment: payment);
+                  }
+                }
+              })
+        ]),
       ),
     );
   }

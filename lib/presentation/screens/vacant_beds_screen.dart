@@ -6,6 +6,8 @@ import '../../data/models/bed_model.dart';
 import '../../data/models/room_model.dart';
 import '../../data/models/building_model.dart';
 import 'tenants_management_screen.dart';
+import '../widgets/sharing_actions.dart';
+import '../../data/services/status_message_service.dart';
 
 class VacantBedsScreen extends StatefulWidget {
   const VacantBedsScreen({super.key});
@@ -240,9 +242,19 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                               ),
                             ],
                           ),
-                          trailing: const Icon(
-                            Icons.person_add_outlined,
-                            color: AppTheme.primaryColor,
+                          trailing: IconButton(
+                            icon: const Icon(Icons.share_outlined,
+                                color: AppTheme.primaryColor),
+                            tooltip: 'Share vacancy on WhatsApp',
+                            onPressed: () => showWhatsAppDraft(context,
+                                message: StatusMessageService.vacancy(
+                                    building: building.buildingName,
+                                    address: building.address,
+                                    room: room.displayName(state.rooms),
+                                    bedType: bed.bedType == BedType.lower
+                                        ? 'Lower'
+                                        : 'Upper',
+                                    rent: rentAmount)),
                           ),
                           onTap: () {
                             TenantsManagementScreen.showAddTenantDialog(
