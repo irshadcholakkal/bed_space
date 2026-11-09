@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/services/google_sheets_service.dart';
 import '../../../data/repositories/sheet_repository.dart';
+import '../../../data/services/saas_service.dart';
 
 part 'sheet_event.dart';
 part 'sheet_state.dart';
@@ -43,7 +44,9 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
   ) async {
     emit(SheetLoading());
     try {
-      final sheetName = 'BedSpace_${event.userEmail}';
+      final sheetName = SaasService.userId == null
+          ? 'BedSpace_${event.userEmail}'
+          : 'Bedspace_${SaasService.userId}';
 
       // 1. Try to find existing sheet first
       String? sheetId = await GoogleSheetsService.findSheetByTitle(
@@ -57,7 +60,12 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
         sheetName,
       );
 
-      await _sheetRepository.saveSheetId(sheetId, event.userEmail);
+      final folderId = SaasService.userId == null
+          ? null
+          : await GoogleSheetsService.ensureDocumentFolder(
+              event.accessToken, SaasService.userId!);
+      await _sheetRepository.saveSheetId(sheetId, event.userEmail,
+          driveFolderId: folderId);
 
       emit(SheetCreated(sheetId: sheetId));
     } catch (e) {

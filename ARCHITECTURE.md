@@ -1,7 +1,10 @@
 # Bed Space Management SaaS Architecture
 
-Status: proposed target architecture. This document describes planned work;
-the existing application is still a Flutter client with direct Google API access.
+Status: target architecture with an initial owner-only implementation. The app
+now includes a landing page, Supabase email accounts and profiles, owner-scoped
+storage bindings, and customer-owned Google spreadsheet/folder setup. The
+organization, billing and backend Google API layers below remain planned. The
+existing accommodation application still uses direct Google API access.
 
 ## 1. Product model
 

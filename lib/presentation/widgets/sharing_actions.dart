@@ -11,6 +11,10 @@ import '../../data/models/tenant_model.dart';
 import '../../data/services/billing_pdf_service.dart';
 import '../../data/services/status_message_service.dart';
 import '../blocs/management/management_bloc.dart';
+import 'package:http/http.dart' as http;
+import '../../data/services/saas_service.dart';
+import '../../data/services/google_drive_service.dart';
+import '../../data/repositories/sheet_repository.dart';
 
 Future<void> showWhatsAppDraft(BuildContext context,
     {required String message, String phone = ''}) async {
@@ -141,14 +145,41 @@ class BillingActionsScreen extends StatefulWidget {
 
 class _BillingActionsScreenState extends State<BillingActionsScreen> {
   bool busy = false;
-  Future<void> document({PaymentModel? payment, bool print = false}) async {
+  Future<void> document(
+      {PaymentModel? payment, bool print = false, bool drive = false}) async {
     setState(() => busy = true);
     try {
       final bytes =
           await BillingPdfService.generate(widget.bill, payment: payment);
       final name =
           '${payment == null ? widget.bill.invoiceNumber : BillingSnapshot.receiptNumber(payment)}.pdf';
-      if (print) {
+      if (drive) {
+        final userId = SaasService.userId;
+        final token = await SheetRepository().getToken();
+        if (userId == null || token == null) {
+          throw StateError('Connect Google before saving documents.');
+        }
+        final binding = await SaasService.client
+            .from('storage_bindings')
+            .select('drive_folder_id')
+            .eq('user_id', userId)
+            .single();
+        final folder = binding['drive_folder_id'] as String?;
+        if (folder == null) {
+          throw StateError('Reconnect Google to set up your document folder.');
+        }
+        final client = http.Client();
+        try {
+          await GoogleDriveService(client).uploadPdf(
+              token: token, folderId: folder, filename: name, bytes: bytes);
+        } finally {
+          client.close();
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text('Saved a PDF copy to your Google Drive folder.')));
+        }
+      } else if (print) {
         await Printing.layoutPdf(name: name, onLayout: (_) async => bytes);
       } else {
         await Printing.sharePdf(bytes: bytes, filename: name);
@@ -208,6 +239,11 @@ class _BillingActionsScreenState extends State<BillingActionsScreen> {
             OutlinedButton(
                 onPressed: busy ? null : () => document(print: true),
                 child: const Text('Print invoice')),
+            if (SaasService.userId != null)
+              OutlinedButton.icon(
+                  onPressed: busy ? null : () => document(drive: true),
+                  icon: const Icon(Icons.cloud_upload_outlined),
+                  label: const Text('Save copy to Drive')),
           ]),
           const Divider(height: 32),
           Text('Payment receipts',
@@ -226,6 +262,13 @@ class _BillingActionsScreenState extends State<BillingActionsScreen> {
                           Text(
                               '${StatusMessageService.money(payment.amount)} • ${DateFormat('dd MMM yyyy').format(payment.paidDate)}'),
                           Wrap(spacing: 8, children: [
+                            if (SaasService.userId != null)
+                              TextButton(
+                                  onPressed: busy
+                                      ? null
+                                      : () => document(
+                                          payment: payment, drive: true),
+                                  child: const Text('Save copy to Drive')),
                             TextButton(
                                 onPressed: busy
                                     ? null

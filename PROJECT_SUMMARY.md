@@ -1,5 +1,15 @@
 # Bed Space Management App - Project Summary
 
+## SaaS foundation update
+
+The app now includes a responsive landing page, Supabase email registration and
+sign-in, customer profiles, and owner-only storage references protected by RLS.
+Customers connect their own Google account for a spreadsheet and private Drive
+folder. Local workspace caches are scoped by account and spreadsheet. See
+[SaaS setup](docs/SAAS_SETUP.md) for deployment requirements and current limits.
+The historical feature summary below describes the original client-only app;
+the complete SaaS backend in `ARCHITECTURE.md` is still a proposed migration.
+
 ## ✅ Project Complete
 
 A full-featured Flutter application for managing bed spaces and shared accommodations has been built from scratch with the following specifications:

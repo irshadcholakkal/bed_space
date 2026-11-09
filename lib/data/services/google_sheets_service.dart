@@ -1,8 +1,6 @@
 /// Google Sheets API Service
 library;
 
-import 'dart:developer' as developer;
-
 ///
 /// IMPORTANT DISCLAIMER:
 /// This service directly calls Google Sheets API from the client.
@@ -26,6 +24,37 @@ import '../models/payment_model.dart';
 import '../models/expense_model.dart';
 
 class GoogleSheetsService {
+  /// Locate or create a private customer-owned document folder.
+  static Future<String> ensureDocumentFolder(
+      String token, String customerId) async {
+    final name = 'Bedspace_$customerId';
+    final headers = {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json'
+    };
+    final uri = Uri.https('www.googleapis.com', '/drive/v3/files', {
+      'q':
+          "name = '$name' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+      'fields': 'files(id)',
+    });
+    final found = await http.get(uri, headers: headers);
+    if (found.statusCode != 200) {
+      throw Exception(
+          'Could not access your Google Drive folder. Reconnect Google and retry.');
+    }
+    final files = jsonDecode(found.body)['files'] as List;
+    if (files.isNotEmpty) return files.first['id'] as String;
+    final created = await http.post(
+        Uri.https('www.googleapis.com', '/drive/v3/files'),
+        headers: headers,
+        body: jsonEncode(
+            {'name': name, 'mimeType': 'application/vnd.google-apps.folder'}));
+    if (created.statusCode != 200 && created.statusCode != 201) {
+      throw Exception('Could not create your private Drive folder.');
+    }
+    return jsonDecode(created.body)['id'] as String;
+  }
+
   final String accessToken;
   final String sheetId;
 
@@ -139,39 +168,12 @@ class GoogleSheetsService {
 
         await service._initializeSheetHeaders();
 
-        // Automatically share with developer
-        await service._shareSheetWithDeveloper();
-
         return sheetId;
       } else {
         throw Exception('Failed to create sheet: ${response.body}');
       }
     } catch (e) {
       throw Exception('Error creating sheet: $e');
-    }
-  }
-
-  /// Automatically share the sheet with the developer
-  Future<void> _shareSheetWithDeveloper() async {
-    try {
-      final url =
-          'https://www.googleapis.com/drive/v3/files/$sheetId/permissions';
-      final response = await http.post(
-        Uri.parse(url),
-        headers: _headers,
-        body: jsonEncode({
-          'role': 'writer',
-          'type': 'user',
-          'emailAddress': 'irshadsh12773@gmail.com',
-        }),
-      );
-
-      if (response.statusCode != 200) {
-        developer.log(
-            'Warning: Failed to share sheet with developer: ${response.body}');
-      }
-    } catch (e) {
-      developer.log('Warning: Error sharing sheet with developer: $e');
     }
   }
 

@@ -18,7 +18,11 @@ if (process.argv.includes('--flutter-version')) {
     values.GOOGLE_CLIENT_ID = process.argv[override + 1];
   }
   // Explicit allowlist: arbitrary secrets in .env never enter the browser bundle.
-  const config = { GOOGLE_CLIENT_ID: values.GOOGLE_CLIENT_ID || '' };
+  const config = {
+    GOOGLE_CLIENT_ID: values.GOOGLE_CLIENT_ID || '',
+    SUPABASE_URL: values.SUPABASE_URL || '',
+    SUPABASE_ANON_KEY: values.SUPABASE_ANON_KEY || '',
+  };
   mkdirSync(path.join(root, '.dart_tool'), { recursive: true });
   writeFileSync(path.join(root, '.dart_tool/build-config.json'), JSON.stringify(config));
   if (!config.GOOGLE_CLIENT_ID) {

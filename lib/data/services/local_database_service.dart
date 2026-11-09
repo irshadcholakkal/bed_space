@@ -9,15 +9,23 @@ import '../models/tenant_model.dart';
 import '../models/payment_model.dart';
 import '../models/bed_model.dart';
 import '../models/expense_model.dart';
+import 'saas_service.dart';
 
 class LocalDatabaseService {
-  static final LocalDatabaseService _instance =
-      LocalDatabaseService._internal();
-  static Database? _database;
+  static final Map<String?, LocalDatabaseService> _instances = {};
+  Database? _database;
+  final String? _scope;
+  static String? _activeScope;
 
-  factory LocalDatabaseService() => _instance;
+  static Future<void> selectWorkspace(String sheetId) async {
+    final scope = '${SaasService.userId ?? 'legacy'}_$sheetId';
+    _activeScope = scope.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+  }
 
-  LocalDatabaseService._internal();
+  factory LocalDatabaseService() => _instances.putIfAbsent(
+      _activeScope, () => LocalDatabaseService._internal(_activeScope));
+
+  LocalDatabaseService._internal(this._scope);
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -26,9 +34,8 @@ class LocalDatabaseService {
   }
 
   Future<Database> _initDatabase() async {
-    final path = kIsWeb
-        ? 'bed_space.db'
-        : join(await getDatabasesPath(), 'bed_space.db');
+    final name = _scope == null ? 'bed_space.db' : 'bed_space_$_scope.db';
+    final path = kIsWeb ? name : join(await getDatabasesPath(), name);
     return await openDatabase(
       path,
       version: 7,

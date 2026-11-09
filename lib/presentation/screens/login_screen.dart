@@ -30,7 +30,7 @@ class LoginScreen extends StatelessWidget {
 
               // Big Staggered Heading
               Text(
-                'Welcome to\nBed Space.',
+                'Connect your\nGoogle workspace.',
                 style: Theme.of(context).textTheme.displayLarge?.copyWith(
                   height: 1.1,
                   color: AppTheme.textColor,
@@ -39,7 +39,7 @@ class LoginScreen extends StatelessWidget {
               const SizedBox(height: 16),
 
               Text(
-                'Manage your shared accommodation seamlessly.',
+                'Your Google account owns your accommodation spreadsheet and document folder.',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   color: AppTheme.subtitleColor,
                   fontWeight: FontWeight.w400,
@@ -75,6 +75,7 @@ class LoginScreen extends StatelessWidget {
                           const AuthCheckRequested(),
                         );
                       } else if (sheetState is SheetError) {
+                        context.read<AuthBloc>().add(const AuthSignOutRequested());
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content: Text(sheetState.message),
@@ -114,7 +115,7 @@ class LoginScreen extends StatelessWidget {
                           (authState is AuthLoading ||
                                   authState is AuthAuthenticatedWithoutSheet)
                               ? 'Initializing workspace...'
-                              : 'Continue with Google',
+                              : 'Connect Google Sheets & Drive',
                           style: const TextStyle(fontSize: 18),
                         ),
                       ),
@@ -127,7 +128,7 @@ class LoginScreen extends StatelessWidget {
               // Footer / Disclaimer
               Center(
                 child: Text(
-                  'Internal prototype • Client-side only',
+                  'Your records stay in your own Google account.',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
               ),

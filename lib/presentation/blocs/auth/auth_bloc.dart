@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/services/google_auth_service.dart';
 import '../../../data/repositories/sheet_repository.dart';
+import '../../../data/services/saas_service.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -26,6 +27,11 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
+      if (SaasService.configured &&
+          await _sheetRepository.getSheetId() == null) {
+        emit(AuthUnauthenticated());
+        return;
+      }
       // Try silent sign-in to restore session
       final accessToken = await _authService.signInSilently();
 
@@ -36,12 +42,15 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           // Cache the latest token for offline access/background sync
           await _sheetRepository.saveToken(accessToken);
 
-          if (sheetId != null) {
+          if (sheetId != null &&
+              await _sheetRepository.isSheetIdForUser(user.email)) {
             emit(AuthAuthenticated(
               userEmail: user.email,
               accessToken: accessToken,
               sheetId: sheetId,
             ));
+          } else if (SaasService.configured) {
+            emit(AuthUnauthenticated());
           } else {
             emit(AuthAuthenticatedWithoutSheet(
               userEmail: user.email,
@@ -63,6 +72,12 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _handleOfflineAuthFallback(
       Emitter<AuthState> emit, String? accessToken) async {
+    // SaaS workspaces require a current Google session; legacy cached tokens
+    // must never restore a different customer's workspace.
+    if (SaasService.configured) {
+      emit(AuthUnauthenticated());
+      return;
+    }
     final cachedEmail = await _sheetRepository.getUserEmail();
     final cachedSheetId = await _sheetRepository.getSheetId();
     final cachedToken = accessToken ?? await _sheetRepository.getToken();
@@ -100,6 +115,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           final savedSheetId = await _sheetRepository.getSheetId();
           final isForCurrentUser =
               await _sheetRepository.isSheetIdForUser(userEmail);
+
+          if (SaasService.configured &&
+              savedSheetId != null &&
+              !isForCurrentUser) {
+            await _authService.signOut();
+            throw StateError(
+                'Connect the Google account already linked to this workspace.');
+          }
 
           if (savedSheetId != null && isForCurrentUser) {
             emit(AuthAuthenticated(

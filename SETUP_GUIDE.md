@@ -2,6 +2,9 @@
 
 This guide will help you set up the Google Sign-In and Google Sheets API integration.
 
+For the landing page, customer registration and Supabase account tables, start
+with [SaaS setup](docs/SAAS_SETUP.md), then configure Google access below.
+
 ## Cloudflare Pages hosting
 
 Create a **Pages** project under **Workers & Pages**, connect your Git repository,

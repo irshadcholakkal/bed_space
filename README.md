@@ -2,6 +2,12 @@
 
 A Flutter application for managing shared accommodation / bed spaces using Google Sign-In and Google Sheets as the database.
 
+The public landing page and email registration use Supabase for customer
+accounts. Each customer connects their own Google Sheets and Drive for business
+records. Follow [SaaS setup](docs/SAAS_SETUP.md) to apply the account schema and
+configure the public build variables. The backend migration described in
+`ARCHITECTURE.md` remains planned; the accommodation API is still client-side.
+
 ## Installable web app (PWA)
 
 Build with `./scripts/build_pwa.ps1` and host `build/web` over HTTPS.
@@ -13,8 +19,8 @@ offline behavior, and deployment instructions.
 ## ⚠️ IMPORTANT DISCLAIMER
 
 **This app:**
-- Is **client-only** (no backend, no Firebase)
-- Uses Google Sign-In for authentication
+- Uses **Supabase Auth** for SaaS customer accounts
+- Uses Google Sign-In to connect customer-owned storage
 - Uses Google Sheets API directly as database
 - **Does NOT guarantee uniqueness across devices**
 - **Is NOT suitable for high-security financial data**

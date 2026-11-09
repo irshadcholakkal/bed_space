@@ -11,6 +11,7 @@ import '../models/expense_model.dart';
 import '../services/google_sheets_service.dart';
 import '../services/local_database_service.dart';
 import 'sheet_repository.dart';
+import '../services/saas_service.dart';
 
 class SyncWorker {
   static final SyncWorker _instance = SyncWorker._internal();
@@ -20,6 +21,7 @@ class SyncWorker {
   bool _isProcessing = false;
 
   Future<bool> processQueue() async {
+    if (SaasService.configured && SaasService.userId == null) return false;
     if (_isProcessing) return false;
 
     _isProcessing = true;
@@ -34,6 +36,7 @@ class SyncWorker {
       final token = await sheetRepo.getToken();
 
       if (sheetId == null || token == null) return false;
+      await LocalDatabaseService.selectWorkspace(sheetId);
 
       final localService = LocalDatabaseService();
       final sheetsService = GoogleSheetsService(
