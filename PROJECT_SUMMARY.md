@@ -2,6 +2,14 @@
 
 ## SaaS foundation update
 
+The landing page now follows the supplied Kero reference, with a landscape
+background, Hedvig Letters Serif headings and Inter text. Membership includes
+one calendar month free, AED 50/month plus other charges or AED 540/year plus
+other charges (10% annual base-price discount). Supabase controls trial and paid
+access; Paymob test-ready Edge Functions create checkout links and verify
+payment callbacks. Deployment, keys and live gateway verification are still
+required. See [Paymob setup](docs/PAYMOB_SETUP.md).
+
 The app now includes a responsive landing page, Supabase email registration and
 sign-in, customer profiles, and owner-only storage references protected by RLS.
 Customers connect their own Google account for a spreadsheet and private Drive

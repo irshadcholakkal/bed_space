@@ -53,6 +53,14 @@ flutter:
   uses-material-design: true
   assets:
     - assets/fonts/NotoSans-Regular.ttf
+    - assets/landing/landscape.jpg
+  fonts:
+    - family: HedvigLetters
+      fonts:
+        - asset: assets/fonts/HedvigLettersSerif.ttf
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter.ttf
 
 # App Launcher Icon Configuration
 flutter_launcher_icons:

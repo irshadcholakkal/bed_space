@@ -8,6 +8,10 @@ records. Follow [SaaS setup](docs/SAAS_SETUP.md) to apply the account schema and
 configure the public build variables. The backend migration described in
 `ARCHITECTURE.md` remains planned; the accommodation API is still client-side.
 
+Membership: one calendar month free, then AED 50/month + other charges, or AED
+540/year + other charges. [Paymob setup](docs/PAYMOB_SETUP.md) documents the
+subscription migration, server-only keys, test checkout and webhook endpoints.
+
 ## Installable web app (PWA)
 
 Build with `./scripts/build_pwa.ps1` and host `build/web` over HTTPS.

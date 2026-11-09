@@ -1,335 +1,576 @@
 import 'package:flutter/material.dart';
-import '../../data/services/saas_service.dart';
 import 'saas_auth_screen.dart';
 
-const _ink = Color(0xff122c2a);
-const _paper = Color(0xfff7f6f0);
-const _accent = Color(0xffd5ed9e);
+const _ink = Color(0xff172222);
+const _muted = Color(0xff687373);
+const _line = Color(0xffe0e5e3);
 
-class LandingScreen extends StatelessWidget {
+class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
-  void _open(BuildContext context, {bool register = true}) {
-    Navigator.of(context).push(MaterialPageRoute<void>(
-        builder: (_) => SaasAuthScreen(register: register)));
-  }
-
   @override
-  Widget build(BuildContext context) => Scaffold(
-        backgroundColor: _paper,
-        body: SelectionArea(
-            child: SingleChildScrollView(
-                child: Center(
-                    child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1240),
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen> {
+  final _features = GlobalKey(), _pricing = GlobalKey(), _faq = GlobalKey();
+  bool _annual = false;
+  void _scroll(GlobalKey key) => Scrollable.ensureVisible(key.currentContext!,
+      duration: const Duration(milliseconds: 550), curve: Curves.easeInOut);
+  void _open({bool register = true}) =>
+      Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => SaasAuthScreen(
+              register: register,
+              billingCycle: _annual ? 'annual' : 'monthly')));
+  @override
+  Widget build(BuildContext context) => Theme(
+      data: Theme.of(context).copyWith(
+        textTheme: Theme.of(context)
+            .textTheme
+            .apply(fontFamily: 'Inter', bodyColor: _ink, displayColor: _ink),
+        colorScheme: ColorScheme.fromSeed(seedColor: _ink, primary: _ink),
+        filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+                backgroundColor: _ink,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(7)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 19))),
+      ),
+      child: Scaffold(
+          backgroundColor: Colors.white,
+          body: SelectionArea(
+              child: SingleChildScrollView(
+                  child: Column(children: [
+            _Landscape(
+                child: _Width(
+                    child: Column(children: [
+              Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 24),
+                  child: LayoutBuilder(
+                      builder: (context, c) => Wrap(
+                              alignment: WrapAlignment.spaceBetween,
+                              runSpacing: 14,
+                              spacing: 24,
+                              crossAxisAlignment: WrapCrossAlignment.center,
+                              children: [
+                                const _Brand(light: true),
+                                Wrap(
+                                    spacing: 4,
+                                    crossAxisAlignment:
+                                        WrapCrossAlignment.center,
+                                    children: [
+                                      if (c.maxWidth > 650)
+                                        _nav('Features',
+                                            () => _scroll(_features)),
+                                      _nav('Pricing', () => _scroll(_pricing)),
+                                      if (c.maxWidth > 650)
+                                        _nav('FAQs', () => _scroll(_faq)),
+                                      _nav('Sign in',
+                                          () => _open(register: false)),
+                                      const SizedBox(width: 12),
+                                      FilledButton(
+                                          style: FilledButton.styleFrom(
+                                              backgroundColor: Colors.white,
+                                              foregroundColor: _ink,
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 18,
+                                                      vertical: 15)),
+                                          onPressed: _open,
+                                          child: const Text('Try free')),
+                                    ]),
+                              ]))),
+              const SizedBox(height: 92),
+              const _Eyebrow('A LITTLE MORE SPACE. A LOT LESS ADMIN.',
+                  light: true),
+              const SizedBox(height: 24),
+              LayoutBuilder(
+                  builder: (context, c) => Text(
+                      'A calmer way to manage\nyour shared spaces.',
+                      textAlign: TextAlign.center,
+                      style: _serif(c.maxWidth > 700 ? 76 : 43, light: true))),
+              const SizedBox(height: 24),
+              const SizedBox(
+                  width: 610,
+                  child: Text(
+                      'Buildings, beds, tenants and rent. Beautifully in sync, with business records that stay in your own Google Sheets and Drive.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Color(0xffe1e8e6),
+                          fontSize: 17,
+                          height: 1.8))),
+              const SizedBox(height: 30),
+              FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white, foregroundColor: _ink),
+                  onPressed: _open,
+                  icon: const Icon(Icons.arrow_forward, size: 17),
+                  label: const Text('Start your 1-month free trial')),
+              const SizedBox(height: 14),
+              const Text('Then AED 50/month + other charges.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Color(0xffd0d9d7), fontSize: 12)),
+              const SizedBox(height: 72),
+              const _DashboardPreview(),
+              const SizedBox(height: 48),
+            ]))),
+            _Width(
+                child: Column(children: [
+              const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 40),
+                  child: Wrap(
+                      alignment: WrapAlignment.center,
+                      spacing: 42,
+                      runSpacing: 20,
+                      children: [
+                        _Integration(
+                            Icons.table_chart_outlined, 'Google Sheets'),
+                        _Integration(Icons.folder_outlined, 'Google Drive'),
+                        _Integration(
+                            Icons.verified_user_outlined, 'Supabase accounts'),
+                        _Integration(
+                            Icons.install_mobile_outlined, 'Installable PWA'),
+                      ])),
+              const Divider(color: _line),
+              SizedBox(key: _features, height: 90),
+              const _Eyebrow('ROOM TO FOCUS ON WHAT MATTERS'),
+              const SizedBox(height: 20),
+              Text('Everything in its place.',
+                  textAlign: TextAlign.center, style: _serif(46)),
+              const SizedBox(height: 18),
+              const SizedBox(
+                  width: 590,
+                  child: Text(
+                      'From the next available bed to the next rent payment. Bring the daily details together in one thoughtful workspace.',
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(color: _muted, height: 1.8, fontSize: 16))),
+              const SizedBox(height: 44),
+              LayoutBuilder(builder: (context, c) {
+                final width =
+                    c.maxWidth > 800 ? (c.maxWidth - 40) / 3 : c.maxWidth;
+                return Wrap(spacing: 20, runSpacing: 28, children: [
+                  _Feature(
+                      width: width,
+                      icon: Icons.bed_outlined,
+                      title: 'A home for every detail',
+                      body:
+                          'Organize buildings, rooms and beds. Keep vacancy and tenant information close, without the scattered spreadsheets.',
+                      tint: const Color(0xffedf2ee),
+                      lines: const [
+                        'Buildings & rooms',
+                        'Occupied & available',
+                        'Tenant details'
+                      ]),
+                  _Feature(
+                      width: width,
+                      icon: Icons.receipt_long_outlined,
+                      title: 'Rent, without the guesswork',
+                      body:
+                          'See payments, balances and expenses. Prepare invoices and receipts, then save a copy to your own Drive.',
+                      tint: const Color(0xffeef0f5),
+                      lines: const [
+                        'Rent payments',
+                        'Invoices & receipts',
+                        'Monthly expenses'
+                      ]),
+                  _Feature(
+                      width: width,
+                      icon: Icons.cloud_outlined,
+                      title: 'Your data. Your Google.',
+                      body:
+                          'Your account lives in Supabase. Your accommodation records and documents live in your connected Google account.',
+                      tint: const Color(0xfff4f0e9),
+                      lines: const [
+                        'Customer-owned Sheets',
+                        'Private Drive folder',
+                        'No automatic sharing'
+                      ]),
+                ]);
+              }),
+              const SizedBox(height: 100),
+              Container(
+                  padding: const EdgeInsets.all(30),
+                  decoration: BoxDecoration(
+                      color: const Color(0xfff5f6f3),
+                      borderRadius: BorderRadius.circular(16)),
+                  child: Column(children: [
+                    const _Eyebrow('A SIMPLE START'),
+                    const SizedBox(height: 16),
+                    Text('Your workspace, in three steps.',
+                        textAlign: TextAlign.center, style: _serif(36)),
+                    const SizedBox(height: 30),
+                    const Wrap(
+                        spacing: 32,
+                        runSpacing: 28,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          _Step('01', 'Create your account',
+                              'Register your business and start your one-month trial.'),
+                          _Step('02', 'Connect your Google',
+                              'Set up your own spreadsheet and private document folder.'),
+                          _Step('03', 'Make yourself at home',
+                              'Add buildings, beds and tenants. Take control of the day.'),
+                        ]),
+                  ])),
+              SizedBox(key: _pricing, height: 100),
+              const _Eyebrow('ONE WORKSPACE. SIMPLE PRICING.'),
+              const SizedBox(height: 20),
+              Text('Start with a month on us.',
+                  textAlign: TextAlign.center, style: _serif(46)),
+              const SizedBox(height: 18),
+              const Text(
+                  'Get to know Bedspace. Choose the billing rhythm that suits your business.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: _muted, fontSize: 16, height: 1.8)),
+              const SizedBox(height: 28),
+              SegmentedButton<bool>(segments: const [
+                ButtonSegment(value: false, label: Text('Monthly')),
+                ButtonSegment(
+                    value: true, label: Text('Annual \u00b7 save 10%'))
+              ], selected: {
+                _annual
+              }, onSelectionChanged: (s) => setState(() => _annual = s.first)),
+              const SizedBox(height: 32),
+              ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 900),
+                  child: LayoutBuilder(builder: (context, c) {
+                    final width =
+                        c.maxWidth > 650 ? (c.maxWidth - 24) / 2 : c.maxWidth;
+                    return Wrap(spacing: 24, runSpacing: 24, children: [
+                      Container(
+                          width: width,
+                          padding: const EdgeInsets.all(28),
+                          decoration: BoxDecoration(
+                              border: Border.all(color: _line),
+                              borderRadius: BorderRadius.circular(15)),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const _Eyebrow('YOUR FIRST MONTH'),
+                                const SizedBox(height: 20),
+                                Text('Free to settle in.', style: _serif(32)),
+                                const SizedBox(height: 20),
+                                const Text('AED 0',
+                                    style: TextStyle(
+                                        fontSize: 48, letterSpacing: -2)),
+                                const Text('for one calendar month',
+                                    style: TextStyle(color: _muted)),
+                                const SizedBox(height: 24),
+                                const Divider(color: _line),
+                                const SizedBox(height: 16),
+                                for (final text in [
+                                  'Full workspace access during the trial',
+                                  'Connect your own Sheets and Drive',
+                                  'No payment required to begin'
+                                ])
+                                  _Check(text),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton(
+                                        onPressed: _open,
+                                        child: const Padding(
+                                            padding: EdgeInsets.symmetric(
+                                                vertical: 16),
+                                            child: Text('Start free trial')))),
+                              ])),
+                      Container(
+                          width: width,
+                          padding: const EdgeInsets.all(28),
+                          decoration: BoxDecoration(
+                              color: _ink,
+                              borderRadius: BorderRadius.circular(15)),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _Eyebrow(
+                                    _annual
+                                        ? 'ANNUAL \u00b7 SAVE 10%'
+                                        : 'MONTHLY MEMBERSHIP',
+                                    light: true),
+                                const SizedBox(height: 20),
+                                Text('Space to keep growing.',
+                                    style: _serif(32, light: true)),
+                                const SizedBox(height: 20),
+                                Text(_annual ? 'AED 540' : 'AED 50',
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 48,
+                                        letterSpacing: -2)),
+                                Text(
+                                    _annual
+                                        ? '/year + other charges'
+                                        : '/month + other charges',
+                                    style:
+                                        const TextStyle(color: Colors.white70)),
+                                const SizedBox(height: 12),
+                                Text(
+                                    _annual
+                                        ? 'AED 45/month equivalent. Save AED 60/year.'
+                                        : 'One month of access per renewal payment.',
+                                    style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                        height: 1.6)),
+                                const SizedBox(height: 24),
+                                const Divider(color: Colors.white24),
+                                const SizedBox(height: 16),
+                                for (final text in [
+                                  'Buildings, rooms, beds and tenants',
+                                  'Rent, expenses, invoices and receipts',
+                                  'Your Google Sheets and Drive storage'
+                                ])
+                                  _Check(text, light: true),
+                                const SizedBox(height: 24),
+                                SizedBox(
+                                    width: double.infinity,
+                                    child: FilledButton(
+                                        style: FilledButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: _ink),
+                                        onPressed: _open,
+                                        child: const Text('Get started'))),
+                              ])),
+                    ]);
+                  })),
+              const SizedBox(height: 20),
+              const SizedBox(
+                  width: 760,
+                  child: Text(
+                      'Other charges are additional to the plan price and will be shown before payment. When the trial or paid period ends, workspace access is paused until payment is confirmed. Your Google files remain in your account.',
+                      textAlign: TextAlign.center,
+                      style:
+                          TextStyle(color: _muted, fontSize: 12, height: 1.9))),
+              SizedBox(key: _faq, height: 100),
+              Text('A little more clarity.',
+                  textAlign: TextAlign.center, style: _serif(42)),
+              const SizedBox(height: 30),
+              const _Faq('How does the free trial work?',
+                  'Your trial lasts one calendar month from account creation. You can set up and use your workspace without making a payment. After the trial, a confirmed subscription payment is required to continue.'),
+              const _Faq('What if I miss a payment?',
+                  'Your workspace is paused when your trial or paid period ends without a new payment. You can still sign in to renew. Access resumes after Paymob confirms a successful payment.'),
+              const _Faq('How much is the annual plan?',
+                  'The annual base price is AED 540 plus other charges, paid for the year. That is 10% less than twelve monthly base payments of AED 50: a saving of AED 60 per year.'),
+              const _Faq('Where are my records stored?',
+                  'Supabase holds your account and subscription details. Your accommodation records stay in your connected Google Sheet; document copies are saved to your Drive folder. Pausing your subscription does not delete those Google files.'),
+              const _Faq('Can I use Bedspace on my phone?',
+                  'Yes. Bedspace is an installable Flutter PWA. Use Install app in Chrome or Add to Home Screen in Safari. Account verification, payments and Google synchronization need an internet connection.'),
+              const SizedBox(height: 90),
+            ])),
+            _Landscape(
+                child: _Width(
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 90),
+                        child: Column(children: [
+                          Text('Make room for\na simpler day.',
+                              textAlign: TextAlign.center,
+                              style: _serif(56, light: true)),
+                          const SizedBox(height: 24),
+                          const Text(
+                              'One month to find your rhythm. Your own data, every step of the way.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  color: Colors.white70, height: 1.8)),
+                          const SizedBox(height: 28),
+                          FilledButton(
+                              style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.white,
+                                  foregroundColor: _ink),
+                              onPressed: _open,
+                              child: const Text('Try Bedspace free')),
+                        ])))),
+            _Width(
+                child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 36),
+                    child: Column(children: [
+                      Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          runSpacing: 22,
+                          spacing: 40,
+                          children: [
+                            const _Brand(),
+                            Wrap(spacing: 22, children: [
+                              TextButton(
+                                  onPressed: () => _scroll(_features),
+                                  child: const Text('Features')),
+                              TextButton(
+                                  onPressed: () => _scroll(_pricing),
+                                  child: const Text('Pricing')),
+                              TextButton(
+                                  onPressed: () => _scroll(_faq),
+                                  child: const Text('FAQs'))
+                            ])
+                          ]),
+                      const Divider(height: 50, color: _line),
+                      const Text(
+                          'Bedspace by The Percentage Company. Shared spaces, thoughtfully managed.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: _muted)),
+                    ]))),
+          ])))));
+  Widget _nav(String title, VoidCallback onPressed) => TextButton(
+      onPressed: onPressed,
+      style: TextButton.styleFrom(foregroundColor: Colors.white),
+      child: Text(title));
+}
+
+TextStyle _serif(double size, {bool light = false}) => TextStyle(
+    fontFamily: 'HedvigLetters',
+    fontWeight: FontWeight.w400,
+    fontSize: size,
+    height: 1.12,
+    letterSpacing: -1.5,
+    color: light ? Colors.white : _ink);
+
+class _Width extends StatelessWidget {
+  final Widget child;
+  const _Width({required this.child});
+  @override
+  Widget build(BuildContext context) => Center(
+      child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 1220),
           child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Wrap(
-                          alignment: WrapAlignment.spaceBetween,
-                          spacing: 24,
-                          runSpacing: 16,
-                          crossAxisAlignment: WrapCrossAlignment.center,
-                          children: [
-                            const Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.bed_rounded,
-                                      size: 32, color: _ink),
-                                  SizedBox(width: 10),
-                                  Text('bedspace',
-                                      style: TextStyle(
-                                          fontSize: 25,
-                                          fontWeight: FontWeight.w800,
-                                          color: _ink)),
-                                ]),
-                            Row(mainAxisSize: MainAxisSize.min, children: [
-                              TextButton(
-                                  onPressed: () =>
-                                      _open(context, register: false),
-                                  child: const Text('Sign in')),
-                              const SizedBox(width: 12),
-                              FilledButton(
-                                  style: FilledButton.styleFrom(
-                                      backgroundColor: const Color(0xff122c2a),
-                                      foregroundColor: Colors.white),
-                                  onPressed: () => _open(context),
-                                  child: const Text('Get started')),
-                            ]),
-                          ]),
-                    ),
-                    const Divider(color: Color(0xffd9ddd4)),
-                    LayoutBuilder(builder: (context, constraints) {
-                      final wide = constraints.maxWidth > 850;
-                      final copy = Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const _Tag('BUILT FOR SHARED ACCOMMODATION'),
-                            const SizedBox(height: 26),
-                            Text('Every bed.\nEvery payment.\nOne clear view.',
-                                style: TextStyle(
-                                    fontSize: wide ? 64 : 43,
-                                    height: 1.06,
-                                    letterSpacing: -2.2,
-                                    color: _ink,
-                                    fontWeight: FontWeight.w800)),
-                            const SizedBox(height: 24),
-                            const Text(
-                                'Bring your buildings, tenants and rent together.\nKeep your business records in your own Google Sheets and Drive.',
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    height: 1.65,
-                                    color: Color(0xff52635c))),
-                            const SizedBox(height: 30),
-                            Wrap(
-                                spacing: 16,
-                                runSpacing: 14,
-                                crossAxisAlignment: WrapCrossAlignment.center,
-                                children: [
-                                  FilledButton.icon(
-                                      style: FilledButton.styleFrom(
-                                          backgroundColor:
-                                              const Color(0xff122c2a),
-                                          foregroundColor: Colors.white),
-                                      onPressed: () => _open(context),
-                                      icon: const Icon(Icons.arrow_forward,
-                                          size: 18),
-                                      label: const Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              vertical: 15),
-                                          child: Text('Create your account'))),
-                                  const Text(
-                                      'Your workspace. Your Google account.',
-                                      style:
-                                          TextStyle(fontSize: 13, color: _ink)),
-                                ]),
-                          ]);
-                      return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 54),
-                          child: wide
-                              ? Row(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                      Expanded(flex: 6, child: copy),
-                                      const SizedBox(width: 40),
-                                      const Expanded(flex: 5, child: _Preview())
-                                    ])
-                              : Column(children: [
-                                  copy,
-                                  const SizedBox(height: 36),
-                                  const _Preview()
-                                ]));
-                    }),
-                    Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(26),
-                        decoration: BoxDecoration(
-                            color: _accent,
-                            borderRadius: BorderRadius.circular(18)),
-                        child:
-                            const Wrap(spacing: 40, runSpacing: 16, children: [
-                          _Point(Icons.grid_view_rounded,
-                              'Buildings, rooms & beds'),
-                          _Point(Icons.receipt_long_outlined,
-                              'Rent & expense tracking'),
-                          _Point(Icons.cloud_outlined,
-                              'Customer-owned Google storage'),
-                        ])),
-                    const SizedBox(height: 80),
-                    const _Tag('LESS ADMIN. MORE CLARITY.'),
-                    const SizedBox(height: 18),
-                    const Text('A better rhythm for your rentals.',
-                        style: TextStyle(
-                            fontSize: 36,
-                            letterSpacing: -1,
-                            color: _ink,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 30),
-                    LayoutBuilder(builder: (context, constraints) {
-                      final width = constraints.maxWidth > 800
-                          ? (constraints.maxWidth - 40) / 3
-                          : constraints.maxWidth;
-                      return Wrap(spacing: 20, runSpacing: 20, children: [
-                        _Feature(
-                            width,
-                            '01',
-                            'Know what’s available',
-                            'Organize buildings and rooms. See occupied and vacant beds before placing your next tenant.',
-                            Icons.bed_outlined),
-                        _Feature(
-                            width,
-                            '02',
-                            'Keep rent in focus',
-                            'Track payments, balances and expenses in the same workspace as your tenants.',
-                            Icons.payments_outlined),
-                        _Feature(
-                            width,
-                            '03',
-                            'Keep your records close',
-                            'Connect your Google account for accommodation records in Sheets and a dedicated Drive folder.',
-                            Icons.folder_outlined),
-                      ]);
-                    }),
-                    const SizedBox(height: 80),
-                    Container(
-                        padding: const EdgeInsets.all(32),
-                        decoration: BoxDecoration(
-                            color: _ink,
-                            borderRadius: BorderRadius.circular(24)),
-                        child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                  'The software is ours.\nThe business data is yours.',
-                                  style: TextStyle(
-                                      fontSize: 34,
-                                      height: 1.2,
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w700)),
-                              const SizedBox(height: 20),
-                              const Text(
-                                  'Supabase manages your account and business profile. Your connected Google account holds your accommodation spreadsheet and document folder. No automatic sharing with the developer.',
-                                  style: TextStyle(
-                                      color: Color(0xffd7e3de),
-                                      fontSize: 17,
-                                      height: 1.7)),
-                              const SizedBox(height: 28),
-                              const Wrap(
-                                  spacing: 28,
-                                  runSpacing: 20,
-                                  children: [
-                                    _Step('1', 'Register',
-                                        'Create your business account.'),
-                                    _Step('2', 'Connect Google',
-                                        'Authorize your own Sheets and Drive.'),
-                                    _Step('3', 'Start managing',
-                                        'Set up buildings, beds and tenants.'),
-                                  ]),
-                            ])),
-                    const SizedBox(height: 72),
-                    const Text('A few things to know',
-                        style: TextStyle(
-                            fontSize: 30,
-                            color: _ink,
-                            fontWeight: FontWeight.w700)),
-                    const SizedBox(height: 16),
-                    const ExpansionTile(
-                        title: Text('Where does my data live?'),
-                        children: [
-                          Padding(
-                              padding: EdgeInsets.all(18),
-                              child: Text(
-                                  'Your identity and business profile are stored in Supabase. Accommodation records are stored in your connected Google Sheet. Your Drive folder is reserved for business documents. Temporary workspace copies are cached on your device.'))
-                        ]),
-                    const ExpansionTile(
-                        title: Text('Do I need a Google account?'),
-                        children: [
-                          Padding(
-                              padding: EdgeInsets.all(18),
-                              child: Text(
-                                  'Yes. Create your Bedspace account with email, then connect the Google account that will own your spreadsheet and Drive folder.'))
-                        ]),
-                    const ExpansionTile(
-                        title: Text('Can I install it on my phone?'),
-                        children: [
-                          Padding(
-                              padding: EdgeInsets.all(18),
-                              child: Text(
-                                  'Yes. Bedspace is a progressive web app. Use Install app in Chrome or Add to Home Screen in Safari. Google authorization and synchronization need an internet connection.'))
-                        ]),
-                    const SizedBox(height: 56),
-                    Center(
-                        child: Column(children: [
-                      const Text('Make room for simpler management.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              fontSize: 32,
-                              color: _ink,
-                              fontWeight: FontWeight.w700)),
-                      const SizedBox(height: 24),
-                      FilledButton(
-                          style: FilledButton.styleFrom(
-                              backgroundColor: const Color(0xff122c2a),
-                              foregroundColor: Colors.white),
-                          onPressed: () => _open(context),
-                          child: const Padding(
-                              padding: EdgeInsets.all(12),
-                              child: Text('Get started with Bedspace'))),
-                      if (!SaasService.configured)
-                        const Padding(
-                            padding: EdgeInsets.only(top: 16),
-                            child: Text(
-                                'Account registration opens when the service is configured.',
-                                textAlign: TextAlign.center)),
-                    ])),
-                    const SizedBox(height: 64),
-                    const Divider(),
-                    const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 24),
-                        child: Text(
-                            'BEDSPACE  /  Shared accommodation, thoughtfully managed.',
-                            style: TextStyle(color: Color(0xff52635c)))),
-                  ])),
-        )))),
-      );
+              child: SizedBox(width: double.infinity, child: child))));
 }
 
-class _Tag extends StatelessWidget {
-  final String text;
-  const _Tag(this.text);
+class _Landscape extends StatelessWidget {
+  final Widget child;
+  const _Landscape({required this.child});
   @override
-  Widget build(BuildContext context) => Text(text,
-      style: const TextStyle(
-          color: Color(0xff647445),
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.8));
+  Widget build(BuildContext context) => Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+          color: Color(0xff172b30),
+          image: DecorationImage(
+              image: AssetImage('assets/landing/landscape.jpg'),
+              fit: BoxFit.cover)),
+      child: Container(
+          decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                Color(0x44102326),
+                Color(0x55102326),
+                Color(0xdd0b181b)
+              ])),
+          child: child));
 }
 
-class _Point extends StatelessWidget {
-  final IconData icon;
-  final String text;
-  const _Point(this.icon, this.text);
+class _Brand extends StatelessWidget {
+  final bool light;
+  const _Brand({this.light = false});
   @override
   Widget build(BuildContext context) =>
       Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: _ink),
+        Icon(Icons.bed_outlined, color: light ? Colors.white : _ink, size: 28),
         const SizedBox(width: 10),
-        Flexible(
-            child: Text(text,
-                style:
-                    const TextStyle(color: _ink, fontWeight: FontWeight.w600)))
+        Text('bedspace',
+            style: TextStyle(
+                fontFamily: 'HedvigLetters',
+                fontSize: 29,
+                color: light ? Colors.white : _ink))
       ]);
+}
+
+class _Eyebrow extends StatelessWidget {
+  final String text;
+  final bool light;
+  const _Eyebrow(this.text, {this.light = false});
+  @override
+  Widget build(BuildContext context) => Text(text,
+      textAlign: TextAlign.center,
+      style: TextStyle(
+          fontSize: 10,
+          letterSpacing: 2,
+          height: 1.5,
+          fontWeight: FontWeight.w500,
+          color: light ? Colors.white70 : _muted));
+}
+
+class _Integration extends StatelessWidget {
+  final IconData icon;
+  final String text;
+  const _Integration(this.icon, this.text);
+  @override
+  Widget build(BuildContext context) =>
+      Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, size: 20, color: _muted),
+        const SizedBox(width: 9),
+        Text(text, style: const TextStyle(fontSize: 13, color: _muted))
+      ]);
+}
+
+class _Check extends StatelessWidget {
+  final String text;
+  final bool light;
+  const _Check(this.text, {this.light = false});
+  @override
+  Widget build(BuildContext context) => Padding(
+      padding: const EdgeInsets.symmetric(vertical: 7),
+      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(Icons.check, size: 16, color: light ? Colors.white70 : _muted),
+        const SizedBox(width: 10),
+        Expanded(
+            child: Text(text,
+                style: TextStyle(
+                    color: light ? Colors.white70 : _muted,
+                    fontSize: 12,
+                    height: 1.6)))
+      ]));
 }
 
 class _Feature extends StatelessWidget {
   final double width;
-  final String number, title, body;
   final IconData icon;
-  const _Feature(this.width, this.number, this.title, this.body, this.icon);
+  final String title, body;
+  final Color tint;
+  final List<String> lines;
+  const _Feature(
+      {required this.width,
+      required this.icon,
+      required this.title,
+      required this.body,
+      required this.tint,
+      required this.lines});
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => SizedBox(
       width: width,
-      padding: const EdgeInsets.all(26),
-      decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: const Color(0xffe1e4db))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          Icon(icon, color: _ink, size: 30),
-          Text(number, style: const TextStyle(color: Color(0xff84917a)))
-        ]),
-        const SizedBox(height: 30),
-        Text(title,
-            style: const TextStyle(
-                fontSize: 22, color: _ink, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 12),
+        Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(26),
+            decoration: BoxDecoration(
+                color: tint, borderRadius: BorderRadius.circular(14)),
+            child:
+                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(icon, size: 30, color: _ink),
+              const SizedBox(height: 24),
+              for (final line in lines)
+                Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 9),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: .8),
+                        borderRadius: BorderRadius.circular(6)),
+                    child: Row(children: [
+                      const Icon(Icons.check_circle_outline,
+                          size: 14, color: _muted),
+                      const SizedBox(width: 10),
+                      Expanded(
+                          child:
+                              Text(line, style: const TextStyle(fontSize: 12)))
+                    ]))
+            ])),
+        const SizedBox(height: 23),
+        Text(title, style: _serif(27)),
+        const SizedBox(height: 14),
         Text(body,
-            style: const TextStyle(height: 1.7, color: Color(0xff52635c))),
+            style: const TextStyle(fontSize: 14, color: _muted, height: 1.85)),
       ]));
 }
 
@@ -338,98 +579,117 @@ class _Step extends StatelessWidget {
   const _Step(this.n, this.title, this.body);
   @override
   Widget build(BuildContext context) => SizedBox(
-      width: 260,
+      width: 290,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('$n / $title',
-            style: const TextStyle(
-                color: _accent, fontSize: 18, fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        Text(body, style: const TextStyle(color: Colors.white70, height: 1.5)),
+        Text(n, style: const TextStyle(color: _muted, fontSize: 11)),
+        const SizedBox(height: 14),
+        Text(title, style: _serif(25)),
+        const SizedBox(height: 12),
+        Text(body,
+            style: const TextStyle(color: _muted, height: 1.8, fontSize: 13))
       ]));
 }
 
-class _Preview extends StatelessWidget {
-  const _Preview();
+class _Faq extends StatelessWidget {
+  final String title, body;
+  const _Faq(this.title, this.body);
   @override
-  Widget build(BuildContext context) => Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-          color: const Color(0xffe7ebdf),
-          borderRadius: BorderRadius.circular(28)),
+  Widget build(BuildContext context) => ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 820),
+      child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          title: Text(title, style: const TextStyle(fontSize: 15)),
+          children: [
+            Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 30, 24),
+                child: Text(body,
+                    style: const TextStyle(
+                        color: _muted, height: 1.9, fontSize: 14)))
+          ]));
+}
+
+class _DashboardPreview extends StatelessWidget {
+  const _DashboardPreview();
+  @override
+  Widget build(BuildContext context) => ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 920),
       child: Container(
-          padding: const EdgeInsets.all(22),
+          padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(18)),
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Row(children: [
-              Icon(Icons.dashboard_outlined, color: _ink),
-              SizedBox(width: 8),
-              Expanded(
-                  child: Text('Workspace overview',
-                      style: TextStyle(fontWeight: FontWeight.w700))),
-              Text('DEMO',
-                  style: TextStyle(fontSize: 10, color: Color(0xff647445)))
-            ]),
-            const SizedBox(height: 28),
-            const Text('A good day to be in control.',
-                style: TextStyle(
-                    fontSize: 23, fontWeight: FontWeight.w700, color: _ink)),
-            const SizedBox(height: 24),
-            const Row(children: [
-              Expanded(child: _Metric('Total beds', '48')),
-              SizedBox(width: 12),
-              Expanded(child: _Metric('Occupied', '42'))
-            ]),
-            const SizedBox(height: 24),
-            const Text('Room availability',
-                style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(height: 14),
-            for (final row in [
-              ('Room 101', 'Full', 1.0),
-              ('Room 102', '2 available', 0.5),
-              ('Room 103', '1 available', 0.75)
-            ])
-              Padding(
-                  padding: const EdgeInsets.only(bottom: 18),
-                  child: Column(children: [
-                    Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Flexible(child: Text(row.$1)),
-                          Flexible(
-                              child: Text(row.$2,
-                                  style: const TextStyle(
-                                      fontSize: 12, color: Color(0xff647445))))
-                        ]),
-                    const SizedBox(height: 8),
-                    LinearProgressIndicator(
-                        value: row.$3,
-                        minHeight: 7,
-                        color: _ink,
-                        backgroundColor: _accent,
-                        borderRadius: BorderRadius.circular(5)),
-                  ])),
-            const Divider(),
-            const SizedBox(height: 8),
-            const _Point(
-                Icons.check_circle_outline, 'Connected to your Google Sheets'),
-          ])));
-}
-
-class _Metric extends StatelessWidget {
-  final String label, value;
-  const _Metric(this.label, this.value);
-  @override
-  Widget build(BuildContext context) => Container(
-      padding: const EdgeInsets.all(16),
-      decoration:
-          BoxDecoration(color: _paper, borderRadius: BorderRadius.circular(12)),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: const TextStyle(fontSize: 12)),
-        const SizedBox(height: 8),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 32, fontWeight: FontWeight.w700, color: _ink))
-      ]));
+              color: Colors.white.withValues(alpha: .15),
+              borderRadius: BorderRadius.circular(17),
+              border: Border.all(color: Colors.white24)),
+          child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                  color: const Color(0xfffbfcfa),
+                  borderRadius: BorderRadius.circular(10)),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(children: [
+                      Icon(Icons.dashboard_outlined, size: 18),
+                      SizedBox(width: 8),
+                      Expanded(
+                          child: Text('Your workspace',
+                              style: TextStyle(fontSize: 12))),
+                      Text('ILLUSTRATIVE DEMO',
+                          style: TextStyle(
+                              fontSize: 8, letterSpacing: 1, color: _muted))
+                    ]),
+                    const Divider(height: 30, color: _line),
+                    Text('A clear view of the day.', style: _serif(30)),
+                    const SizedBox(height: 22),
+                    LayoutBuilder(
+                        builder: (context, c) =>
+                            Wrap(spacing: 14, runSpacing: 14, children: [
+                              for (final item in [
+                                ('Total beds', '48'),
+                                ('Occupied', '42'),
+                                ('Available', '6')
+                              ])
+                                Container(
+                                    width: c.maxWidth > 500
+                                        ? (c.maxWidth - 28) / 3
+                                        : c.maxWidth,
+                                    padding: const EdgeInsets.all(18),
+                                    decoration: BoxDecoration(
+                                        color: const Color(0xffeff3ef),
+                                        borderRadius: BorderRadius.circular(7)),
+                                    child: Row(children: [
+                                      Expanded(
+                                          child: Text(item.$1,
+                                              style: const TextStyle(
+                                                  fontSize: 12,
+                                                  color: _muted))),
+                                      Text(item.$2, style: _serif(28))
+                                    ]))
+                            ])),
+                    const SizedBox(height: 22),
+                    const Text('Room availability',
+                        style: TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.w600)),
+                    const SizedBox(height: 16),
+                    for (final room in [
+                      ('Room 101', 1.0),
+                      ('Room 102', .5),
+                      ('Room 103', .75)
+                    ])
+                      Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(children: [
+                            SizedBox(
+                                width: 80,
+                                child: Text(room.$1,
+                                    style: const TextStyle(
+                                        fontSize: 11, color: _muted))),
+                            Expanded(
+                                child: LinearProgressIndicator(
+                                    value: room.$2,
+                                    minHeight: 5,
+                                    color: const Color(0xff718f80),
+                                    backgroundColor: const Color(0xffe4eae6),
+                                    borderRadius: BorderRadius.circular(3)))
+                          ])),
+                  ]))));
 }

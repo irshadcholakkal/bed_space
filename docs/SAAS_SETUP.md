@@ -4,6 +4,10 @@ The Flutter app now opens on a public landing page. Customers create an email
 account in Supabase, confirm their email, sign in, and connect Google Sheets
 and Drive. No separate landing-page deployment is needed.
 
+For one-month trials, AED 50 monthly / AED 540 annual pricing, membership access
+and Paymob test payments, also follow [Paymob setup](PAYMOB_SETUP.md).
+Apply its subscription migration before deploying the updated app.
+
 ## Supabase
 
 1. Create a Supabase project. In its SQL editor, run
@@ -56,7 +60,8 @@ public key. Confirm both spreadsheets and folders are private in Google Drive.
 Sign out and switch accounts in the same browser to check workspace isolation.
 Reload and reconnect Google to verify the existing spreadsheet is reused.
 
-This is the initial owner-only SaaS flow. Billing, staff invitations, account
+This is the initial owner-only SaaS flow. Paymob checkout and subscription access
+are prepared separately in `PAYMOB_SETUP.md`. Automatic card debits, staff invitations, account
 deletion, password recovery UI, backend Google refresh-token management and
 automatic Drive document uploads remain follow-up work. The direct Google API
 path remains client-side; this does not implement the full backend architecture

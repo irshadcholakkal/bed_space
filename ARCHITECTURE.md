@@ -3,7 +3,9 @@
 Status: target architecture with an initial owner-only implementation. The app
 now includes a landing page, Supabase email accounts and profiles, owner-scoped
 storage bindings, and customer-owned Google spreadsheet/folder setup. The
-organization, billing and backend Google API layers below remain planned. The
+organization and backend Google API layers below remain planned. Owner-level
+trial entitlements and Paymob test-ready renewal checkout/webhooks are now
+implemented; merchant keys and deployment are documented in `docs/PAYMOB_SETUP.md`. The
 existing accommodation application still uses direct Google API access.
 
 ## 1. Product model

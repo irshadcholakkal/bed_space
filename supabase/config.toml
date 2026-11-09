@@ -1,0 +1,7 @@
+[functions.create-paymob-checkout]
+verify_jwt = false
+# The handler validates the user's JWT through Supabase Auth (supports publishable keys).
+
+[functions.paymob-webhook]
+verify_jwt = false
+# Paymob callbacks are authenticated by HMAC, not a Supabase user session.

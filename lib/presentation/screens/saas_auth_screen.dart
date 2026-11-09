@@ -4,7 +4,9 @@ import '../../data/services/saas_service.dart';
 
 class SaasAuthScreen extends StatefulWidget {
   final bool register;
-  const SaasAuthScreen({super.key, required this.register});
+  final String billingCycle;
+  const SaasAuthScreen(
+      {super.key, required this.register, this.billingCycle = 'monthly'});
   @override
   State<SaasAuthScreen> createState() => _SaasAuthScreenState();
 }
@@ -45,7 +47,8 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                 Uri.base.replace(path: '/', query: '', fragment: '').toString(),
             data: {
               'display_name': _name.text.trim(),
-              'business_name': _business.text.trim()
+              'business_name': _business.text.trim(),
+              'preferred_billing': widget.billingCycle,
             });
         if (result.session == null) {
           if (mounted) {
