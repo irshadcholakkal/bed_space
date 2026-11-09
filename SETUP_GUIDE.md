@@ -24,6 +24,19 @@ See [PWA deployment instructions](docs/PWA.md) for custom domains, preview
 authorization, installation and offline checks, and the
 [Cloudflare build configuration reference](https://developers.cloudflare.com/pages/configuration/build-configuration/).
 
+## Hosting with an existing Cloudflare Worker
+
+The repository also supports a static-assets Worker named `bed-space` through
+`wrangler.json`. Keep **Build command** `bash scripts/cloudflare-build.sh`,
+**Deploy command** `npx wrangler deploy`, and **Root directory** `/`.
+Wrangler uploads only the compiled `build/web` folder.
+
+Set `GOOGLE_CLIENT_ID`, `NODE_VERSION=22`, and `SKIP_DEPENDENCY_INSTALL=true`
+under **Builds > Variables and secrets**, then deploy the updated repository.
+Runtime variables and bindings are unnecessary for this static app; the Google
+client ID is embedded at build time. Keep the custom domain attached to this
+Worker and authorize its exact HTTPS origin in Google Cloud Console.
+
 ## Google Cloud setup for the Cloudflare Pages PWA
 
 1. Create/select your project in https://console.cloud.google.com/.
