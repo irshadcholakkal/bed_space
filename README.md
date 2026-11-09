@@ -5,6 +5,8 @@ A Flutter application for managing shared accommodation / bed spaces using Googl
 ## Installable web app (PWA)
 
 Build with `./scripts/build_pwa.ps1` and host `build/web` over HTTPS.
+For Cloudflare Pages, use build command `bash scripts/cloudflare-build.sh`,
+framework preset **None**, and build output directory `build/web`.
 See [PWA setup](docs/PWA.md) for Google web sign-in configuration, installation,
 offline behavior, and deployment instructions.
 

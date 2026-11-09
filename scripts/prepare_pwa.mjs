@@ -13,7 +13,7 @@ async function list(directory, prefix = '') {
   return files.flat();
 }
 const files = (await list(root)).filter((file) =>
-  !['pwa-sw.js', 'pwa-precache.json', 'flutter_service_worker.js'].includes(file) &&
+  !['pwa-sw.js', 'pwa-precache.json', 'flutter_service_worker.js', '_headers', '_redirects'].includes(file) &&
   !file.endsWith('.map')).sort();
 for (const required of ['index.html', 'manifest.json', 'flutter_bootstrap.js',
   'main.dart.js', 'sqlite3.wasm', 'sqflite_sw.js']) {

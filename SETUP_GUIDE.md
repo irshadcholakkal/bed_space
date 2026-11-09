@@ -2,6 +2,73 @@
 
 This guide will help you set up the Google Sign-In and Google Sheets API integration.
 
+## Cloudflare Pages hosting
+
+Create a **Pages** project under **Workers & Pages**, connect your Git repository,
+and use these build settings:
+
+| Setting | Value |
+|---|---|
+| Framework preset | None |
+| Root directory | Repository root, or the folder containing `pubspec.yaml` |
+| Build command | `bash scripts/cloudflare-build.sh` |
+| Build output directory | `build/web` |
+| Build environment variables | `NODE_VERSION=22`, `SKIP_DEPENDENCY_INSTALL=true`, and `GOOGLE_CLIENT_ID` |
+
+Set the environment variables for Production and Preview as needed. Use the
+Google **Web application** client ID described below, then deploy. Changes to
+`GOOGLE_CLIENT_ID` require a new build. A Git-integrated Pages project does not
+need a deploy command; if asked for a Workers deploy command, select Pages.
+
+See [PWA deployment instructions](docs/PWA.md) for custom domains, preview
+authorization, installation and offline checks, and the
+[Cloudflare build configuration reference](https://developers.cloudflare.com/pages/configuration/build-configuration/).
+
+## Google Cloud setup for the Cloudflare Pages PWA
+
+1. Create/select your project in https://console.cloud.google.com/.
+2. In **APIs & Services > Library**, enable **Google Sheets API** and
+   **Google Drive API**.
+3. Open **Google Auth Platform**. Set up **Branding** with the app name,
+   support email and contact email. In **Audience**, choose **External** for
+   personal Gmail accounts and add your login email under **Test users** while
+   the app is in Testing. Internal is only for a Google Workspace organization.
+4. In **Data Access**, add the scopes requested by this app:
+   `openid`, `email`, `profile`,
+   `https://www.googleapis.com/auth/spreadsheets`, and
+   `https://www.googleapis.com/auth/drive.file`.
+5. In **Clients > Create client**, choose **Web application**. Add these
+   **Authorized JavaScript origins**, replacing the deployment example:
+   - `http://localhost`
+   - `http://localhost:3000`
+   - `https://YOUR-PROJECT.pages.dev`
+   - Your custom HTTPS domain, if used.
+   Origins have no path or trailing slash. No redirect URI is needed for this
+   app's browser popup/token sign-in flow.
+6. Copy the **Client ID** into the root `.env`:
+   ```dotenv
+   GOOGLE_CLIENT_ID=YOUR_CLIENT_ID.apps.googleusercontent.com
+   FLUTTER_VERSION=3.47.2
+   ```
+   This browser app does not use a client secret, API key or service-account
+   JSON. No change in `lib/main.dart` is required.
+7. For local Chrome testing, use PowerShell from the project root:
+   ```powershell
+   node scripts/load-build-env.mjs
+   flutter run -d chrome --web-port 3000 --dart-define-from-file=.dart_tool/build-config.json
+   ```
+8. In **Cloudflare Pages > Project > Settings > Environment Variables**, add the same
+   `GOOGLE_CLIENT_ID` for Production (and Preview if required), then redeploy.
+   The local `.env` is intentionally not uploaded. Authorize each preview
+   origin separately if you test Google login on preview deployments.
+9. Open the app, sign in with an allowed test user and grant Sheets/Drive
+   access. When changing to a different Cloud project, its `drive.file`
+   authorization does not automatically give access to files created by the
+   previous OAuth app; back up existing data before switching projects.
+
+For access beyond test users, review Google's publishing/verification
+requirements for the requested scopes in Google Auth Platform.
+
 ## Prerequisites
 
 - Flutter SDK installed
@@ -32,7 +99,7 @@ Enable the following APIs in your Google Cloud project:
 1. Go to **APIs & Services** > **Credentials**
 2. Click **Create Credentials** > **OAuth client ID**
 3. If prompted, configure the OAuth consent screen first:
-   - User type: **Internal** (for personal use)
+   - User type: **External** for personal Gmail; **Internal** only for Workspace organizations
    - Fill in required fields
 4. Create OAuth client ID:
    - Application type: **Android**
@@ -66,7 +133,7 @@ Enable the following APIs in your Google Cloud project:
 ### 1.4 Configure OAuth Consent Screen
 
 1. Go to **APIs & Services** > **OAuth consent screen**
-2. User Type: **Internal** (for personal use) or **External** (if you need to test with other accounts)
+2. User Type: **External** for personal Gmail accounts, or **Internal** for users within a Google Workspace organization
 3. Fill in required information:
    - App name: Bed Space Management
    - User support email: Your email

@@ -13,6 +13,7 @@
 library;
 
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter/foundation.dart';
 
 class GoogleAuthService {
   static const List<String> _scopes = [
@@ -23,7 +24,7 @@ class GoogleAuthService {
     'https://www.googleapis.com/auth/drive.file',
   ];
 
-  final GoogleSignIn _googleSignIn = GoogleSignIn(
+  late final GoogleSignIn _googleSignIn = GoogleSignIn(
     clientId: const String.fromEnvironment('GOOGLE_CLIENT_ID').isEmpty
         ? null
         : const String.fromEnvironment('GOOGLE_CLIENT_ID'),
@@ -33,6 +34,10 @@ class GoogleAuthService {
   /// Sign in with Google
   /// Returns access token for Google Sheets API
   Future<String?> signIn() async {
+    if (kIsWeb && const String.fromEnvironment('GOOGLE_CLIENT_ID').isEmpty) {
+      throw StateError('Google sign-in is not configured. Set GOOGLE_CLIENT_ID '
+          'in Cloudflare Pages Environment Variables to your web OAuth client ID, then redeploy.');
+    }
     try {
       final GoogleSignInAccount? account = await _googleSignIn.signIn();
       if (account == null) return null;
@@ -46,6 +51,9 @@ class GoogleAuthService {
 
   /// Attempt silent sign-in (no UI). Returns access token if successful.
   Future<String?> signInSilently() async {
+    if (kIsWeb && const String.fromEnvironment('GOOGLE_CLIENT_ID').isEmpty) {
+      return null;
+    }
     try {
       final GoogleSignInAccount? account = await _googleSignIn.signInSilently();
       if (account == null) return null;

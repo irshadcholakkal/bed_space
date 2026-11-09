@@ -33,6 +33,15 @@ migrate_working_dir/
 /build/
 /coverage/
 .vercel/
+.wrangler/
+.env
+.env.*
+!.env.example
+
+# Local Google OAuth and platform credentials
+**/google-services.json
+**/GoogleService-Info.plist
+**/client_secret*.json
 
 # Symbolication related
 app.*.symbols

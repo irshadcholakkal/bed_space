@@ -1,28 +1,39 @@
 # Bed Space PWA
 
-## Deploy on Vercel
+## Deploy on Cloudflare Pages
 
-1. Push the project to your Git repository and import it in Vercel.
-2. Set **Root Directory** to the folder containing `pubspec.yaml` and
-   `vercel.json` (use `bed_space` if the repository contains this app in that folder).
-3. Choose the **Other** framework preset. The checked-in configuration sets
-   the build command to `bash scripts/vercel-build.sh` and output to `build/web`.
-   No Node package installation is required.
+1. Push the project to your Git repository and import it in Cloudflare Pages.
+2. Create a **Pages** project under **Workers & Pages** and connect the Git
+   repository. Set **Root directory** to the folder containing `pubspec.yaml`
+   (leave blank if it is at the repository root).
+3. Set **Framework preset: None**, **Build command:
+   `bash scripts/cloudflare-build.sh`**, and **Build output directory:
+   `build/web`**. No deploy command is needed for a Git-integrated Pages project.
+   If the setup asks for a Workers deploy command, switch to creating a Pages
+   project. No Node package installation is required.
 4. Add `GOOGLE_CLIENT_ID` in **Settings > Environment Variables**, using a
    Google OAuth **Web application** client ID. Enable it for Production and,
    if needed, Preview. This is a public client ID, not a client secret.
+   Without this variable the PWA still builds, but Google sign-in is unavailable.
+   Redeploy after adding or changing the variable because it is compiled into
+   the Flutter web bundle.
+   Set `NODE_VERSION=22` and `SKIP_DEPENDENCY_INSTALL=true`; the script installs
+   Flutter dependencies itself. Configure variables for Production and Preview
+   separately as needed.
 5. Deploy. The script installs Flutter 3.47.2, restores locked dependencies,
    builds the web app and generates its PWA cache manifest. Optionally set
    `FLUTTER_VERSION` to another exact stable version after testing it locally.
-6. In Google Cloud Console, add `https://YOUR-PROJECT.vercel.app` and your
+6. In Google Cloud Console, add `https://YOUR-PROJECT.pages.dev` and your
    custom domain, if any, under the OAuth client's **Authorized JavaScript
    origins**. Each origin is exact; arbitrary preview URLs will not inherit
    authorization. Use your stable production domain for installed PWAs.
 
-Vercel serves the deployment over HTTPS. The configuration revalidates static
-files, prevents service-worker caching by the HTTP cache, sets the WASM MIME
-type and routes extensionless app URLs to `index.html`. Missing `.js`, `.wasm`
-and other file requests remain 404s rather than receiving HTML.
+Cloudflare Pages serves the deployment over HTTPS. `web/_headers` is copied
+into the output to revalidate static files and set WASM/manifest MIME types.
+Pages' built-in SPA fallback serves `index.html` for unmatched paths because
+the build has no top-level `404.html`. Do not add a blanket `_redirects` rule.
+Missing files may also receive the SPA fallback, so check resource MIME types
+when diagnosing a failed asset request.
 
 After deployment, open the production URL in Chrome/Edge and select **Install
 app**, or use Safari's **Share > Add to Home Screen**. Check Google sign-in,
@@ -31,9 +42,21 @@ update, close all app windows/tabs and reopen. Browser printing may load its
 PDF renderer online; PDF downloads use the bundled generator.
 
 The configuration prepares hosting; connecting the repository, setting the
-OAuth client ID and deploying are done in your Vercel account.
+OAuth client ID and deploying are done in your Cloudflare Pages account.
 
 ## Local release build
+
+Copy `.env.example` to `.env` and fill in `GOOGLE_CLIENT_ID`. Both build scripts
+load `.env` and optional `.env.local` automatically (Node.js 22+ required).
+Precedence: explicit PowerShell client-ID argument, process/Cloudflare Pages environment,
+`.env.local`, then `.env`. Only the public Google client ID is passed to Flutter;
+other keys are never included in the PWA. The files are excluded from Git and
+live outside `build/web`, the only uploaded directory. In Cloudflare Pages, set
+the `.env` values through **Settings >
+Environment Variables** instead, then redeploy. Never upload `.env` into `web/`.
+
+There is no backend client secret in this app. OAuth access tokens and Sheet IDs
+are maintained for each signed-in user rather than shared through `.env`.
 
 Build the installable release from the project root (Flutter and Node.js required):
 
