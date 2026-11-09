@@ -221,6 +221,21 @@ flutter run
 
 ## Troubleshooting
 
+### Cloudflare Pages shows a white screen
+
+In the Pages project's build settings, use **Build command**
+`bash scripts/cloudflare-build.sh` and **Build output directory** `build/web`.
+The source folder `web` is not deployable: its HTML and bootstrap JavaScript
+contain placeholders that Flutter replaces during a release build.
+Set the root directory to the folder containing `pubspec.yaml`, then trigger
+a new deployment from the latest commit.
+
+After deployment, check that `/main.dart.js` returns JavaScript and that the
+page source has `<base href="/">` rather than `$FLUTTER_BASE_HREF`.
+For Direct Upload, run `./scripts/build_pwa.ps1` locally and upload the
+contents of `build/web`. If an installed PWA still shows the old deployment,
+clear this site's browser storage and reopen it.
+
 ### Google Sign-In Fails
 
 1. **Check SHA-1 fingerprint**: Ensure you've added the correct SHA-1 fingerprint in Google Cloud Console
