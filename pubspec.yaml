@@ -54,6 +54,8 @@ flutter:
   assets:
     - assets/fonts/NotoSans-Regular.ttf
     - assets/landing/landscape.jpg
+    - assets/landing/hills.png
+    - assets/logo.png
   fonts:
     - family: HedvigLetters
       fonts:
@@ -61,6 +63,9 @@ flutter:
     - family: Inter
       fonts:
         - asset: assets/fonts/Inter.ttf
+    - family: GeistMono
+      fonts:
+        - asset: assets/fonts/GeistMono.ttf
 
 # App Launcher Icon Configuration
 flutter_launcher_icons:
