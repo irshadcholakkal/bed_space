@@ -17,6 +17,9 @@ subscription migration, server-only keys, test checkout and webhook endpoints.
 Build with `./scripts/build_pwa.ps1` and host `build/web` over HTTPS.
 For Cloudflare Pages, use build command `bash scripts/cloudflare-build.sh`,
 framework preset **None**, and build output directory `build/web`.
+For Cloudflare Workers, set **Build command** to `bash scripts/cloudflare-build.sh`
+and **Deploy command** to `npx wrangler deploy` in **Settings > Builds**.
+The build must finish before Wrangler can upload `build/web`.
 See [PWA setup](docs/PWA.md) for Google web sign-in configuration, installation,
 offline behavior, and deployment instructions.
 

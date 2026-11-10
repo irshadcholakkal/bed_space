@@ -1,5 +1,35 @@
 # Bed Space PWA
 
+## Deploy on Cloudflare Workers
+
+The repository's `wrangler.json` serves static files from `build/web`. Flutter
+must generate that directory before Wrangler deploys it; it is intentionally
+excluded from Git.
+
+In **Workers & Pages > your Worker > Settings > Builds**, set:
+
+| Setting | Value |
+| --- | --- |
+| Root directory | Folder containing `pubspec.yaml` and `wrangler.json` (repository root for this project) |
+| Build command | `bash scripts/cloudflare-build.sh` |
+| Deploy command | `npx wrangler deploy` |
+
+Set build variables `NODE_VERSION=22`, `SUPABASE_URL`, and `SUPABASE_ANON_KEY`.
+Enable Google in Supabase and configure callback URLs as described in the
+[single sign-in setup](../README.md#single-google-sign-in-supabase-deployments).
+`GOOGLE_CLIENT_ID` is only needed for the legacy Google-only authentication flow.
+Keep the Google client secret in Supabase, outside these public build variables.
+
+Save the settings and retry the deployment. The build log should show Flutter
+installation, `flutter build web`, and PWA preparation **before** Wrangler runs.
+Messages about having no dependencies or build output to cache are informational.
+An error stating that `assets.directory` does not exist means the build did not
+run or did not finish successfully. Check the earlier build log for the cause.
+
+Workers Builds requires its build command to be configured in the dashboard;
+do not rely on a Wrangler custom-build setting for this Git-integrated flow.
+See [Cloudflare build configuration](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
+
 ## Deploy on Cloudflare Pages
 
 1. Push the project to your Git repository and import it in Cloudflare Pages.
@@ -9,8 +39,8 @@
 3. Set **Framework preset: None**, **Build command:
    `bash scripts/cloudflare-build.sh`**, and **Build output directory:
    `build/web`**. No deploy command is needed for a Git-integrated Pages project.
-   If the setup asks for a Workers deploy command, switch to creating a Pages
-   project. No Node package installation is required.
+   If the setup asks for a Workers deploy command, use the Workers instructions
+   above instead. No Node package installation is required.
 4. Add `GOOGLE_CLIENT_ID` in **Settings > Environment Variables**, using a
    Google OAuth **Web application** client ID. Enable it for Production and,
    if needed, Preview. This is a public client ID, not a client secret.
