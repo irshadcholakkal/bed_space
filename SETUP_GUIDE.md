@@ -6,6 +6,8 @@ For the landing page, customer registration and Supabase account tables, start
 with [SaaS setup](docs/SAAS_SETUP.md), then configure Google access below.
 For subscriptions, server-only payment keys and callback addresses, see
 [Paymob setup](docs/PAYMOB_SETUP.md).
+For manual payment recording, administrator authorization and customer payment
+history, see [Billing administration](docs/BILLING_ADMIN.md).
 
 ## Cloudflare Pages hosting
 

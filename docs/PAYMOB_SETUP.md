@@ -1,5 +1,9 @@
 # Paymob test payments and membership access
 
+For customer account details, manual cash/bank payment recording and paid/unpaid
+administration, also apply the third migration and follow
+[Billing administration](BILLING_ADMIN.md).
+
 ## Product rules implemented
 
 - One calendar month free from Supabase account creation.

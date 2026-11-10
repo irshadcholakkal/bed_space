@@ -18,6 +18,7 @@ class _SubscriptionGateState extends State<SubscriptionGate>
   MembershipCheckFailure _failure = MembershipCheckFailure.connection;
   Timer? _timer;
   bool _loading = true, _failed = false, _requesting = false;
+  bool _closedForDenial = false;
   @override
   void initState() {
     super.initState();
@@ -43,6 +44,7 @@ class _SubscriptionGateState extends State<SubscriptionGate>
     try {
       final access = await (widget.loadAccess ?? SubscriptionService.access)();
       if (!mounted) return;
+      if (access.allowed) _closedForDenial = false;
       setState(() {
         _access = access;
         _loading = false;
@@ -80,10 +82,17 @@ class _SubscriptionGateState extends State<SubscriptionGate>
     }
   }
 
-  void _closeWorkspaceRoutes() =>
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) Navigator.of(context).popUntil((route) => route.isFirst);
-      });
+  void _closeWorkspaceRoutes() {
+    if (_closedForDenial) return;
+    _closedForDenial = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        Navigator.of(context).popUntil(
+            (route) => route.isFirst || route.settings.name == '/admin');
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {

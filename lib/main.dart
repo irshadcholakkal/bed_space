@@ -22,6 +22,7 @@ import 'data/repositories/management_repository.dart';
 import 'data/repositories/sync_worker.dart';
 import 'data/services/saas_service.dart';
 import 'presentation/screens/saas_gate.dart';
+import 'presentation/screens/billing_admin_screen.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -67,6 +68,7 @@ class BedSpaceApp extends StatelessWidget {
       theme: AppTheme.theme,
       debugShowCheckedModeBanner: false,
       home: const SaasGate(),
+      routes: {'/admin': (_) => const BillingAdminScreen()},
     );
   }
 }

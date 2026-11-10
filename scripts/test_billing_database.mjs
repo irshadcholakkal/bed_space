@@ -10,14 +10,14 @@ try {
   await db.exec(`
     create role anon; create role authenticated; create role service_role;
     create schema auth;
-    create table auth.users(id uuid primary key, created_at timestamptz not null default now(), raw_user_meta_data jsonb not null default '{}');
+    create table auth.users(id uuid primary key, email text, email_confirmed_at timestamptz, last_sign_in_at timestamptz, created_at timestamptz not null default now(), raw_user_meta_data jsonb not null default '{}');
     create function auth.uid() returns uuid language sql stable as
       $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth to authenticated;
     grant execute on function auth.uid() to authenticated;
     set timezone = 'UTC';
   `);
-  for (const file of ['202611090001_accounts.sql', '202611100001_subscriptions.sql']) {
+  for (const file of ['202611090001_accounts.sql', '202611100001_subscriptions.sql', '202611100002_billing_administration.sql']) {
     await db.exec(await readFile(new URL(`../supabase/migrations/${file}`, import.meta.url), 'utf8'));
   }
   await db.query('insert into auth.users(id) values ($1),($2)', [owner, other]);
@@ -57,5 +57,51 @@ try {
   assert.equal((await account()).allowed, false, 'Refund suspends access for review');
   await db.exec('reset role');
   assert.ok(order.id);
+  await db.exec('reset role');
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [other]);
+  await db.exec('set role authenticated');
+  assert.equal((await db.query('select public.is_billing_admin() as result')).rows[0].result, false);
+  await assert.rejects(db.query('select public.admin_billing_accounts()'), /administrator required/);
+  await assert.rejects(db.query("select public.admin_record_payment($1,'monthly',5000,'BANK-1','')", [other]), /administrator required/);
+  await assert.rejects(db.query('insert into public.billing_admins(user_id) values ($1)', [other]), /permission denied/);
+  await db.exec('reset role');
+  await db.query('insert into public.billing_admins(user_id) values ($1)', [owner]);
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [owner]);
+  await db.exec('set role authenticated');
+  assert.equal((await db.query('select public.is_billing_admin() as result')).rows[0].result, true);
+  assert.equal((await db.query('select public.admin_billing_accounts() as result')).rows[0].result.length, 2);
+  const manual = async (amount=5250) => db.query("select public.admin_record_payment($1,'monthly',$2,'BANK-1','Internal proof checked') as result", [other,amount]);
+  const firstManual = (await manual()).rows[0].result;
+  assert.equal(firstManual.result,'payment_recorded');
+  assert.equal((await manual()).rows[0].result.result,'already_recorded');
+  await assert.rejects(manual(5300), /already belongs/);
+  await db.query("select public.admin_set_membership_block($1,true,'Access review')",[other]);
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [other]);
+  assert.equal((await account()).allowed,false);
+  const history=(await db.query('select public.my_payment_history() as result')).rows[0].result;
+  assert.equal(history.length,1);
+  assert.equal(history[0].payment_source,'manual');
+  assert.equal('notes' in history[0],false,'Private admin notes are not in customer history');
+  await assert.rejects(db.query('select notes from public.billing_orders'), /permission denied/);
+  await db.exec('reset role');
+  await db.query("insert into public.billing_orders(user_id,billing_cycle,amount_cents,mode,paymob_order_id) values ($1,'monthly',5000,'test','9001')",[other]);
+  await db.query("select public.settle_paymob_payment('9001','9002',5000,'AED',true,false,'test')");
+  await db.exec('set role authenticated');
+  assert.equal((await account()).allowed,false,'Automatic payment must not override an explicit administrator block');
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [owner]);
+  await db.query("select public.admin_set_membership_block($1,false,'Review completed')",[other]);
+  const details=(await db.query('select public.admin_customer_billing($1) as result',[other])).rows[0].result;
+  assert.equal(details.payments.length,2);
+  assert.ok(details.audit.length>=4);
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [other]);
+  assert.equal((await account()).allowed,true,'Removing the block restores an otherwise paid membership');
+  await db.exec('reset role');
+  await db.query("update public.subscriptions set trial_ends_at=now()-interval '2 months',paid_until=now()-interval '1 day' where user_id=$1",[other]);
+  await db.exec('set role authenticated');
+  assert.equal((await account()).allowed,false,'Paid membership automatically becomes unpaid at expiry');
+  await db.query("select set_config('request.jwt.claim.sub', $1, false)", [owner]);
+  const rows=(await db.query('select public.admin_billing_accounts() as result')).rows[0].result;
+  assert.equal(rows.find(row=>row.user_id===other).membership_status,'unpaid');
   console.log('Billing database checks passed: trial, RLS, privileged writes, failed payments, amount validation, duplicate callbacks, monthly unlock, annual extension and refunds.');
+  console.log('Administration checks passed: role isolation, manual payment idempotency, private notes, blocking, automatic payment preservation, audit and unpaid expiry.');
 } finally { await db.close(); }

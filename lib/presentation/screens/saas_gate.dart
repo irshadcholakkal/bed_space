@@ -10,6 +10,7 @@ import '../../data/services/local_database_service.dart';
 import '../../main.dart';
 import 'landing_screen.dart';
 import 'subscription_gate.dart';
+import 'billing_admin_screen.dart';
 
 /// Supabase identity gates the Google-connected workspace, including named routes.
 class SaasGate extends StatefulWidget {
@@ -55,56 +56,62 @@ class _SaasGateState extends State<SaasGate> {
   @override
   Widget build(BuildContext context) {
     if (SaasService.userId == null) return const LandingScreen();
-    return SubscriptionGate(
+    return BillingAdminShortcut(
         key: ValueKey(SaasService.userId),
-        child: MultiBlocProvider(
+        child: SubscriptionGate(
             key: ValueKey(SaasService.userId),
-            providers: [
-              BlocProvider(
-                  create: (_) => AuthBloc(
-                      authService: GoogleAuthService(),
-                      sheetRepository: SheetRepository())
-                    ..add(const AuthCheckRequested())),
-              BlocProvider(
-                  create: (_) => SheetBloc(sheetRepository: SheetRepository())),
-            ],
-            child: Column(children: [
-              Material(
-                  color: const Color(0xff122c2a),
-                  child: SafeArea(
-                      bottom: false,
-                      child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 6),
-                          child: Row(children: [
-                            const Icon(Icons.bed_outlined, color: Colors.white),
-                            const SizedBox(width: 10),
-                            Expanded(
-                                child: Text(
-                                    SaasService
-                                            .client.auth.currentUser?.email ??
-                                        'Your workspace',
-                                    style: const TextStyle(color: Colors.white),
-                                    overflow: TextOverflow.ellipsis)),
-                            TextButton(
-                                onPressed: () async {
-                                  try {
-                                    await GoogleAuthService().signOut();
-                                    await SaasService.client.auth.signOut();
-                                  } catch (_) {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text(
-                                                  'Could not sign out. Please try again.')));
-                                    }
-                                  }
-                                },
-                                child: const Text('Sign out of account',
-                                    style: TextStyle(color: Colors.white))),
-                          ])))),
-              Expanded(child: AuthWrapper(key: ValueKey(SaasService.userId))),
-            ])));
+            child: MultiBlocProvider(
+                key: ValueKey(SaasService.userId),
+                providers: [
+                  BlocProvider(
+                      create: (_) => AuthBloc(
+                          authService: GoogleAuthService(),
+                          sheetRepository: SheetRepository())
+                        ..add(const AuthCheckRequested())),
+                  BlocProvider(
+                      create: (_) =>
+                          SheetBloc(sheetRepository: SheetRepository())),
+                ],
+                child: Column(children: [
+                  Material(
+                      color: const Color(0xff122c2a),
+                      child: SafeArea(
+                          bottom: false,
+                          child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 6),
+                              child: Row(children: [
+                                const Icon(Icons.bed_outlined,
+                                    color: Colors.white),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                    child: Text(
+                                        SaasService.client.auth.currentUser
+                                                ?.email ??
+                                            'Your workspace',
+                                        style: const TextStyle(
+                                            color: Colors.white),
+                                        overflow: TextOverflow.ellipsis)),
+                                TextButton(
+                                    onPressed: () async {
+                                      try {
+                                        await GoogleAuthService().signOut();
+                                        await SaasService.client.auth.signOut();
+                                      } catch (_) {
+                                        if (context.mounted) {
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(const SnackBar(
+                                                  content: Text(
+                                                      'Could not sign out. Please try again.')));
+                                        }
+                                      }
+                                    },
+                                    child: const Text('Sign out of account',
+                                        style: TextStyle(color: Colors.white))),
+                              ])))),
+                  Expanded(
+                      child: AuthWrapper(key: ValueKey(SaasService.userId))),
+                ]))));
   }
 }
 

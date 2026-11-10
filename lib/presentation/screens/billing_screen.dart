@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/services/saas_service.dart';
 import '../../data/services/subscription_service.dart';
+import '../widgets/customer_billing_history.dart';
 
 class BillingScreen extends StatefulWidget {
   final AccountAccess? access;
@@ -20,6 +21,12 @@ class _BillingScreenState extends State<BillingScreen> {
       _phone = TextEditingController();
   bool _annual = false, _busy = false;
   String? _message;
+  @override
+  void initState() {
+    super.initState();
+    _annual = widget.access?.billingCycle == 'annual';
+  }
+
   @override
   void dispose() {
     _first.dispose();
@@ -216,6 +223,7 @@ class _BillingScreenState extends State<BillingScreen> {
                                           child: const Text(
                                               'Already paid? Check payment status')),
                                     const SizedBox(height: 12),
+                                    CustomerBillingHistory(access: access),
                                     const Text(
                                         'Payment is confirmed securely by Paymob. Returning from checkout alone does not activate your membership.',
                                         textAlign: TextAlign.center,

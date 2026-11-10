@@ -20,6 +20,15 @@ test('Checkout requires an authenticated customer', async () => {
   const response = await checkout(new Request('https://project.example/functions/v1/create-paymob-checkout', { method: 'POST', body: '{}' }));
   assert.equal(response.status, 401);
 });
+test('Administrator-blocked accounts cannot start checkout', async () => {
+  globalThis.fetch = async (url) => {
+    if(String(url).endsWith('/auth/v1/user'))return json({id:'00000000-0000-4000-8000-000000000001',email:'test@example.com',email_confirmed_at:'2026-11-10'});
+    if(String(url).includes('/subscriptions?'))return json([{suspended:false,admin_blocked:true}]);
+    assert.fail('Blocked account must not create a payment order or call Paymob');
+  };
+  const response=await checkout(new Request('https://project.example/functions/v1/create-paymob-checkout',{method:'POST',headers:{authorization:'Bearer test'},body:JSON.stringify({billing_cycle:'monthly',first_name:'Test',last_name:'Customer',phone:'+971500000000'})}));
+  assert.equal(response.status,403);
+});
 test('Checkout ignores a browser amount and binds the server order to Paymob', async () => {
   const orderId = '00000000-0000-4000-8000-000000000001';
   let patched = false;

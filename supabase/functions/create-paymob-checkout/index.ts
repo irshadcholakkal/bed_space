@@ -36,9 +36,9 @@ Deno.serve(async (request: Request) => {
     const integration = Number(required('PAYMOB_INTEGRATION_ID'));
     if (!Number.isSafeInteger(integration) || integration <= 0) throw new Error('Invalid integration ID');
     const amount = amountFor(input.billing_cycle, required(input.billing_cycle === 'annual' ? 'PAYMOB_ANNUAL_EXTRA_CENTS' : 'PAYMOB_MONTHLY_EXTRA_CENTS'));
-    const subscriptions = await database(`subscriptions?user_id=eq.${user.id}&select=user_id,suspended`);
+    const subscriptions = await database(`subscriptions?user_id=eq.${user.id}&select=user_id,suspended,admin_blocked`);
     if (subscriptions.length !== 1) throw new Error('Apply subscription migration before checkout');
-    if (subscriptions[0].suspended) return reply({ error: 'Please contact support to review your account before making another payment.' }, 403);
+    if (subscriptions[0].suspended || subscriptions[0].admin_blocked) return reply({ error: 'Please contact support to review your account before making another payment.' }, 403);
     const since = new Date(Date.now() - 10 * 60 * 1000).toISOString();
     const recent = await database(`billing_orders?user_id=eq.${user.id}&created_at=gte.${encodeURIComponent(since)}&select=id&limit=5`);
     if (recent.length >= 5) return reply({ error: 'Please wait a few minutes before requesting another payment link.' }, 429);

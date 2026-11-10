@@ -33,8 +33,10 @@ class AccountAccess {
   final bool allowed, suspended;
   final DateTime serverNow, accessUntil, trialEndsAt;
   final DateTime? paidUntil;
+  final String? billingCycle;
   AccountAccess.fromJson(Map<String, dynamic> json)
-      : allowed = json['allowed'] == true,
+      : billingCycle = json['billing_cycle'] as String?,
+        allowed = json['allowed'] == true,
         suspended = json['suspended'] == true,
         serverNow = DateTime.parse(json['server_now'] as String),
         accessUntil = DateTime.parse(json['access_until'] as String),
