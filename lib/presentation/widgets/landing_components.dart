@@ -174,7 +174,7 @@ class _ProductGraphic extends StatelessWidget {
                       [
                         ('Accommodation records', 'Google Sheets'),
                         ('Document copies', 'Google Drive'),
-                        ('Account details', 'Supabase')
+                        ('Account details', 'Bedspace')
                       ],
                     ][kind])
                       Container(

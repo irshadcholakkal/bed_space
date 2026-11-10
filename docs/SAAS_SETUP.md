@@ -53,6 +53,45 @@ Apply its subscription migration before deploying the updated app.
 
 ## Verify before opening registration
 
+### Verification link says Page unavailable
+
+Check that `https://rents.thepercentagecompany.com/` opens without any query
+parameters first. A DNS `NXDOMAIN` response means the custom hostname is missing;
+the app and Supabase callback code cannot run until that hostname is restored.
+In Cloudflare, open **Workers & Pages > bed-space > Settings > Domains & Routes**
+and add `rents.thepercentagecompany.com` as a **Custom Domain**. Cloudflare
+manages its DNS record and certificate. `wrangler.json` also declares the custom
+domain so future deployments retain the binding; the deployment token needs
+permission to manage it. The `workers.dev` fallback remains enabled.
+
+Keep the Supabase Auth Site URL and allowed redirect URL set to
+`https://rents.thepercentagecompany.com/`. A callback containing `?code=...` is
+normal for PKCE and is handled by the Flutter SDK. Open the link in the browser
+used for registration, since the code verifier is stored there. Do not clear
+site storage during this step. After fixing DNS, try signing in normally; if
+verification is still required, request a fresh link rather than reusing an old
+or consumed code.
+
+### Membership cannot be verified
+
+The landing page and registration can work before the billing schema exists,
+but membership validation also requires `public.subscriptions`,
+`public.account_access()` and the trial trigger. Run
+`supabase/check_membership_setup.sql` in Supabase SQL Editor for a read-only
+check. If these are missing, apply
+`supabase/migrations/202611100001_subscriptions.sql` after the accounts migration.
+Do not rerun an already-applied migration blindly. The subscriptions migration
+creates trial records for existing registered users as well as future signups.
+If all setup checks pass but the API still reports a missing function, run
+`notify pgrst, 'reload schema';` in SQL Editor to refresh the API schema cache.
+
+The app distinguishes `MEMBERSHIP_SETUP` (missing database setup/permissions),
+`MEMBERSHIP_RECORD` (no visible customer membership), `MEMBERSHIP_SESSION`
+(sign-in needs renewal), and `MEMBERSHIP_CONNECTION` (lookup unavailable).
+Membership is never granted locally when verification fails.
+
+### Account isolation checks
+
 Register two separate customer accounts, confirm their emails, and connect
 different Google accounts. Verify each profile and storage binding can only be
 read by its owner; test unauthenticated and cross-account requests using the

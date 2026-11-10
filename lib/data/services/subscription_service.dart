@@ -1,4 +1,33 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'saas_service.dart';
+
+class MembershipCheckFailure implements Exception {
+  final String reference, message;
+  const MembershipCheckFailure(this.reference, this.message);
+  static const connection = MembershipCheckFailure('MEMBERSHIP_CONNECTION',
+      'We could not verify your membership. Please check your connection and try again.');
+  static const setup = MembershipCheckFailure('MEMBERSHIP_SETUP',
+      'Membership verification is not configured yet. Please contact support.');
+  static const missing = MembershipCheckFailure('MEMBERSHIP_RECORD',
+      'Your membership has not been set up yet. Please contact support.');
+  static const session = MembershipCheckFailure('MEMBERSHIP_SESSION',
+      'Your session has expired. Please sign out and sign in again.');
+
+  static MembershipCheckFailure fromError(Object error) {
+    if (error is MembershipCheckFailure) return error;
+    if (error is PostgrestException) {
+      if (['PGRST202', 'PGRST205', '42P01', '42883', '42501']
+          .contains(error.code)) {
+        return setup;
+      }
+      if (['PGRST301', 'PGRST302', 'PGRST303'].contains(error.code)) {
+        return session;
+      }
+    }
+    if (error is FormatException || error is TypeError) return setup;
+    return connection;
+  }
+}
 
 class AccountAccess {
   final bool allowed, suspended;
@@ -17,12 +46,18 @@ class AccountAccess {
 
 class SubscriptionService {
   static Future<AccountAccess> access() async {
-    final result = await SaasService.client
-        .rpc('account_access')
-        .timeout(const Duration(seconds: 15));
-    if (result is! Map<String, dynamic>) {
-      throw StateError('Subscription is unavailable');
+    try {
+      if (SaasService.client.auth.currentSession == null) {
+        throw MembershipCheckFailure.session;
+      }
+      final result = await SaasService.client
+          .rpc('account_access')
+          .timeout(const Duration(seconds: 15));
+      if (result == null) throw MembershipCheckFailure.missing;
+      if (result is! Map<String, dynamic>) throw MembershipCheckFailure.setup;
+      return AccountAccess.fromJson(result);
+    } catch (error) {
+      throw MembershipCheckFailure.fromError(error);
     }
-    return AccountAccess.fromJson(result);
   }
 }

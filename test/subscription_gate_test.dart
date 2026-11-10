@@ -47,4 +47,20 @@ void main() {
     expect(find.text('Try again'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
+  testWidgets(
+      'Missing migration shows a setup reference without opening workspace',
+      (tester) async {
+    await tester.pumpWidget(MaterialApp(
+        home: SubscriptionGate(
+            loadAccess: () async => throw MembershipCheckFailure.setup,
+            child: const Text('Protected workspace'))));
+    await tester.pumpAndSettle();
+    expect(find.text('Reference: MEMBERSHIP_SETUP'), findsOneWidget);
+    expect(
+        find.text(
+            'Membership verification is not configured yet. Please contact support.'),
+        findsOneWidget);
+    expect(find.text('Protected workspace'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
 }

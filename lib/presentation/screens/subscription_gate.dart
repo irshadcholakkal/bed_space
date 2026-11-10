@@ -15,6 +15,7 @@ class SubscriptionGate extends StatefulWidget {
 class _SubscriptionGateState extends State<SubscriptionGate>
     with WidgetsBindingObserver {
   AccountAccess? _access;
+  MembershipCheckFailure _failure = MembershipCheckFailure.connection;
   Timer? _timer;
   bool _loading = true, _failed = false, _requesting = false;
   @override
@@ -64,10 +65,11 @@ class _SubscriptionGateState extends State<SubscriptionGate>
         }
       });
       if (!access.allowed) _closeWorkspaceRoutes();
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         setState(() {
           _failed = true;
+          _failure = MembershipCheckFailure.fromError(error);
           _loading = false;
           _access = null;
         });
@@ -93,9 +95,10 @@ class _SubscriptionGateState extends State<SubscriptionGate>
               child: Padding(
                   padding: const EdgeInsets.all(24),
                   child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    const Text(
-                        'We could not verify your membership. Please check your connection and try again.',
-                        textAlign: TextAlign.center),
+                    Text(_failure.message, textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                    Text('Reference: ${_failure.reference}',
+                        style: Theme.of(context).textTheme.bodySmall),
                     const SizedBox(height: 16),
                     FilledButton(
                         onPressed: _refresh, child: const Text('Try again')),

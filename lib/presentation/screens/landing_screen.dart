@@ -840,12 +840,12 @@ const _featureData = [
   (
     'CUSTOMER-OWNED STORAGE',
     'A workspace with your name on it',
-    'Connect your Google account for your accommodation spreadsheet and private document folder. Supabase handles your customer account and membership.'
+    'Connect your Google account for your accommodation spreadsheet and private document folder. Manage your account and membership in Bedspace.'
   ),
 ];
 const _guideText = [
   'Create your Bedspace account and confirm your email. Your one-calendar-month trial begins at account creation. Connect the Google account that will own your accommodation spreadsheet and document folder. Then add your buildings, rooms, beds and tenants.\n\nYour workspace is an installable PWA: use Install app in Chrome or Add to Home Screen in Safari.',
-  'Supabase stores your customer profile and subscription details. Accommodation records live in your connected Google Sheet. Invoice and receipt copies can be saved to your private Google Drive folder.\n\nNew files are not automatically shared with the developer. Pausing your subscription does not delete your Google files. Temporary workspace copies are cached on your device.',
+  'Bedspace manages your customer profile and membership. Accommodation records live in your connected Google Sheet. Invoice and receipt copies can be saved to your private Google Drive folder.\n\nNew files are not automatically shared with the developer. Pausing your subscription does not delete your Google files. Temporary workspace copies are cached on your device.',
   'Start with one calendar month free. Then renew at AED 50/month plus other charges, or AED 540/year plus other charges. The annual base price saves 10% compared with twelve monthly payments.\n\nOther charges are shown before payment. Your workspace pauses after trial or paid access expires. A verified Paymob payment reopens it. Renewals are customer-initiated; automatic card debits are not enabled.',
 ];
 TextStyle _serif(double size) => TextStyle(

@@ -2,6 +2,13 @@
   "$schema": "https://unpkg.com/wrangler/config-schema.json",
   "name": "bed-space",
   "compatibility_date": "2026-11-09",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "rents.thepercentagecompany.com",
+      "custom_domain": true
+    }
+  ],
   "assets": {
     "directory": "./build/web",
     "not_found_handling": "single-page-application"
