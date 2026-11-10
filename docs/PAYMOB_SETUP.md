@@ -36,7 +36,7 @@ PAYMOB_SECRET_KEY=YOUR_PAYMOB_TEST_SECRET_KEY
 PAYMOB_PUBLIC_KEY=YOUR_PAYMOB_TEST_PUBLIC_KEY
 PAYMOB_HMAC_SECRET=YOUR_PAYMOB_HMAC_SECRET
 PAYMOB_INTEGRATION_ID=YOUR_TEST_CARD_INTEGRATION_ID
-APP_URL=https://rents.thepercentagecompany.com
+APP_URL=https://bedspace.thepercentagecompany.com
 PAYMOB_MONTHLY_EXTRA_CENTS=0
 PAYMOB_ANNUAL_EXTRA_CENTS=0
 ```
@@ -76,7 +76,7 @@ Replace `YOUR_PROJECT_REF` with the identifier in your Supabase project URL.
 |---|---|
 | Signed-in payment-link creation (POST) | `https://YOUR_PROJECT_REF.supabase.co/functions/v1/create-paymob-checkout` |
 | Paymob processed callback (POST) | `https://YOUR_PROJECT_REF.supabase.co/functions/v1/paymob-webhook` |
-| Browser return | `https://rents.thepercentagecompany.com/?billing=return` |
+| Browser return | `https://bedspace.thepercentagecompany.com/?billing=return` |
 | Hosted test checkout | Created dynamically by Paymob after test keys are configured |
 
 In Paymob's test card integration settings, set the processed callback to the

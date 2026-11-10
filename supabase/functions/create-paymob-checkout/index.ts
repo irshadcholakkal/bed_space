@@ -2,7 +2,7 @@ import { database, required } from '../_shared/backend.ts';
 import { amountFor } from '../_shared/paymob.mjs';
 
 Deno.serve(async (request: Request) => {
-  const appUrl = Deno.env.get('APP_URL') || 'https://rents.thepercentagecompany.com';
+  const appUrl = Deno.env.get('APP_URL') || 'https://bedspace.thepercentagecompany.com';
   const origin = new URL(appUrl).origin;
   const headers = { 'Access-Control-Allow-Origin': origin,
     'Access-Control-Allow-Headers': 'authorization, apikey, content-type, x-client-info',

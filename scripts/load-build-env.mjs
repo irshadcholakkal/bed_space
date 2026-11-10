@@ -21,11 +21,16 @@ if (process.argv.includes('--flutter-version')) {
   const config = {
     GOOGLE_CLIENT_ID: values.GOOGLE_CLIENT_ID || '',
     SUPABASE_URL: values.SUPABASE_URL || '',
-    SUPABASE_ANON_KEY: values.SUPABASE_ANON_KEY || '',
+    SUPABASE_ANON_KEY: values.SUPABASE_ANON_KEY || values.SUPABASE_PUBLISHABLE_KEY || '',
   };
+  if (process.argv.includes('--require-supabase') &&
+      (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY)) {
+    console.error('Build stopped: set SUPABASE_URL and SUPABASE_ANON_KEY (or SUPABASE_PUBLISHABLE_KEY) in Cloudflare Settings > Builds > Variables and secrets, then redeploy. These public values are compiled into the app; runtime variables cannot configure an existing bundle.');
+    process.exit(1);
+  }
   mkdirSync(path.join(root, '.dart_tool'), { recursive: true });
   writeFileSync(path.join(root, '.dart_tool/build-config.json'), JSON.stringify(config));
-  if (!config.GOOGLE_CLIENT_ID) {
+  if (!config.GOOGLE_CLIENT_ID && (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY)) {
     console.warn('Warning: GOOGLE_CLIENT_ID is empty. Google sign-in requires configuration and a rebuild.');
   }
 }

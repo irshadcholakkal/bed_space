@@ -17,8 +17,8 @@ Apply its subscription migration before deploying the updated app.
    explains project keys, email redirects and row-level security.
 2. Enable the email authentication provider and email confirmation. Configure
    production SMTP for customer email delivery.
-3. Set the Auth Site URL to `https://rents.thepercentagecompany.com` and allow
-   `https://rents.thepercentagecompany.com/` as a redirect URL. Add
+3. Set the Auth Site URL to `https://bedspace.thepercentagecompany.com` and allow
+   `https://bedspace.thepercentagecompany.com/` as a redirect URL. Add
    `http://localhost:3000/` for development.
 4. Add the following public build variables to `.env` locally and to Cloudflare
    **Builds > Variables and secrets** for production:
@@ -55,17 +55,17 @@ Apply its subscription migration before deploying the updated app.
 
 ### Verification link says Page unavailable
 
-Check that `https://rents.thepercentagecompany.com/` opens without any query
+Check that `https://bedspace.thepercentagecompany.com/` opens without any query
 parameters first. A DNS `NXDOMAIN` response means the custom hostname is missing;
 the app and Supabase callback code cannot run until that hostname is restored.
 In Cloudflare, open **Workers & Pages > bed-space > Settings > Domains & Routes**
-and add `rents.thepercentagecompany.com` as a **Custom Domain**. Cloudflare
+and add `bedspace.thepercentagecompany.com` as a **Custom Domain**. Cloudflare
 manages its DNS record and certificate. `wrangler.json` also declares the custom
 domain so future deployments retain the binding; the deployment token needs
 permission to manage it. The `workers.dev` fallback remains enabled.
 
 Keep the Supabase Auth Site URL and allowed redirect URL set to
-`https://rents.thepercentagecompany.com/`. A callback containing `?code=...` is
+`https://bedspace.thepercentagecompany.com/`. A callback containing `?code=...` is
 normal for PKCE and is handled by the Flutter SDK. Open the link in the browser
 used for registration, since the code verifier is stored there. Do not clear
 site storage during this step. After fixing DNS, try signing in normally; if

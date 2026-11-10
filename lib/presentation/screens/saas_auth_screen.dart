@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/services/google_auth_service.dart';
 import '../../data/services/saas_service.dart';
 
@@ -21,10 +22,61 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
   late bool _register = widget.register;
   bool _busy = false;
   String? _message;
+  final _form = GlobalKey<FormState>();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  bool _hidePassword = true;
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submitEmail() async {
+    if (!_form.currentState!.validate() || !SaasService.configured) return;
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      if (_register) {
+        final result = await SaasService.client.auth.signUp(
+          email: _email.text.trim(),
+          password: _password.text,
+          emailRedirectTo:
+              Uri.base.replace(path: '/', query: '', fragment: '').toString(),
+          data: {'preferred_billing': widget.billingCycle},
+        );
+        if (result.session == null && mounted) {
+          setState(() => _message =
+              'Check your email to confirm your Bedspace account, then sign in.');
+        }
+      } else {
+        await SaasService.client.auth.signInWithPassword(
+            email: _email.text.trim(), password: _password.text);
+      }
+      if (mounted && SaasService.userId != null) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _message = e.message);
+    } catch (_) {
+      if (mounted) {
+        setState(() => _message =
+            'Could not reach the account service. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
 
   void _switchMode() => setState(() {
         _register = !_register;
         _message = null;
+        _password.clear();
+        _form.currentState?.reset();
       });
 
   Future<void> _submit() async {
@@ -217,8 +269,8 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
             const SizedBox(height: 20),
             Text(
                 _register
-                    ? 'Start your Bedspace workspace with one Google account. A little less admin, a lot more clarity.'
-                    : 'Your spaces, people and rent records, together again. Continue with the Google account linked to your workspace.',
+                    ? 'Start your Bedspace workspace with Google or your email. A little less admin, a lot more clarity.'
+                    : 'Your spaces, people and rent records, together again. Choose how you sign in to your workspace.',
                 style: const TextStyle(
                     color: _secondary, fontSize: 14, height: 1.85)),
             const SizedBox(height: 30),
@@ -240,7 +292,8 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                             fontSize: 17,
                             fontWeight: FontWeight.w500)),
                     const SizedBox(height: 10),
-                    const Text('One sign-in for Bedspace, Sheets and Drive.',
+                    const Text(
+                        'Choose Google or your Bedspace email and password.',
                         style: TextStyle(
                             color: _secondary, fontSize: 12, height: 1.7)),
                     const SizedBox(height: 24),
@@ -248,8 +301,9 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                         onPressed:
                             _busy || !SaasService.configured ? null : _submit,
                         style: FilledButton.styleFrom(
-                            backgroundColor: _ink,
-                            foregroundColor: _background,
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xff1f1f1f),
+                            side: const BorderSide(color: Color(0xff747775)),
                             disabledBackgroundColor: const Color(0xff333a38),
                             disabledForegroundColor: const Color(0xffa6afad),
                             minimumSize: const Size.fromHeight(54),
@@ -266,10 +320,10 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2))
                               else
-                                const Text('G',
-                                    style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700)),
+                                Image.asset('assets/auth/google_g.png',
+                                    width: 20,
+                                    height: 20,
+                                    excludeFromSemantics: true),
                               const SizedBox(width: 12),
                               Flexible(
                                   child: Text(
@@ -279,16 +333,26 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                                       style: const TextStyle(
                                           fontSize: 14,
                                           fontWeight: FontWeight.w600))),
-                              const SizedBox(width: 12),
-                              const Icon(Icons.arrow_forward, size: 17),
                             ])),
+                    const SizedBox(height: 24),
+                    const Row(children: [
+                      Expanded(child: Divider(color: _line)),
+                      Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 12),
+                          child: Text('or use email',
+                              style:
+                                  TextStyle(color: _secondary, fontSize: 12))),
+                      Expanded(child: Divider(color: _line)),
+                    ]),
+                    const SizedBox(height: 20),
+                    _emailForm(),
                     if (_message != null || !SaasService.configured) ...[
                       const SizedBox(height: 16),
                       Semantics(
                           liveRegion: true,
                           child: Text(
                               _message ??
-                                  'Sign-in is currently unavailable. Please try again later.',
+                                  'Account sign-in is not configured for this deployment. Please contact the site administrator.',
                               style: const TextStyle(
                                   color: Color(0xffffc4b5),
                                   fontSize: 12,
@@ -304,7 +368,7 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                           SizedBox(width: 10),
                           Expanded(
                               child: Text(
-                                  'Allow Sheets and Drive access when Google asks. Your accommodation records stay in your Google account.',
+                                  'Google sign-in also connects Sheets and Drive. With email sign-in, you will connect Google separately. Use a Bedspace password here, never your Google password.',
                                   style: TextStyle(
                                       color: _secondary,
                                       fontSize: 11,
@@ -328,4 +392,92 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                 textAlign: TextAlign.center,
                 style: TextStyle(color: _secondary, fontSize: 10, height: 1.8)),
           ]);
+
+  Widget _emailForm() => Form(
+        key: _form,
+        child: AutofillGroup(
+            child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextFormField(
+              controller: _email,
+              enabled: !_busy,
+              keyboardType: TextInputType.emailAddress,
+              textInputAction: TextInputAction.next,
+              autofillHints: const [AutofillHints.email],
+              style: const TextStyle(color: _ink),
+              decoration: _fieldDecoration('Email address'),
+              validator: (value) => RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                      .hasMatch(value?.trim() ?? '')
+                  ? null
+                  : 'Enter a valid email address',
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _password,
+              enabled: !_busy,
+              obscureText: _hidePassword,
+              autocorrect: false,
+              enableSuggestions: false,
+              autofillHints: [
+                _register ? AutofillHints.newPassword : AutofillHints.password
+              ],
+              style: const TextStyle(color: _ink),
+              decoration: _fieldDecoration('Bedspace password').copyWith(
+                suffixIcon: IconButton(
+                  tooltip: _hidePassword ? 'Show password' : 'Hide password',
+                  onPressed: _busy
+                      ? null
+                      : () => setState(() => _hidePassword = !_hidePassword),
+                  icon: Icon(
+                      _hidePassword
+                          ? Icons.visibility_outlined
+                          : Icons.visibility_off_outlined,
+                      size: 20),
+                ),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Enter your Bedspace password';
+                }
+                if (_register && value.length < 8) {
+                  return 'Use at least 8 characters';
+                }
+                return null;
+              },
+              onFieldSubmitted: (_) {
+                if (!_busy) _submitEmail();
+              },
+            ),
+            const SizedBox(height: 20),
+            FilledButton(
+              onPressed: _busy || !SaasService.configured ? null : _submitEmail,
+              style: FilledButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                  shape: const StadiumBorder()),
+              child: Text(_busy
+                  ? 'Please wait...'
+                  : _register
+                      ? 'Sign up with email'
+                      : 'Sign in with email'),
+            ),
+          ],
+        )),
+      );
+
+  InputDecoration _fieldDecoration(String label) => InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: _secondary, fontSize: 13),
+        filled: true,
+        fillColor: _background,
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _line)),
+        enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: const BorderSide(color: _line)),
+        errorMaxLines: 2,
+      );
 }

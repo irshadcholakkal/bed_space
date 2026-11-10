@@ -5,7 +5,7 @@
   "workers_dev": true,
   "routes": [
     {
-      "pattern": "rents.thepercentagecompany.com",
+      "pattern": "bedspace.thepercentagecompany.com",
       "custom_domain": true
     }
   ],

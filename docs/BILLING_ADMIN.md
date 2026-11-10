@@ -29,7 +29,7 @@ their `billing_admins.enabled` to false in SQL Editor.
 
 Reload and sign in. Authorized admins see **Administration** even when their
 own workspace membership is expired. The admin page is also available at
-`https://rents.thepercentagecompany.com/#/admin`. It checks authorization on every
+`https://bedspace.thepercentagecompany.com/#/admin`. It checks authorization on every
 RPC; knowing the URL does not grant access.
 
 ## What the admin page handles

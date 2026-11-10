@@ -9,7 +9,7 @@ if [[ ! "$FLUTTER_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   echo 'FLUTTER_VERSION must be an exact stable version, for example 3.47.2.' >&2
   exit 1
 fi
-node scripts/load-build-env.mjs
+node scripts/load-build-env.mjs --require-supabase
 
 SDK_DIR="${TMPDIR:-/tmp}/bed-space-flutter-${FLUTTER_VERSION}"
 if [[ ! -x "$SDK_DIR/bin/flutter" ]]; then

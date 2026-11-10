@@ -126,3 +126,18 @@ dart run sqflite_common_ffi_web:setup --force
 To check an installation in Chrome DevTools, inspect Application → Manifest,
 Service workers, Cache storage, and IndexedDB. After the service worker has
 installed, enable Network → Offline and reload to verify the cached app loads.
+
+### Email sign-in and unavailable sign-in
+
+The auth page also supports a Bedspace email/password account (including Gmail
+addresses). This uses Supabase Email authentication, which must be enabled in
+Authentication / Sign In / Providers. It never accepts or verifies a Google
+account password. Email signup asks the user to confirm their email when email
+confirmation is enabled in Supabase. Email users authorize Google separately
+before opening customer-owned Sheets and Drive storage.
+
+If the page says account sign-in is not configured, set `SUPABASE_URL` and
+`SUPABASE_ANON_KEY` (or `SUPABASE_PUBLISHABLE_KEY`) under Cloudflare **Settings >
+Builds > Variables and secrets**. Then rebuild and redeploy. Setting Worker
+runtime variables alone cannot change Flutter's compiled configuration. The
+Cloudflare build now stops early when these required public values are missing.
