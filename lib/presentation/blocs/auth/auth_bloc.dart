@@ -27,33 +27,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
-      if (SaasService.configured &&
-          await _sheetRepository.getSheetId() == null) {
-        emit(AuthUnauthenticated());
-        return;
-      }
       // Try silent sign-in to restore session
       final accessToken = await _authService.signInSilently();
 
       if (accessToken != null) {
-        final user = await _authService.getCurrentUser();
-        if (user != null) {
+        final userEmail = await _authService.getCurrentUserEmail();
+        if (userEmail != null) {
           final sheetId = await _sheetRepository.getSheetId();
           // Cache the latest token for offline access/background sync
           await _sheetRepository.saveToken(accessToken);
 
           if (sheetId != null &&
-              await _sheetRepository.isSheetIdForUser(user.email)) {
+              await _sheetRepository.isSheetIdForUser(userEmail)) {
             emit(AuthAuthenticated(
-              userEmail: user.email,
+              userEmail: userEmail,
               accessToken: accessToken,
               sheetId: sheetId,
             ));
-          } else if (SaasService.configured) {
-            emit(AuthUnauthenticated());
+          } else if (SaasService.configured && sheetId != null) {
+            emit(AuthError(
+                'Connect the Google account already linked to this workspace.'));
           } else {
             emit(AuthAuthenticatedWithoutSheet(
-              userEmail: user.email,
+              userEmail: userEmail,
               accessToken: accessToken,
             ));
           }

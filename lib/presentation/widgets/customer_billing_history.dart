@@ -55,7 +55,7 @@ class _CustomerBillingHistoryState extends State<CustomerBillingHistory> {
                   return const Padding(
                       padding: EdgeInsets.all(16),
                       child: Text(
-                          'Payment history could not be loaded. Please try again later.'));
+                          'Payment history could not be loaded. Please try again later!.'));
                 }
                 if (!snapshot.hasData) {
                   return const Padding(

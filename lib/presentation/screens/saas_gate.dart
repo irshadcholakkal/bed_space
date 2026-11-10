@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
@@ -21,11 +22,21 @@ class SaasGate extends StatefulWidget {
 
 class _SaasGateState extends State<SaasGate> {
   StreamSubscription<dynamic>? _subscription;
+  int _authRevision = 0;
   @override
   void initState() {
     super.initState();
     if (SaasService.configured) {
-      _subscription = SaasService.client.auth.onAuthStateChange.listen((_) {
+      _subscription = SaasService.client.auth.onAuthStateChange.listen((data) {
+        if (data.event == AuthChangeEvent.signedIn) _authRevision++;
+        if (SaasService.userId != null &&
+            data.event == AuthChangeEvent.signedIn) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              Navigator.of(context).popUntil((route) => route.isFirst);
+            }
+          });
+        }
         if (SaasService.userId == null) {
           SheetRepository.clearSessionTokens();
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -61,7 +72,7 @@ class _SaasGateState extends State<SaasGate> {
         child: SubscriptionGate(
             key: ValueKey(SaasService.userId),
             child: MultiBlocProvider(
-                key: ValueKey(SaasService.userId),
+                key: ValueKey('${SaasService.userId}:$_authRevision'),
                 providers: [
                   BlocProvider(
                       create: (_) => AuthBloc(
@@ -96,7 +107,6 @@ class _SaasGateState extends State<SaasGate> {
                                     onPressed: () async {
                                       try {
                                         await GoogleAuthService().signOut();
-                                        await SaasService.client.auth.signOut();
                                       } catch (_) {
                                         if (context.mounted) {
                                           ScaffoldMessenger.of(context)

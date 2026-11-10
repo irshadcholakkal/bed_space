@@ -210,3 +210,43 @@ link in column K (`parent_room_id`) of the Rooms tab.
 ## License
 
 Internal use only - Not for distribution
+
+## Single Google sign-in (Supabase deployments)
+
+The sign-in and signup buttons both use **Continue with Google**. Supabase
+creates or signs in the customer account while Google grants Sheets and Drive
+access in the same OAuth flow. After subscription access is granted, the app
+opens the saved workspace or automatically creates its sheet and document folder.
+
+Before deploying this flow:
+
+1. Enable **Google** under Supabase Authentication / Sign In / Providers and
+   configure its Google web OAuth client ID and secret. Keep the secret in
+   Supabase; never put it in Flutter build variables.
+2. Add the callback URL shown by Supabase
+   (`https://<project-ref>.supabase.co/auth/v1/callback`) to the Google OAuth
+   client's authorized redirect URIs.
+3. Set the app's public origin as the Supabase Site URL and add the app's root
+   callback URL to Authentication / URL Configuration / Redirect URLs. Include
+   the localhost root callback when developing locally.
+4. Enable the Google Sheets and Drive APIs in that Google Cloud project. Configure
+   its consent screen for `openid`, `email`, `profile`,
+   `https://www.googleapis.com/auth/spreadsheets`, and
+   `https://www.googleapis.com/auth/drive.file`. Add test users while Google OAuth
+   is in testing mode. Users must grant both storage permissions.
+5. Keep the existing `SUPABASE_URL` and `SUPABASE_ANON_KEY` build variables.
+   Supabase web OAuth does not require the Flutter `GOOGLE_CLIENT_ID` variable.
+   For native builds, also set `SUPABASE_AUTH_REDIRECT_URL` to an app deep link,
+   register that scheme in the platform app, and allow it in Supabase Redirect URLs.
+
+Existing password users should choose the same verified Google email to let
+Supabase link matching identities under its normal identity-linking rules. Do
+not create a different Google account when accessing an existing workspace.
+The existing account/profile/membership triggers still provision new accounts.
+No database migration is required by this UI change.
+
+Supabase does not refresh Google's access tokens. Restored provider tokens are
+checked for expiry and required scopes before opening the workspace. When access
+expires or is revoked, use the Google connection button to authorize again; this
+uses the same Supabase OAuth flow. Fully unattended Google token renewal would
+require a separate server-side refresh-token implementation.
