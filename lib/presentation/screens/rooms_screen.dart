@@ -6,6 +6,7 @@ import '../../data/models/room_model.dart';
 import '../../data/repositories/management_repository.dart';
 import '../blocs/management/management_bloc.dart';
 import 'property_portfolio_screen.dart';
+import '../theme/app_theme.dart';
 
 enum _RoomFilter { all, available, full, noBeds, rooms, subrooms }
 
@@ -19,9 +20,9 @@ class RoomsScreen extends StatefulWidget {
 }
 
 class _RoomsScreenState extends State<RoomsScreen> {
-  static const _ink = Color(0xff172c29);
-  static const _muted = Color(0xff6b7773);
-  static const _paper = Color(0xfff5f5f0);
+  static const _ink = AppTheme.textColor;
+  static const _muted = AppTheme.secondaryTextColor;
+  static const _paper = AppTheme.backgroundColor;
   final _search = TextEditingController();
   _RoomFilter _filter = _RoomFilter.all;
 
@@ -40,13 +41,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
           period: widget.period);
     }
     return Theme(
-        data: ThemeData(
-            useMaterial3: true,
-            fontFamily: 'Inter',
-            colorScheme: const ColorScheme.light(
-                primary: _ink, surface: Colors.white, onSurface: _ink)),
+        data: AppTheme.theme,
         child: Scaffold(
             backgroundColor: _paper,
+            appBar: AppBar(title: const Text('Rooms')),
             body: SafeArea(child: BlocBuilder<ManagementBloc, ManagementState>(
                 builder: (context, state) {
               if (state is! ManagementLoaded) {
@@ -130,8 +128,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                                             .buildingId] ??
                                                         'Rooms',
                                                 style: const TextStyle(
-                                                    fontFamily: 'HedvigLetters',
-                                                    fontSize: 32,
+                                                    fontWeight: FontWeight.w700,
+                                                    fontSize: 24,
                                                     color: _ink))),
                                         IconButton(
                                             tooltip: 'Beds & availability',
@@ -174,38 +172,40 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                               border: OutlineInputBorder(
                                                   borderRadius:
                                                       BorderRadius.circular(16),
-                                                  borderSide:
-                                                      BorderSide.none))),
+                                                  borderSide: BorderSide(
+                                                      color: Colors.grey
+                                                          .withValues(
+                                                              alpha: .2))))),
                                       const SizedBox(height: 14),
                                       SingleChildScrollView(
                                           scrollDirection: Axis.horizontal,
                                           child: Row(children: [
                                             for (final entry in labels.entries)
                                               Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          right: 8),
+                                                  padding: const EdgeInsets.only(
+                                                      right: 8),
                                                   child: ChoiceChip(
                                                       label: Text(
                                                           '${entry.value} (${candidates.where((room) => matches(room, entry.key)).length})'),
                                                       selected:
                                                           _filter == entry.key,
-                                                      onSelected: (_) =>
-                                                          setState(() =>
-                                                              _filter =
-                                                                  entry.key),
-                                                      selectedColor: _ink,
+                                                      onSelected: (_) => setState(() =>
+                                                          _filter = entry.key),
+                                                      selectedColor:
+                                                          AppTheme.primaryColor,
                                                       backgroundColor:
                                                           Colors.white,
                                                       showCheckmark: false,
                                                       labelStyle: TextStyle(
-                                                          color: _filter ==
-                                                                  entry.key
-                                                              ? Colors.white
-                                                              : _ink),
+                                                          color:
+                                                              _filter == entry.key
+                                                                  ? Colors.white
+                                                                  : _ink),
                                                       shape:
                                                           const StadiumBorder(),
-                                                      side: BorderSide.none)),
+                                                      side: BorderSide(
+                                                          color: Colors.grey
+                                                              .withValues(alpha: .2)))),
                                           ])),
                                       const SizedBox(height: 12),
                                       Text(
@@ -299,25 +299,31 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                               final color = total == 0
                                                   ? _muted
                                                   : available > 0
-                                                      ? const Color(0xff23745c)
-                                                      : const Color(0xffa45837);
+                                                      ? AppTheme.secondaryColor
+                                                      : AppTheme
+                                                          .secondaryTextColor;
                                               return Padding(
                                                   padding: const EdgeInsets.only(
                                                       bottom: 12),
                                                   child: Material(
-                                                      color: Colors.white,
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              20),
-                                                      child: InkWell(
+                                                      shape: RoundedRectangleBorder(
                                                           borderRadius:
                                                               BorderRadius.circular(
-                                                                  20),
+                                                                  10),
+                                                          side: BorderSide(
+                                                              color: Colors.grey
+                                                                  .withValues(
+                                                                      alpha:
+                                                                          .1))),
+                                                      color: Colors.white,
+                                                      child: InkWell(
+                                                          borderRadius:
+                                                              BorderRadius
+                                                                  .circular(10),
                                                           onTap: () =>
                                                               context.push(Uri(
-                                                                      path:
-                                                                          '/rooms',
-                                                                      queryParameters: {
+                                                                  path: '/rooms',
+                                                                  queryParameters: {
                                                                     'building':
                                                                         room.buildingId,
                                                                     'room':
@@ -329,63 +335,85 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                                                       'period':
                                                                           widget
                                                                               .period!
-                                                                  })
-                                                                  .toString()),
+                                                                  }).toString()),
                                                           child: Padding(
-                                                              padding:
-                                                                  const EdgeInsets
-                                                                      .all(20),
-                                                              child: Column(
-                                                                  crossAxisAlignment:
-                                                                      CrossAxisAlignment
-                                                                          .start,
-                                                                  children: [
-                                                                    Row(
-                                                                        children: [
-                                                                          Icon(
-                                                                              room.isSubroom ? Icons.subdirectory_arrow_right : Icons.meeting_room_outlined,
-                                                                              color: _ink),
-                                                                          const SizedBox(
-                                                                              width: 12),
-                                                                          Expanded(
-                                                                              child: Text(room.displayName(state.rooms), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _ink))),
-                                                                          Container(
-                                                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                                              decoration: BoxDecoration(color: color.withValues(alpha: .1), borderRadius: BorderRadius.circular(30)),
-                                                                              child: Text(status, style: TextStyle(color: color, fontSize: 11))),
-                                                                        ]),
-                                                                    const SizedBox(
-                                                                        height:
-                                                                            8),
-                                                                    Text(
-                                                                        buildingNames[room.buildingId] ??
-                                                                            'Unknown building',
-                                                                        style: const TextStyle(
-                                                                            color:
-                                                                                _muted,
-                                                                            fontSize:
-                                                                                12)),
-                                                                    const SizedBox(
-                                                                        height:
-                                                                            16),
-                                                                    Wrap(
-                                                                        spacing:
-                                                                            18,
-                                                                        runSpacing:
-                                                                            8,
-                                                                        children: [
-                                                                          Text(
-                                                                              '$available / $total beds available',
-                                                                              style: TextStyle(color: color, fontSize: 12)),
-                                                                          Text(
-                                                                              '${total - available} occupied',
-                                                                              style: const TextStyle(color: _muted, fontSize: 12)),
-                                                                          if (available >
-                                                                              0)
-                                                                            Text('$lower lower | $upper upper vacant',
-                                                                                style: const TextStyle(color: _muted, fontSize: 12)),
-                                                                        ]),
-                                                                  ])))));
+                                                              padding: const EdgeInsets.all(20),
+                                                              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                                                Row(children: [
+                                                                  Icon(
+                                                                      room.isSubroom
+                                                                          ? Icons
+                                                                              .subdirectory_arrow_right
+                                                                          : Icons
+                                                                              .meeting_room_outlined,
+                                                                      color:
+                                                                          _ink),
+                                                                  const SizedBox(
+                                                                      width:
+                                                                          12),
+                                                                  Expanded(
+                                                                      child: Text(
+                                                                          room.displayName(state
+                                                                              .rooms),
+                                                                          style: const TextStyle(
+                                                                              fontSize: 16,
+                                                                              fontWeight: FontWeight.w600,
+                                                                              color: _ink))),
+                                                                  Container(
+                                                                      padding: const EdgeInsets
+                                                                          .symmetric(
+                                                                          horizontal:
+                                                                              10,
+                                                                          vertical:
+                                                                              6),
+                                                                      decoration: BoxDecoration(
+                                                                          color: color.withValues(
+                                                                              alpha:
+                                                                                  .1),
+                                                                          borderRadius: BorderRadius.circular(
+                                                                              30)),
+                                                                      child: Text(
+                                                                          status,
+                                                                          style: TextStyle(
+                                                                              color: color,
+                                                                              fontSize: 11))),
+                                                                ]),
+                                                                const SizedBox(
+                                                                    height: 8),
+                                                                Text(
+                                                                    buildingNames[room
+                                                                            .buildingId] ??
+                                                                        'Unknown building',
+                                                                    style: const TextStyle(
+                                                                        color:
+                                                                            _muted,
+                                                                        fontSize:
+                                                                            12)),
+                                                                const SizedBox(
+                                                                    height: 16),
+                                                                Wrap(
+                                                                    spacing: 18,
+                                                                    runSpacing:
+                                                                        8,
+                                                                    children: [
+                                                                      Text(
+                                                                          '$available / $total beds available',
+                                                                          style: TextStyle(
+                                                                              color: color,
+                                                                              fontSize: 12)),
+                                                                      Text(
+                                                                          '${total - available} occupied',
+                                                                          style: const TextStyle(
+                                                                              color: _muted,
+                                                                              fontSize: 12)),
+                                                                      if (available >
+                                                                          0)
+                                                                        Text(
+                                                                            '$lower lower | $upper upper vacant',
+                                                                            style:
+                                                                                const TextStyle(color: _muted, fontSize: 12)),
+                                                                    ]),
+                                                              ])))));
                                             }))),
                           ])));
             }))));
