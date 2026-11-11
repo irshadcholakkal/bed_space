@@ -100,47 +100,8 @@ class _SaasGateState extends State<SaasGate> {
                       create: (_) =>
                           SheetBloc(sheetRepository: SheetRepository())),
                 ],
-                child: Column(children: [
-                  Material(
-                      color: const Color(0xff122c2a),
-                      child: SafeArea(
-                          bottom: false,
-                          child: Padding(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 20, vertical: 6),
-                              child: Row(children: [
-                                const Icon(Icons.bed_outlined,
-                                    color: Colors.white),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                    child: Text(
-                                        SaasService.client.auth.currentUser
-                                                ?.email ??
-                                            'Your workspace',
-                                        style: const TextStyle(
-                                            color: Colors.white),
-                                        overflow: TextOverflow.ellipsis)),
-                                TextButton(
-                                    onPressed: () async {
-                                      try {
-                                        await GoogleAuthService().signOut();
-                                      } catch (_) {
-                                        if (context.mounted) {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(const SnackBar(
-                                                  content: Text(
-                                                      'Could not sign out. Please try again.')));
-                                        }
-                                      }
-                                    },
-                                    child: const Text('Sign out of account',
-                                        style: TextStyle(color: Colors.white))),
-                              ])))),
-                  Expanded(
-                      child: AuthWrapper(
-                          key: ValueKey(SaasService.userId),
-                          child: widget.child)),
-                ]))));
+                child: AuthWrapper(
+                    key: ValueKey(SaasService.userId), child: widget.child))));
   }
 }
 

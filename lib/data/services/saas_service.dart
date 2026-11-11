@@ -16,7 +16,11 @@ class SaasService {
     // Capture before the SDK consumes/clears OAuth URL parameters.
     startupAuthError = authCallbackError(Uri.base);
     if (configured) {
-      await Supabase.initialize(url: url, publishableKey: publicKey);
+      await Supabase.initialize(
+          url: url,
+          publishableKey: publicKey,
+          authOptions: const FlutterAuthClientOptions(
+              persistSession: true, autoRefreshToken: true));
     }
   }
 }

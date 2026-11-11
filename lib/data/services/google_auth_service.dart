@@ -18,6 +18,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'saas_service.dart';
+import 'google_token_store.dart';
 
 class GoogleAuthService {
   static const List<String> _scopes = [
@@ -72,7 +73,9 @@ class GoogleAuthService {
     if (SaasService.configured) {
       // Supabase refreshes its own JWT, but not Google's provider token.
       final session = SaasService.client.auth.currentSession;
-      final token = session?.providerToken;
+      if (session == null) return null;
+      final token =
+          session.providerToken ?? await GoogleTokenStore.read(session.user.id);
       if (token == null || token.isEmpty) return null;
       try {
         final response = await http
@@ -83,10 +86,11 @@ class GoogleAuthService {
         final info = jsonDecode(response.body) as Map<String, dynamic>;
         final scopes = (info['scope'] as String? ?? '').split(' ');
         if (!_scopes.skip(3).every(scopes.contains) ||
-            info['email'] != session?.user.email ||
+            info['email'] != session.user.email ||
             (int.tryParse('${info['expires_in']}') ?? 0) <= 60) {
           return null;
         }
+        await GoogleTokenStore.save(session.user.id, token);
         return token;
       } catch (_) {
         return null;
@@ -109,7 +113,9 @@ class GoogleAuthService {
   /// Sign out
   Future<void> signOut() async {
     if (SaasService.configured) {
+      final userId = SaasService.userId;
       await SaasService.client.auth.signOut();
+      if (userId != null) await GoogleTokenStore.clear(userId);
       return;
     }
     await _googleSignIn.signOut();
