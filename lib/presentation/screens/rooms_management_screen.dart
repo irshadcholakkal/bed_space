@@ -9,6 +9,11 @@ import '../theme/app_theme.dart';
 class RoomsManagementScreen extends StatefulWidget {
   const RoomsManagementScreen({super.key});
 
+  static void showAddRoomDialog(BuildContext context,
+          {RoomModel? parentRoom}) =>
+      _RoomsManagementScreenState.showAddRoomDialog(context,
+          parentRoom: parentRoom);
+
   @override
   State<RoomsManagementScreen> createState() => _RoomsManagementScreenState();
 }
@@ -45,7 +50,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
               color: AppTheme.primaryColor,
             ),
             tooltip: 'Add Room',
-            onPressed: () => _showAddRoomDialog(context),
+            onPressed: () => showAddRoomDialog(context),
           ),
         ],
       ),
@@ -188,7 +193,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                               ),
                               const SizedBox(height: 16),
                               ElevatedButton.icon(
-                                onPressed: () => _showAddRoomDialog(context),
+                                onPressed: () => showAddRoomDialog(context),
                                 icon: const Icon(Icons.add),
                                 label: const Text('Add Room'),
                                 style: ElevatedButton.styleFrom(
@@ -348,7 +353,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                                     Icons.add_home_outlined),
                                                 tooltip: 'Add Subroom',
                                                 onPressed: () =>
-                                                    _showAddRoomDialog(context,
+                                                    showAddRoomDialog(context,
                                                         parentRoom: room),
                                               ),
                                         // trailing: IconButton(
@@ -387,7 +392,8 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
     );
   }
 
-  void _showAddRoomDialog(BuildContext context, {RoomModel? parentRoom}) async {
+  static void showAddRoomDialog(BuildContext context,
+      {RoomModel? parentRoom}) async {
     final managementBloc = context.read<ManagementBloc>();
     managementBloc.add(const LoadBuildings());
 

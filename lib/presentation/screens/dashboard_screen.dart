@@ -17,15 +17,6 @@ class DashboardScreen extends StatelessWidget {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text('Dashboard'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.business),
-            tooltip: 'Manage Buildings',
-            onPressed: () {
-              context.push('/buildings');
-            },
-          ),
-        ],
       ),
       body: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {

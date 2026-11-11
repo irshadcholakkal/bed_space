@@ -7,6 +7,9 @@ import '../../data/repositories/management_repository.dart';
 import '../blocs/management/management_bloc.dart';
 import 'property_portfolio_screen.dart';
 import '../theme/app_theme.dart';
+import 'buildings_management_screen.dart';
+import 'rooms_management_screen.dart';
+import 'tenants_management_screen.dart';
 
 enum _RoomFilter { all, available, full, noBeds, rooms, subrooms }
 
@@ -44,7 +47,28 @@ class _RoomsScreenState extends State<RoomsScreen> {
         data: AppTheme.theme,
         child: Scaffold(
             backgroundColor: _paper,
-            appBar: AppBar(title: const Text('Rooms')),
+            appBar: AppBar(title: const Text('Rooms'), actions: [
+              PopupMenuButton<String>(
+                tooltip: 'Add building, room or tenant',
+                icon: const Icon(Icons.more_vert),
+                onSelected: (action) {
+                  switch (action) {
+                    case 'building':
+                      BuildingsManagementScreen.showAddBuildingDialog(context);
+                    case 'room':
+                      RoomsManagementScreen.showAddRoomDialog(context);
+                    case 'tenant':
+                      TenantsManagementScreen.showAddTenantDialog(context,
+                          preSelectedBuildingId: widget.buildingId);
+                  }
+                },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'building', child: Text('Add Building')),
+                  PopupMenuItem(value: 'room', child: Text('Add Rooms')),
+                  PopupMenuItem(value: 'tenant', child: Text('Add Tenant')),
+                ],
+              ),
+            ]),
             body: SafeArea(child: BlocBuilder<ManagementBloc, ManagementState>(
                 builder: (context, state) {
               if (state is! ManagementLoaded) {

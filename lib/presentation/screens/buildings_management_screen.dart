@@ -30,7 +30,7 @@ class BuildingsManagementScreen extends StatelessWidget {
               color: AppTheme.primaryColor,
             ),
             tooltip: 'Add Building',
-            onPressed: () => _showAddBuildingDialog(context),
+            onPressed: () => showAddBuildingDialog(context),
           ),
         ],
       ),
@@ -97,7 +97,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
-                      onPressed: () => _showAddBuildingDialog(context),
+                      onPressed: () => showAddBuildingDialog(context),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Building'),
                       style: ElevatedButton.styleFrom(
@@ -194,7 +194,7 @@ class BuildingsManagementScreen extends StatelessWidget {
     );
   }
 
-  void _showAddBuildingDialog(BuildContext context) {
+  static void showAddBuildingDialog(BuildContext context) {
     final managementBloc = context.read<ManagementBloc>();
     final nameController = TextEditingController();
     final addressController = TextEditingController();

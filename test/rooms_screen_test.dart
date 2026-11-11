@@ -64,6 +64,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Room 102'), findsOneWidget);
       expect(find.text('0 / 0 beds available'), findsOneWidget);
+      await tester.tap(find.byTooltip('Add building, room or tenant'));
+      await tester.pumpAndSettle();
+      expect(find.text('Add Building'), findsOneWidget);
+      expect(find.text('Add Rooms'), findsOneWidget);
+      expect(find.text('Add Tenant'), findsOneWidget);
+      await tester.tap(find.text('Add Building'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(TextField, 'Building Name'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
