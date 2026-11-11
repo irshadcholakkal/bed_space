@@ -39,6 +39,16 @@
 
 <body>
   <noscript>Enable JavaScript to use Bed Space Management.</noscript>
+  <script>
+    // Upgrade old hash-style app bookmarks before Flutter reads the URL.
+    if (location.hash.startsWith('#/') && !location.hash.startsWith('#//')) {
+      const base = new URL(document.baseURI);
+      const route = new URL(location.hash.slice(2), base);
+      if (route.origin === base.origin && route.pathname.startsWith(base.pathname)) {
+        history.replaceState(history.state, '', route.href);
+      }
+    }
+  </script>
   <script src="pwa.js" defer></script>
   <script src="flutter_bootstrap.js" async></script>
 </body>

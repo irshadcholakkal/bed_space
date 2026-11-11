@@ -1,4 +1,4 @@
-import 'package:bed_space/presentation/screens/room_expenses_screen.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/management/management_bloc.dart';
@@ -258,19 +258,8 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                       borderRadius: BorderRadius.circular(10),
                                       child: ListTile(
                                         onTap: () {
-                                          final bloc =
-                                              context.read<ManagementBloc>();
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                              builder: (context) =>
-                                                  BlocProvider.value(
-                                                value: bloc,
-                                                child: RoomExpensesScreen(
-                                                    room: room),
-                                              ),
-                                            ),
-                                          );
+                                          context.push(
+                                              '/rooms/${Uri.encodeComponent(room.roomId ?? '')}/expenses');
                                         },
 
                                         //  => _showEditRoomDialog(context, room),

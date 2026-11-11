@@ -10,6 +10,16 @@ async function isAppShell(response) {
     (await response.clone().text()).includes('flutter_bootstrap.js');
 }
 
+function navigationShell(response) {
+  // Cached index.html may have followed a host canonical redirect. Returning
+  // that response directly to a manual-redirect navigation can cause ERR_FAILED.
+  const headers = new Headers(response.headers);
+  headers.delete('content-encoding');
+  headers.delete('content-length');
+  headers.set('Cache-Control', 'no-store');
+  return new Response(response.body, { status: 200, headers });
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const response = await fetch(new URL('pwa-precache.json', ROOT), { cache: 'no-store' });
@@ -49,19 +59,26 @@ self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET' || url.origin !== ROOT.origin ||
       !url.pathname.startsWith(ROOT.pathname)) return;
   event.respondWith((async () => {
-    const cache = await caches.open(CACHE);
     if (event.request.mode === 'navigate') {
-      const cached = await cache.match(SHELL);
-      if (await isAppShell(cached)) return cached;
+      try {
+        const cache = await caches.open(CACHE);
+        const cached = await cache.match(SHELL);
+        if (await isAppShell(cached)) return navigationShell(cached);
+      } catch (_) { /* Storage may be unavailable in private/restricted browsers. */ }
       // Keep the browser's callback URL intact, but fetch the root shell when
       // the local cache was evicted. Deep URLs need not exist on the host.
       try {
         const shell = await fetch(new URL('./', ROOT), { cache: 'no-store' });
-        if (await isAppShell(shell)) return shell;
+        if (await isAppShell(shell)) return navigationShell(shell);
       } catch (_) { /* Offer a useful response when the device is offline. */ }
       return new Response('Bedspace is unavailable offline. Reconnect and reload to open your workspace.',
         { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
     }
-    return (await cache.match(event.request)) || fetch(event.request);
+    try {
+      const cache = await caches.open(CACHE);
+      const cached = await cache.match(event.request);
+      if (cached) return cached;
+    } catch (_) { /* A cache failure must not block online app assets. */ }
+    return fetch(event.request);
   })());
 });

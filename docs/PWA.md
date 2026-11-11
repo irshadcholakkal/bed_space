@@ -5,7 +5,7 @@
 - `/`: Next.js static marketing page, immediately readable HTML. No Flutter,
   CanvasKit, database initialization or Google SDK downloads on the public page.
 - `/app/`: Flutter account screens and workspace; install the PWA from this URL.
-- `/app/?view=login` and `/app/?view=signup&billing=annual`: account entry points.
+- `/app/login` and `/app/signup?billing=annual`: account entry points.
 
 Run `./scripts/build_pwa.ps1` locally. It builds Flutter with base href `/app/`,
 prepares the app's offline manifest, builds the Next.js static export, then
@@ -90,3 +90,5 @@ app windows close to avoid mixing versions.
 If SQLite web dependencies change, regenerate their binaries with
 `dart run sqflite_common_ffi_web:setup --force`, then rebuild. Verify the workspace
 manifest, service worker scope, cache storage and IndexedDB in browser DevTools.
+
+See [all application routes](ROUTING.md) for direct page URLs, protected-route redirects and legacy links.

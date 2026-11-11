@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -7,7 +8,6 @@ import '../blocs/management/management_bloc.dart';
 import '../../data/models/payment_model.dart';
 import '../../data/models/expense_model.dart';
 import '../theme/app_theme.dart';
-import 'tenants_management_screen.dart';
 import '../widgets/sharing_actions.dart';
 
 class FinancialsScreen extends StatefulWidget {
@@ -177,15 +177,7 @@ class _FinancialsScreenState extends State<FinancialsScreen> {
         IconButton(
           icon: const Icon(Icons.people_outline, color: AppTheme.textColor),
           onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => BlocProvider.value(
-                  value: context.read<ManagementBloc>(),
-                  child: const TenantsManagementScreen(),
-                ),
-              ),
-            );
+            context.push('/tenants');
           },
         ),
         const SizedBox(width: 16),

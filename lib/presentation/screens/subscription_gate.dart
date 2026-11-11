@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/services/subscription_service.dart';
@@ -132,9 +133,7 @@ class _SubscriptionGateState extends State<SubscriptionGate>
                             : 'Your membership is active',
                         style: const TextStyle(fontSize: 12))),
                 TextButton(
-                    onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                            builder: (_) => BillingScreen(access: _access))),
+                    onPressed: () => context.push('/billing'),
                     child: const Text('Membership')),
               ]))),
       Expanded(child: widget.child),

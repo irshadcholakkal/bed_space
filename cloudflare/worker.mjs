@@ -1,7 +1,23 @@
 // Public marketing HTML lives at /. Flutter and its SPA fallback live at /app/.
+const appAliases = new Set(['login', 'signup', 'dashboard', 'rooms', 'financials',
+  'settings', 'buildings', 'tenants', 'vacant-beds', 'billing', 'admin', 'connect-google']);
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
+    const segments = url.pathname.split('/').filter(Boolean);
+    if (url.pathname === '/auth/callback') {
+      url.pathname = '/app/auth/callback';
+      return Response.redirect(url.href, 308);
+    }
+    if (appAliases.has(segments[0])) {
+      url.pathname = '/app/' + segments.join('/');
+      return Response.redirect(url.href, 308);
+    }
+    if (['features', 'pricing', 'guides'].includes(segments[0]) && segments.length === 1) {
+      url.pathname = '/';
+      url.hash = segments[0];
+      return Response.redirect(url.href, 308);
+    }
     if (url.pathname === '/app') {
       url.pathname = '/app/';
       return Response.redirect(url.href, 308);

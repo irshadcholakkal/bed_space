@@ -1,16 +1,10 @@
-import 'package:bed_space/presentation/blocs/management/management_bloc.dart'
-    as management_bloc;
+import 'package:go_router/go_router.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/dashboard/dashboard_bloc.dart';
-import '../blocs/management/management_bloc.dart';
 import '../theme/app_theme.dart';
 import '../widgets/stat_card.dart';
-import 'buildings_management_screen.dart';
-import 'rooms_management_screen.dart';
-import 'tenants_management_screen.dart';
-import 'vacant_beds_screen.dart';
 
 /// Dashboard Screen
 /// Shows overview statistics and current month financials
@@ -28,15 +22,7 @@ class DashboardScreen extends StatelessWidget {
             icon: const Icon(Icons.business),
             tooltip: 'Manage Buildings',
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: context.read<ManagementBloc>(),
-                    child: const BuildingsManagementScreen(),
-                  ),
-                ),
-              );
+              context.push('/buildings');
             },
           ),
         ],
@@ -113,15 +99,7 @@ class DashboardScreen extends StatelessWidget {
                             icon: Icons.apartment, // More Airbnb-like icon
                             color: AppTheme.primaryColor,
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BlocProvider.value(
-                                    value: context.read<ManagementBloc>(),
-                                    child: const BuildingsManagementScreen(),
-                                  ),
-                                ),
-                              );
+                              context.push('/buildings');
                             },
                           ),
                         ),
@@ -133,17 +111,7 @@ class DashboardScreen extends StatelessWidget {
                             icon: Icons.meeting_room,
                             color: AppTheme.secondaryColor,
                             onTap: () {
-                              final bloc = context
-                                  .read<management_bloc.ManagementBloc>();
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BlocProvider.value(
-                                    value: bloc,
-                                    child: const RoomsManagementScreen(),
-                                  ),
-                                ),
-                              );
+                              context.push('/rooms/manage');
                               // Navigator.push(
                               //   context,
                               //   MaterialPageRoute(
@@ -184,15 +152,7 @@ class DashboardScreen extends StatelessWidget {
                             icon: Icons.people,
                             color: AppTheme.successColor,
                             onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => BlocProvider.value(
-                                    value: context.read<ManagementBloc>(),
-                                    child: const TenantsManagementScreen(),
-                                  ),
-                                ),
-                              );
+                              context.push('/tenants');
                             },
                           ),
                         ),
@@ -206,15 +166,7 @@ class DashboardScreen extends StatelessWidget {
                       color: AppTheme.primaryColor, // Highlight availability
                       fullWidth: true,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => BlocProvider.value(
-                              value: context.read<ManagementBloc>(),
-                              child: const VacantBedsScreen(),
-                            ),
-                          ),
-                        );
+                        context.push('/vacant-beds');
                       },
                     ),
                     const SizedBox(height: 48),

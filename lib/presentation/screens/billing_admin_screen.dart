@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -31,7 +32,7 @@ class _BillingAdminShortcutState extends State<BillingAdminShortcut> {
                     child: FloatingActionButton.extended(
                         heroTag: 'billing-admin',
                         onPressed: () =>
-                            Navigator.of(context).pushNamed('/admin'),
+                            context.push('/admin'),
                         icon: const Icon(Icons.admin_panel_settings_outlined),
                         label: const Text('Administration')))
                 : const SizedBox()),

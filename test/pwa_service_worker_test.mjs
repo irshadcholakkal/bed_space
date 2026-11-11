@@ -5,7 +5,7 @@ import { runInNewContext } from 'node:vm';
 
 const shell = () => new Response('<html><script src="flutter_bootstrap.js"></script></html>',
   { headers: { 'Content-Type': 'text/html' } });
-function worker(fetcher, cached, scope = '/') {
+function worker(fetcher, cached, scope = '/', cacheUnavailable = false) {
   const events = {};
   const stored = new Map(cached ? [[`https://example.com${scope}index.html`, cached]] : []);
   const cache = { match: async (url) => stored.get(url), put: async (url, value) => stored.set(url, value) };
@@ -13,7 +13,10 @@ function worker(fetcher, cached, scope = '/') {
     .replace('__PWA_VERSION__', 'test'), {
     self: { location: { href: `https://example.com${scope}pwa-sw.js` },
       addEventListener: (name, callback) => { events[name] = callback; } },
-    URL, Response, fetch: fetcher, caches: { open: async () => cache },
+    URL, Response, Headers, fetch: fetcher, caches: { open: async () => {
+      if (cacheUnavailable) throw new Error('Cache storage unavailable');
+      return cache;
+    } },
   });
   return {
     stored,
@@ -30,6 +33,23 @@ function worker(fetcher, cached, scope = '/') {
 test('Navigation uses the cached release shell without a network request', async () => {
   const w = worker(() => { throw new Error('Unexpected network'); }, shell());
   assert.equal((await w.navigate()).status, 200);
+});
+test('Redirected cached HTML becomes a fresh navigation response', async () => {
+  const cached = shell();
+  Object.defineProperty(cached, 'redirected', { value: true });
+  const w = worker(() => { throw new Error('Unexpected network'); }, cached);
+  const response = await w.navigate();
+  assert.equal(response.status, 200);
+  assert.equal(response.redirected, false);
+  assert.notEqual(response, cached);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.match(await response.text(), /flutter_bootstrap/);
+});
+test('Unavailable cache storage does not reject callback navigation', async () => {
+  const w = worker(async () => shell(), null, '/app/', true);
+  const response = await w.navigate('https://example.com/app/?error=server_error');
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /flutter_bootstrap/);
 });
 test('Evicted cache fetches the root shell instead of a missing callback route', async () => {
   const requested = [];

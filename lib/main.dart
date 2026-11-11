@@ -3,6 +3,8 @@ library;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
@@ -22,7 +24,8 @@ import 'data/repositories/management_repository.dart';
 import 'data/repositories/sync_worker.dart';
 import 'data/services/saas_service.dart';
 import 'presentation/screens/saas_gate.dart';
-import 'presentation/screens/billing_admin_screen.dart';
+import 'presentation/routing/app_router.dart';
+import 'presentation/routing/app_routes.dart';
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
@@ -34,6 +37,8 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  if (kIsWeb) usePathUrlStrategy();
+  await AppRouteIntent.restore();
   initializeDatabasePlatform();
   await SaasService.initialize();
 
@@ -58,23 +63,37 @@ void main() async {
   runApp(const BedSpaceApp());
 }
 
-class BedSpaceApp extends StatelessWidget {
+class BedSpaceApp extends StatefulWidget {
   const BedSpaceApp({super.key});
+  @override
+  State<BedSpaceApp> createState() => _BedSpaceAppState();
+}
+
+class _BedSpaceAppState extends State<BedSpaceApp> {
+  late final AuthRouterRefresh _refresh = AuthRouterRefresh();
+  late final GoRouter _router = createAppRouter(_refresh);
+
+  @override
+  void dispose() {
+    _router.dispose();
+    _refresh.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Bedspace | Shared accommodation management',
       theme: AppTheme.theme,
       debugShowCheckedModeBanner: false,
-      home: const SaasGate(),
-      routes: {'/admin': (_) => const BillingAdminScreen()},
+      routerConfig: _router,
     );
   }
 }
 
 class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
+  final Widget? child;
+  const AuthWrapper({super.key, this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +150,7 @@ class AuthWrapper extends StatelessWidget {
                     ..add(const LoadAllManagementData()),
                 ),
               ],
-              child: const HomeScreen(),
+              child: child ?? const HomeScreen(),
             );
           },
         ),

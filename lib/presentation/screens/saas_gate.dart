@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/sheet/sheet_bloc.dart';
@@ -17,7 +18,9 @@ import 'billing_admin_screen.dart';
 
 /// Supabase identity gates the Google-connected workspace, including named routes.
 class SaasGate extends StatefulWidget {
-  const SaasGate({super.key});
+  final Widget? child;
+  final bool requiresWorkspace;
+  const SaasGate({super.key, this.child, this.requiresWorkspace = true});
   @override
   State<SaasGate> createState() => _SaasGateState();
 }
@@ -30,24 +33,21 @@ class _SaasGateState extends State<SaasGate> {
     super.initState();
     if (SaasService.configured) {
       _subscription = SaasService.client.auth.onAuthStateChange.listen((data) {
+        if (!mounted) return;
         if (data.event == AuthChangeEvent.signedIn) _authRevision++;
-        if (SaasService.userId != null &&
-            data.event == AuthChangeEvent.signedIn) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (mounted) {
-              Navigator.of(context).popUntil((route) => route.isFirst);
-            }
-          });
-        }
         if (SaasService.userId == null) {
           SheetRepository.clearSessionTokens();
+        }
+        if (GoRouter.maybeOf(context) == null &&
+            (SaasService.userId == null ||
+                data.event == AuthChangeEvent.signedIn)) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (mounted) {
               Navigator.of(context).popUntil((route) => route.isFirst);
             }
           });
         }
-        if (mounted) setState(() {});
+        setState(() {});
       }, onError: (Object error) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -83,6 +83,7 @@ class _SaasGateState extends State<SaasGate> {
       }
       return const LandingScreen();
     }
+    if (!widget.requiresWorkspace) return widget.child!;
     return BillingAdminShortcut(
         key: ValueKey(SaasService.userId),
         child: SubscriptionGate(
@@ -136,7 +137,9 @@ class _SaasGateState extends State<SaasGate> {
                                         style: TextStyle(color: Colors.white))),
                               ])))),
                   Expanded(
-                      child: AuthWrapper(key: ValueKey(SaasService.userId))),
+                      child: AuthWrapper(
+                          key: ValueKey(SaasService.userId),
+                          child: widget.child)),
                 ]))));
   }
 }

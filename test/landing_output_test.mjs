@@ -11,8 +11,8 @@ test('Static landing contains the design and app links without loading Flutter',
     'Built around your working day', 'A simple plan for your spaces', 'Make yourself at home']) {
     assert.ok(html.includes(heading), heading);
   }
-  assert.ok(html.includes('href="/app/?view=login"'));
-  assert.ok(html.includes('href="/app/?view=signup'));
+  assert.ok(html.includes('href="/app/login"'));
+  assert.ok(html.includes('href="/app/signup'));
   assert.ok(html.includes('billing=annual'));
   assert.ok(html.includes('<details>'));
   assert.doesNotMatch(html, /flutter_bootstrap\.js|main\.dart\.js|canvaskit/);

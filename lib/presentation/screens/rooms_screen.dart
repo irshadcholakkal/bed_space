@@ -1,11 +1,9 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/room/room_bloc.dart';
-import '../blocs/management/management_bloc.dart' as management_bloc;
 import '../theme/app_theme.dart';
 import '../../data/models/bed_model.dart'; // Added
-import 'rooms_management_screen.dart';
-import 'tenants_management_screen.dart';
 
 /// Rooms Screen
 /// Shows buildings and rooms with vacancy status
@@ -49,32 +47,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
             ),
             tooltip: 'Manage Rooms',
             onPressed: () {
-              final bloc = context.read<management_bloc.ManagementBloc>();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: bloc,
-                    child: const RoomsManagementScreen(),
-                  ),
-                ),
-              );
+              context.push('/rooms/manage');
             },
           ),
           IconButton(
             icon: const Icon(Icons.people_outline, color: AppTheme.textColor),
             tooltip: 'Manage Tenants',
             onPressed: () {
-              final bloc = context.read<management_bloc.ManagementBloc>();
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => BlocProvider.value(
-                    value: bloc,
-                    child: const TenantsManagementScreen(),
-                  ),
-                ),
-              );
+              context.push('/tenants');
             },
           ),
         ],

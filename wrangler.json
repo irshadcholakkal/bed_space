@@ -14,6 +14,10 @@
     "directory": "./build/site",
     "binding": "ASSETS",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/app", "/app/*"]
+    "run_worker_first": ["/app", "/app/*", "/auth/callback", "/login", "/login/", "/signup", "/signup/",
+      "/dashboard", "/dashboard/", "/rooms", "/rooms/*", "/financials", "/financials/",
+      "/settings", "/settings/", "/buildings", "/buildings/", "/tenants", "/tenants/*",
+      "/vacant-beds", "/vacant-beds/", "/billing", "/billing/*", "/admin", "/admin/",
+      "/connect-google", "/connect-google/", "/features", "/features/", "/pricing", "/pricing/", "/guides", "/guides/"]
   }
 }

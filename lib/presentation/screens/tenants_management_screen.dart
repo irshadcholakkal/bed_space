@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -1753,15 +1754,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
   }
 
   void _navigateToRentBalance(BuildContext context, String tenantId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: context.read<ManagementBloc>(),
-          child: RentBalanceScreen(tenantId: tenantId),
-        ),
-      ),
-    );
+    context.push('/tenants/${Uri.encodeComponent(tenantId)}/rent-balance');
   }
 }
 

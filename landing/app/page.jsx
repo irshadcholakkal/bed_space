@@ -15,12 +15,12 @@ function Heading({ title, children }) {
   return <header className="section-heading"><h2>{title}</h2><p>{children}</p></header>;
 }
 function CTA({ children = 'Start your 1-month free trial' }) {
-  return <a className="button primary" href="/app/?view=signup">{children}</a>;
+  return <a className="button primary" href="/app/signup">{children}</a>;
 }
 export default function Home() {
   return <><HostingTransition /><a className="skip-link" href="#main">Skip to content</a>
     <header className="site-nav"><div className="container nav-inner"><a className="brand" href="/" aria-label="Bedspace home"><img src="/media/logo.png" width="37" height="40" alt="" /><span>Bedspace</span></a>
-      <nav aria-label="Main navigation"><a className="desktop-link" href="#pricing">Pricing</a><a className="desktop-link" href="#features">Features</a><a className="desktop-link" href="#guides">Guides</a><a href="/app/?view=login">Sign in</a><a className="button primary compact" href="/app/?view=signup">Try free</a></nav>
+      <nav aria-label="Main navigation"><a className="desktop-link" href="#pricing">Pricing</a><a className="desktop-link" href="#features">Features</a><a className="desktop-link" href="#guides">Guides</a><a href="/app/login">Sign in</a><a className="button primary compact" href="/app/signup">Try free</a></nav>
     </div></header>
     <main id="main"><section className="hero">
       <picture className="hero-image"><source media="(max-width: 760px)" srcSet="/media/landscape-small.webp" /><img src="/media/landscape.webp" alt="" fetchPriority="high" width="1600" height="1100" /></picture><div className="hero-shade" />
@@ -38,6 +38,6 @@ export default function Home() {
     <section className="section" id="guides"><div className="container"><Heading title="Make yourself at home">A few useful guides to help you get started with your new workspace.</Heading><div className="guide-grid">{guides.map(([icon, title, tag, heading, first, second], index) => <article className="guide" key={tag}><details><summary><span className={`guide-art art-${index}`}><Icon name={icon} size={56} /><span className="guide-open"><Icon name="diagonal" size={18} /></span></span><h3>{title}</h3><span className="tag">Bedspace guide / {tag}</span></summary><div className="guide-body"><h4>{heading}</h4><p>{first}</p><p>{second}</p></div></details></article>)}</div></div></section>
     <section className="section closing"><div className="container"><Heading title="Make room for a simpler day">A thoughtful workspace for buildings, tenants and rent, with business records that stay in your Google account.</Heading><div className="cta-row"><CTA>Try Bedspace free</CTA><a className="button outline" href="#pricing">View membership</a></div><img className="hills" src="/media/hills.webp" width="1200" height="480" loading="lazy" decoding="async" alt="" /></div></section>
     </main>
-    <footer className="site-footer"><div className="container"><div className="footer-top"><div className="footer-about"><img src="/media/logo.png" width="50" height="50" alt="Bedspace" loading="lazy" /><p>A calmer workspace for shared accommodation.</p></div><div><h4>Product</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#guides">Guides</a></div><div><h4>Your account</h4><a href="/app/?view=login">Sign in</a><a href="/app/?view=signup">Start free trial</a><a href="#guides">Data ownership</a></div></div><div className="footer-wordmark" aria-hidden="true">Bedspace</div><p className="footer-bottom">The Percentage Company / Shared spaces, thoughtfully managed.</p></div></footer>
+    <footer className="site-footer"><div className="container"><div className="footer-top"><div className="footer-about"><img src="/media/logo.png" width="50" height="50" alt="Bedspace" loading="lazy" /><p>A calmer workspace for shared accommodation.</p></div><div><h4>Product</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#guides">Guides</a></div><div><h4>Your account</h4><a href="/app/login">Sign in</a><a href="/app/signup">Start free trial</a><a href="#guides">Data ownership</a></div></div><div className="footer-wordmark" aria-hidden="true">Bedspace</div><p className="footer-bottom">The Percentage Company / Shared spaces, thoughtfully managed.</p></div></footer>
   </>;
 }

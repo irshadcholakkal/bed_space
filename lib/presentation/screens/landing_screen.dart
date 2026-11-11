@@ -1,3 +1,4 @@
+import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -35,11 +36,20 @@ class _LandingScreenState extends State<LandingScreen> {
           : const Duration(milliseconds: 800),
       curve: Curves.easeInOutCubic,
       alignment: .10);
-  void _open({bool register = true, bool? annual}) =>
+  void _open({bool register = true, bool? annual}) {
+    final billing = (annual ?? _annual) ? 'annual' : 'monthly';
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      router.push(Uri(
+          path: register ? '/signup' : '/login',
+          queryParameters: {'billing': billing}).toString());
+    } else {
       Navigator.of(context).push(MaterialPageRoute<void>(
-          builder: (_) => SaasAuthScreen(
-              register: register,
-              billingCycle: (annual ?? _annual) ? 'annual' : 'monthly')));
+          builder: (_) =>
+              SaasAuthScreen(register: register, billingCycle: billing)));
+    }
+  }
+
   Widget _reveal(Widget child, {int delay = 0}) =>
       LandingReveal(scroll: _scroll, delay: delay, child: child);
   @override

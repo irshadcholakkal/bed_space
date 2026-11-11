@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:go_router/go_router.dart';
+import '../routing/app_routes.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/services/google_auth_service.dart';
@@ -56,6 +58,8 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
       _message = null;
     });
     try {
+      SaasService.startupAuthError = null;
+      await _rememberDestination();
       if (_register) {
         final result = await SaasService.client.auth.signUp(
           email: _email.text.trim(),
@@ -72,7 +76,12 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
             email: _email.text.trim(), password: _password.text);
       }
       if (mounted && SaasService.userId != null) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
+        final router = GoRouter.maybeOf(context);
+        if (router != null) {
+          router.refresh();
+        } else {
+          Navigator.of(context).popUntil((route) => route.isFirst);
+        }
       }
     } on AuthException catch (e) {
       if (mounted) setState(() => _message = e.message);
@@ -86,12 +95,30 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
     }
   }
 
-  void _switchMode() => setState(() {
-        _register = !_register;
-        _message = null;
-        _password.clear();
-        _form.currentState?.reset();
-      });
+  Future<void> _rememberDestination() async {
+    final router = GoRouter.maybeOf(context);
+    await AppRouteIntent.save(
+        router?.routeInformationProvider.value.uri.queryParameters['from']);
+  }
+
+  void _switchMode() {
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      final parameters =
+          router.routeInformationProvider.value.uri.queryParameters;
+      router.go(Uri(path: _register ? '/login' : '/signup', queryParameters: {
+        if (parameters['from'] != null) 'from': parameters['from']!,
+        if (parameters['billing'] == 'annual') 'billing': 'annual',
+      }).toString());
+      return;
+    }
+    setState(() {
+      _register = !_register;
+      _message = null;
+      _password.clear();
+      _form.currentState?.reset();
+    });
+  }
 
   Future<void> _submit() async {
     setState(() {
@@ -99,6 +126,8 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
       _message = null;
     });
     try {
+      SaasService.startupAuthError = null;
+      await _rememberDestination();
       await GoogleAuthService().signIn();
     } catch (_) {
       if (mounted) {

@@ -8,6 +8,10 @@ export function HostingTransition() {
     // Preserve old email/OAuth/payment return links when the root becomes Next.
     const query = new URLSearchParams(location.search);
     const fragment = new URLSearchParams(location.hash.slice(1));
+    if (location.hash.startsWith('#/') && !location.hash.startsWith('#//')) {
+      location.replace('/app' + location.hash.slice(1));
+      return;
+    }
     if (['code', 'error', 'access_token', 'refresh_token', 'token_hash', 'billing'].some(key => query.has(key) || fragment.has(key))) {
       location.replace('/app/' + location.search + location.hash);
       return;
@@ -57,7 +61,7 @@ export function Pricing() {
       <article key={title} className={`plan ${index === (annual ? 2 : 1) ? 'highlighted' : ''}`}>
         <h3>{title}</h3><div className="price">{price}</div><p className="period">{period}</p><p className="plan-description">{description}</p>
         <div className="plan-features"><span className="tag">Included in your workspace</span><ul>{features.map(feature => <li key={feature}><Icon name="check" size={15} />{feature}</li>)}</ul></div>
-        <a className="button primary" href={`/app/?view=signup&billing=${index === 0 ? (annual ? 'annual' : 'monthly') : billing}`}>{button}</a>
+        <a className="button primary" href={`/app/signup?billing=${index === 0 ? (annual ? 'annual' : 'monthly') : billing}`}>{button}</a>
       </article>)}</div></>;
 }
 

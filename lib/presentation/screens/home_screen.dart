@@ -1,59 +1,39 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'dashboard_screen.dart';
-import 'rooms_screen.dart';
-import 'financials_screen.dart';
-import 'settings_screen.dart';
 
-/// Home Screen with Bottom Navigation
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+class HomeScreen extends StatelessWidget {
+  final Widget? child;
+  const HomeScreen({super.key, this.child});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
-
-  final List<Widget> _screens = [
-    const DashboardScreen(),
-    const RoomsScreen(),
-    const FinancialsScreen(),
-    const SettingsScreen(),
-  ];
+  static int tabFor(String path) {
+    if (path == '/financials' || path.endsWith('/rent-balance')) return 2;
+    if (path == '/settings') return 3;
+    if (path == '/rooms' || path.startsWith('/rooms/')) return 1;
+    return 0;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final path =
+        GoRouter.maybeOf(context)?.routeInformationProvider.value.uri.path ??
+            '/dashboard';
     return Scaffold(
-      body: _screens[_currentIndex],
+      body: child ?? const DashboardScreen(),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
+        currentIndex: tabFor(path),
+        onTap: (index) => context
+            .go(['/dashboard', '/rooms', '/financials', '/settings'][index]),
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.grid_view), // Dashboard
-            activeIcon: Icon(Icons.grid_view_rounded),
-            label: 'Dashboard',
-          ),
+              icon: Icon(Icons.grid_view), label: 'Dashboard'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.meeting_room_outlined), // Rooms
-            activeIcon: Icon(Icons.meeting_room),
-            label: 'Rooms',
-          ),
+              icon: Icon(Icons.meeting_room_outlined), label: 'Rooms'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.account_balance_wallet_outlined), // Financials
-            activeIcon: Icon(Icons.account_balance_wallet),
-            label: 'Financials',
-          ),
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              label: 'Financials'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.settings_outlined), // Settings
-            activeIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+              icon: Icon(Icons.settings_outlined), label: 'Settings'),
         ],
       ),
     );
