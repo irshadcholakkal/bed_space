@@ -45,9 +45,7 @@ class GoogleAuthService {
       }
       final launched = await SaasService.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: kIsWeb
-            ? Uri.base.replace(path: '/', query: '', fragment: '').toString()
-            : callback,
+        redirectTo: kIsWeb ? SaasService.authRedirectUrl : callback,
         scopes: _scopes.join(' '),
         queryParams: const {'prompt': 'consent'},
       );

@@ -24,6 +24,9 @@ export DART_SUPPRESS_ANALYTICS=true
 flutter --version
 flutter config --no-analytics
 flutter pub get --enforce-lockfile
-flutter build web --release --no-wasm-dry-run --no-web-resources-cdn --base-href / \
+flutter build web --release --no-wasm-dry-run --no-web-resources-cdn --base-href /app/ \
   --dart-define-from-file=.dart_tool/build-config.json
 node scripts/prepare_pwa.mjs
+npm ci --prefix landing --no-audit --no-fund
+npm run build --prefix landing
+node scripts/assemble-site.mjs

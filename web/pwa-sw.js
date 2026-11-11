@@ -1,6 +1,7 @@
 // Replaced with a content-derived version by scripts/prepare_pwa.mjs.
-const CACHE = 'bed-space-__PWA_VERSION__';
 const ROOT = new URL('./', self.location.href);
+const CACHE_PREFIX = ROOT.pathname === '/' ? 'bed-space-' : 'bed-space-app-';
+const CACHE = `${CACHE_PREFIX}__PWA_VERSION__`;
 const SHELL = new URL('index.html', ROOT).href;
 
 async function isAppShell(response) {
@@ -14,7 +15,7 @@ self.addEventListener('install', (event) => {
     const response = await fetch(new URL('pwa-precache.json', ROOT), { cache: 'no-store' });
     if (!response.ok) throw new Error('Missing release precache manifest');
     const { version, files } = await response.json();
-    if (CACHE !== `bed-space-${version}`) throw new Error('Release changed during installation; retry later');
+    if (CACHE !== `${CACHE_PREFIX}${version}`) throw new Error('Release changed during installation; retry later');
     // Download and validate everything before writing the new release cache.
     // SPA hosts can return HTML with status 200 for a missing JS/WASM asset.
     const entries = await Promise.all(files.map(async (file) => {
@@ -36,7 +37,7 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const names = await caches.keys();
-    await Promise.all(names.filter((name) => name.startsWith('bed-space-') && name !== CACHE)
+    await Promise.all(names.filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE)
       .map((name) => caches.delete(name)));
     await self.clients.claim();
   })());

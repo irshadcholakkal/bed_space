@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/sheet/sheet_bloc.dart';
@@ -10,6 +11,7 @@ import '../../data/services/saas_service.dart';
 import '../../data/services/local_database_service.dart';
 import '../../main.dart';
 import 'landing_screen.dart';
+import 'saas_auth_screen.dart';
 import 'subscription_gate.dart';
 import 'billing_admin_screen.dart';
 
@@ -66,7 +68,21 @@ class _SaasGateState extends State<SaasGate> {
 
   @override
   Widget build(BuildContext context) {
-    if (SaasService.userId == null) return const LandingScreen();
+    if (SaasService.userId == null) {
+      if (SaasService.startupAuthError != null) {
+        return SaasAuthScreen(
+            register: false, initialMessage: SaasService.startupAuthError);
+      }
+      if (kIsWeb &&
+          (Uri.base.path == '/app' || Uri.base.path.startsWith('/app/'))) {
+        return SaasAuthScreen(
+            register: Uri.base.queryParameters['view'] == 'signup',
+            billingCycle: Uri.base.queryParameters['billing'] == 'annual'
+                ? 'annual'
+                : 'monthly');
+      }
+      return const LandingScreen();
+    }
     return BillingAdminShortcut(
         key: ValueKey(SaasService.userId),
         child: SubscriptionGate(

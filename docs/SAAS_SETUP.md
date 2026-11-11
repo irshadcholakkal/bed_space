@@ -1,8 +1,9 @@
 # SaaS account setup
 
-The Flutter app now opens on a public landing page. Customers create an email
-account in Supabase, confirm their email, sign in, and connect Google Sheets
-and Drive. No separate landing-page deployment is needed.
+The public Next.js landing page is at `/`; Flutter account screens and the
+workspace are at `/app/`. Customers sign in with Google or create an email
+account in Supabase and connect Google Sheets and Drive. Both are published
+in the same Cloudflare deployment.
 
 For one-month trials, AED 50 monthly / AED 540 annual pricing, membership access
 and Paymob test payments, also follow [Paymob setup](PAYMOB_SETUP.md).
@@ -17,9 +18,10 @@ Apply its subscription migration before deploying the updated app.
    explains project keys, email redirects and row-level security.
 2. Enable the email authentication provider and email confirmation. Configure
    production SMTP for customer email delivery.
-3. Set the Auth Site URL to `https://bedspace.thepercentagecompany.com` and allow
-   `https://bedspace.thepercentagecompany.com/` as a redirect URL. Add
-   `http://localhost:3000/` for development.
+3. Set the Auth Site URL to `https://bedspace.thepercentagecompany.com/app/` and
+   allow that exact URL as a redirect. Keep the old root URL allowed for old
+   email links; Next.js forwards those callbacks to the app. Add
+   `http://127.0.0.1:4173/app/` for combined local preview.
 4. Add the following public build variables to `.env` locally and to Cloudflare
    **Builds > Variables and secrets** for production:
 
@@ -134,3 +136,32 @@ Supabase web OAuth callback mismatch.
 After saving, start a fresh sign-in. If it still fails, Google error details
 show the actual `redirect_uri` and client ID to compare exactly. See
 [Supabase Google setup](https://supabase.com/docs/guides/auth/social-sign-in/auth-google).
+
+## Google callback: Unable to exchange external code
+
+This error means Supabase received Google's authorization code but its
+server-side token exchange failed. It is separate from app hosting and occurs
+before new-user profile/trial triggers. The underlying Google token-endpoint
+error appears in Supabase Authentication logs for `/callback`.
+
+1. In Google Cloud Console > Google Auth Platform > Clients, open the **Web
+   application** client used by Supabase. The last inspected live request used
+   `70192161390-94371ulkmu9qt4i26d01vp89220rsiia.apps.googleusercontent.com`.
+2. In Supabase Authentication > Sign In / Providers > Google, verify the client
+   ID and re-enter an active **client secret from that same Web client**. A
+   Firebase API key, Android OAuth client, Supabase key or client ID is not a
+   Google client secret. Keep this secret only in Supabase.
+3. Keep the exact Google authorized redirect URI:
+   `https://wyojharbgdxtiobwxvbf.supabase.co/auth/v1/callback`.
+4. Save, open the plain Bedspace home URL, and start a fresh Google sign-in.
+   Do not reload or reuse the failed callback URL; codes are short-lived and
+   single-use. No Flutter rebuild is needed just to update the provider secret.
+5. If the problem continues, inspect the failed `/callback` Auth log for
+   Google's response: `invalid_client` points to client credentials;
+   `invalid_grant` calls for checking code reuse/expiry and redirect consistency.
+   Network or provider failures need to be resolved from that log's specific
+   error. Share only the error category, without codes, tokens or secrets.
+
+The app now recognizes error callbacks at startup and shows a retryable sign-in
+screen instead of silently returning to the landing page. This improves error
+handling but cannot repair Google/Supabase server credentials.

@@ -2,8 +2,8 @@
 
 A Flutter application for managing shared accommodation / bed spaces using Google Sign-In and Google Sheets as the database.
 
-The public landing page and email registration use Supabase for customer
-accounts. Each customer connects their own Google Sheets and Drive for business
+The public landing page is a lightweight Next.js static export at `/`.
+The Flutter workspace and Supabase account screens live at `/app/`. Each customer connects their own Google Sheets and Drive for business
 records. Follow [SaaS setup](docs/SAAS_SETUP.md) to apply the account schema and
 configure the public build variables. The backend migration described in
 `ARCHITECTURE.md` remains planned; the accommodation API is still client-side.
@@ -14,14 +14,13 @@ subscription migration, server-only keys, test checkout and webhook endpoints.
 
 ## Installable web app (PWA)
 
-Build with `./scripts/build_pwa.ps1` and host `build/web` over HTTPS.
-For Cloudflare Pages, use build command `bash scripts/cloudflare-build.sh`,
-framework preset **None**, and build output directory `build/web`.
+Build with `./scripts/build_pwa.ps1`. The combined output is `build/site`:
+Next.js at `/`, Flutter at `/app/`. Only entering the workspace downloads Flutter.
 For Cloudflare Workers, set **Build command** to `bash scripts/cloudflare-build.sh`
 and **Deploy command** to `npx wrangler deploy` in **Settings > Builds**.
-The build must finish before Wrangler can upload `build/web`.
-See [PWA setup](docs/PWA.md) for Google web sign-in configuration, installation,
-offline behavior, and deployment instructions.
+Wrangler serves `build/site` and routes app refreshes to the Flutter shell.
+See [PWA setup](docs/PWA.md) for OAuth callbacks, installation and deployment,
+and [landing development](landing/README.md) for the Next.js source.
 
 ## ⚠️ IMPORTANT DISCLAIMER
 

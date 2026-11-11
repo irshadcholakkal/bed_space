@@ -1,0 +1,43 @@
+import { Icon, ProductGraphic } from './graphics';
+import { HostingTransition, Workflows, Pricing, Roles } from './interactions';
+
+const features = [
+  ['CONNECTED SPACES', 'Every room, in perspective', 'See your buildings, rooms and beds as one connected workspace. Bring vacancy and tenant details together, ready for the next person who walks through the door.'],
+  ['PAYMENT CLARITY', 'Rent records that make sense', 'Track recorded payments, balances and expenses without losing the context. Create rent invoices and receipts when you need them, then keep a copy in Drive.'],
+  ['CUSTOMER-OWNED STORAGE', 'A workspace with your name on it', 'Connect your Google account for your accommodation spreadsheet and private document folder. Manage your account and membership in Bedspace.'],
+];
+const guides = [
+  ['rocket', 'Your first building, room and bed', 'GETTING STARTED', 'Getting started', 'Create your Bedspace account with Google, or sign up with email and confirm your email address. Your one-calendar-month trial begins at account creation. Allow Google access for your accommodation spreadsheet and document folder. Then add your buildings, rooms, beds and tenants.', 'Your workspace is an installable PWA: open the app and use Install app in Chrome or Add to Home Screen in Safari.'],
+  ['grid', 'Where your business records live', 'DATA OWNERSHIP', 'Your data, your Google', 'Bedspace manages your customer profile and membership. Accommodation records live in your connected Google Sheet. Invoice and receipt copies can be saved to your private Google Drive folder.', 'New files are not automatically shared with the developer. Pausing your subscription does not delete your Google files. Temporary workspace copies are cached on your device.'],
+  ['card', 'A guide to your membership', 'PLANS & PAYMENTS', 'Membership and renewal', 'Start with one calendar month free. Then renew at AED 50/month plus other charges, or AED 540/year plus other charges. The annual base price saves 10% compared with twelve monthly payments.', 'Other charges are shown before payment. Your workspace pauses after trial or paid access expires. A verified Paymob payment reopens it. Renewals are customer-initiated; automatic card debits are not enabled.'],
+];
+function Heading({ title, children }) {
+  return <header className="section-heading"><h2>{title}</h2><p>{children}</p></header>;
+}
+function CTA({ children = 'Start your 1-month free trial' }) {
+  return <a className="button primary" href="/app/?view=signup">{children}</a>;
+}
+export default function Home() {
+  return <><HostingTransition /><a className="skip-link" href="#main">Skip to content</a>
+    <header className="site-nav"><div className="container nav-inner"><a className="brand" href="/" aria-label="Bedspace home"><img src="/media/logo.png" width="37" height="40" alt="" /><span>Bedspace</span></a>
+      <nav aria-label="Main navigation"><a className="desktop-link" href="#pricing">Pricing</a><a className="desktop-link" href="#features">Features</a><a className="desktop-link" href="#guides">Guides</a><a href="/app/?view=login">Sign in</a><a className="button primary compact" href="/app/?view=signup">Try free</a></nav>
+    </div></header>
+    <main id="main"><section className="hero">
+      <picture className="hero-image"><source media="(max-width: 760px)" srcSet="/media/landscape-small.webp" /><img src="/media/landscape.webp" alt="" fetchPriority="high" width="1600" height="1100" /></picture><div className="hero-shade" />
+      <div className="hero-content container"><h1>Shared space management<br className="desktop-break" /> for modern teams</h1><p>Organize buildings, manage rent and keep your accommodation records together, in a workspace connected to your own Google account.</p><CTA /><small>Then AED 50/month + other charges.</small></div>
+      <span className="floating-glyph glyph-one"><Icon name="folder" size={29} /></span><span className="floating-glyph glyph-two"><Icon name="receipt" size={29} /></span><span className="floating-glyph glyph-three"><Icon name="grid" size={29} /></span><span className="floating-glyph glyph-four"><Icon name="bed" size={29} /></span>
+    </section>
+    <section className="section" id="features"><div className="container"><Heading title="A clearer view of every space">Bring the daily details together, from available beds to the latest rent payment.</Heading>
+      <div className="feature-list">{features.map(([tag, title, body], index) => <article className={`feature-row ${index % 2 ? 'reversed' : ''}`} key={tag}><ProductGraphic kind={index} /><div className="feature-copy"><span className="tag">{tag}</span><h3>{title}</h3><p>{body}</p><a className="button outline" href="#pricing">Explore membership <Icon name="diagonal" size={16} /></a></div></article>)}</div>
+    </div></section>
+    <section className="section"><div className="container"><Heading title="Built around your working day">Explore everyday workflows. These are illustrative examples, ready to make your own.</Heading><Workflows /></div></section>
+    <section className="section pricing-section" id="pricing"><div className="container"><Heading title="A simple plan for your spaces">One month to get comfortable. Then choose monthly or annual membership.</Heading><Pricing />
+      <div className="comparison"><h3>Your membership at a glance</h3><div className="table-scroll" role="region" aria-label="Membership comparison" tabIndex="0"><table><thead><tr>{['Features', 'Trial', 'Monthly', 'Annual'].map(label => <th scope="col" key={label}>{label}</th>)}</tr></thead><tbody><tr><th scope="row">Access period</th><td>1 month</td><td>1 month</td><td>1 year</td></tr>{['Buildings and rooms', 'Beds and tenants', 'Rent and expenses', 'Google Sheets and Drive', 'Invoice and receipt PDFs'].map(label => <tr key={label}><th scope="row">{label}</th>{[0, 1, 2].map(key => <td key={key}><span className="sr-only">Included</span><Icon name="check" size={17} /></td>)}</tr>)}<tr><th scope="row">Base price</th><td>Free</td><td>AED 50</td><td>AED 540</td></tr></tbody></table></div><p className="fine-print">Other charges are additional and shown before payment. Workspace access pauses when the trial or paid period ends without renewal. Your Google files remain yours.</p></div>
+    </div></section>
+    <section className="section"><div className="container"><p className="manifesto">From your first building to your next rent collection, bring your accommodation work into one place. <span>Less switching between tools. More room to focus on the people who live there.</span></p><img className="hills" src="/media/hills.webp" width="1200" height="480" loading="lazy" decoding="async" alt="" /><Roles /></div></section>
+    <section className="section" id="guides"><div className="container"><Heading title="Make yourself at home">A few useful guides to help you get started with your new workspace.</Heading><div className="guide-grid">{guides.map(([icon, title, tag, heading, first, second], index) => <article className="guide" key={tag}><details><summary><span className={`guide-art art-${index}`}><Icon name={icon} size={56} /><span className="guide-open"><Icon name="diagonal" size={18} /></span></span><h3>{title}</h3><span className="tag">Bedspace guide / {tag}</span></summary><div className="guide-body"><h4>{heading}</h4><p>{first}</p><p>{second}</p></div></details></article>)}</div></div></section>
+    <section className="section closing"><div className="container"><Heading title="Make room for a simpler day">A thoughtful workspace for buildings, tenants and rent, with business records that stay in your Google account.</Heading><div className="cta-row"><CTA>Try Bedspace free</CTA><a className="button outline" href="#pricing">View membership</a></div><img className="hills" src="/media/hills.webp" width="1200" height="480" loading="lazy" decoding="async" alt="" /></div></section>
+    </main>
+    <footer className="site-footer"><div className="container"><div className="footer-top"><div className="footer-about"><img src="/media/logo.png" width="50" height="50" alt="Bedspace" loading="lazy" /><p>A calmer workspace for shared accommodation.</p></div><div><h4>Product</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#guides">Guides</a></div><div><h4>Your account</h4><a href="/app/?view=login">Sign in</a><a href="/app/?view=signup">Start free trial</a><a href="#guides">Data ownership</a></div></div><div className="footer-wordmark" aria-hidden="true">Bedspace</div><p className="footer-bottom">The Percentage Company / Shared spaces, thoughtfully managed.</p></div></footer>
+  </>;
+}

@@ -5,13 +5,13 @@ import { runInNewContext } from 'node:vm';
 
 const shell = () => new Response('<html><script src="flutter_bootstrap.js"></script></html>',
   { headers: { 'Content-Type': 'text/html' } });
-function worker(fetcher, cached) {
+function worker(fetcher, cached, scope = '/') {
   const events = {};
-  const stored = new Map(cached ? [['https://example.com/index.html', cached]] : []);
+  const stored = new Map(cached ? [[`https://example.com${scope}index.html`, cached]] : []);
   const cache = { match: async (url) => stored.get(url), put: async (url, value) => stored.set(url, value) };
   runInNewContext(readFileSync(new URL('../web/pwa-sw.js', import.meta.url), 'utf8')
     .replace('__PWA_VERSION__', 'test'), {
-    self: { location: { href: 'https://example.com/pwa-sw.js' },
+    self: { location: { href: `https://example.com${scope}pwa-sw.js` },
       addEventListener: (name, callback) => { events[name] = callback; } },
     URL, Response, fetch: fetcher, caches: { open: async () => cache },
   });
@@ -66,4 +66,20 @@ test('A complete valid release is cached', async () => {
     : new Response('app()', { headers: { 'Content-Type': 'text/javascript' } }));
   await w.install();
   assert.equal(w.stored.size, 2);
+});
+test('App cache loss fetches /app/ rather than the Next landing page', async () => {
+  const requested = [];
+  const w = worker(async url => { requested.push(String(url)); return shell(); }, null, '/app/');
+  assert.equal((await w.navigate('https://example.com/app/rooms?code=example')).status, 200);
+  assert.deepEqual(requested, ['https://example.com/app/']);
+});
+test('App release installation uses the app scope', async () => {
+  const requested = [];
+  const w = worker(async url => {
+    requested.push(String(url));
+    return String(url).endsWith('pwa-precache.json')
+      ? Response.json({ version: 'test', files: ['index.html'] }) : shell();
+  }, null, '/app/');
+  await w.install();
+  assert.deepEqual(requested, ['https://example.com/app/pwa-precache.json', 'https://example.com/app/index.html']);
 });

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../data/services/google_auth_service.dart';
 import '../../data/services/saas_service.dart';
@@ -12,8 +14,12 @@ const _line = Color(0x20ffffff);
 class SaasAuthScreen extends StatefulWidget {
   final bool register;
   final String billingCycle;
+  final String? initialMessage;
   const SaasAuthScreen(
-      {super.key, required this.register, this.billingCycle = 'monthly'});
+      {super.key,
+      required this.register,
+      this.billingCycle = 'monthly',
+      this.initialMessage});
   @override
   State<SaasAuthScreen> createState() => _SaasAuthScreenState();
 }
@@ -21,11 +27,20 @@ class SaasAuthScreen extends StatefulWidget {
 class _SaasAuthScreenState extends State<SaasAuthScreen> {
   late bool _register = widget.register;
   bool _busy = false;
-  String? _message;
+  late String? _message = widget.initialMessage;
   final _form = GlobalKey<FormState>();
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _hidePassword = true;
+
+  Future<void> _goHome() async {
+    if (kIsWeb && Uri.base.path.startsWith('/app')) {
+      await launchUrl(Uri.base.replace(path: '/', query: '', fragment: ''),
+          webOnlyWindowName: '_self');
+    } else if (mounted) {
+      Navigator.maybePop(context);
+    }
+  }
 
   @override
   void dispose() {
@@ -45,8 +60,7 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
         final result = await SaasService.client.auth.signUp(
           email: _email.text.trim(),
           password: _password.text,
-          emailRedirectTo:
-              Uri.base.replace(path: '/', query: '', fragment: '').toString(),
+          emailRedirectTo: SaasService.authRedirectUrl,
           data: {'preferred_billing': widget.billingCycle},
         );
         if (result.session == null && mounted) {
@@ -165,7 +179,7 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
           EdgeInsets.symmetric(horizontal: compact ? 16 : 40, vertical: 16),
       child: Row(children: [
         TextButton(
-          onPressed: _busy ? null : () => Navigator.maybePop(context),
+          onPressed: _busy ? null : _goHome,
           style: TextButton.styleFrom(
               padding: const EdgeInsets.symmetric(horizontal: 4)),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
@@ -179,12 +193,12 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
         if (compact)
           IconButton(
             tooltip: 'Back to home',
-            onPressed: _busy ? null : () => Navigator.maybePop(context),
+            onPressed: _busy ? null : _goHome,
             icon: const Icon(Icons.arrow_back, size: 18),
           )
         else
           TextButton.icon(
-            onPressed: _busy ? null : () => Navigator.maybePop(context),
+            onPressed: _busy ? null : _goHome,
             icon: const Icon(Icons.arrow_back, size: 15),
             label: const Text('Back to home'),
           ),
