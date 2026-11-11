@@ -125,10 +125,7 @@ GoRouter createAppRouter(Listenable refresh) {
                 builder: (_, __) => const TenantPaymentsScreen()),
             GoRoute(
                 path: '/financials',
-                builder: (_, state) => FinancialsScreen(
-                    period: state.uri.queryParameters['period'],
-                    buildingId: state.uri.queryParameters['building'],
-                    roomId: state.uri.queryParameters['room'])),
+                builder: (_, __) => const FinancialsScreen()),
             GoRoute(
                 path: '/settings', builder: (_, __) => const SettingsScreen()),
             GoRoute(
