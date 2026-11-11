@@ -208,7 +208,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                     .where((room) => room.roomId == widget.room.roomId)
                     .firstOrNull ??
                 widget.room;
-            return Text('Finance - ${room.displayName(rooms)}',
+            return Text('Own expenses - ${room.displayName(rooms)}',
                 overflow: TextOverflow.ellipsis);
           },
         ),

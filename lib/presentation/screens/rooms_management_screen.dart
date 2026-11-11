@@ -258,8 +258,12 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                       borderRadius: BorderRadius.circular(10),
                                       child: ListTile(
                                         onTap: () {
-                                          context.push(
-                                              '/rooms/${Uri.encodeComponent(room.roomId ?? '')}/expenses');
+                                          context.push(Uri(
+                                              path: '/rooms',
+                                              queryParameters: {
+                                                'building': room.buildingId,
+                                                'room': room.roomId ?? '',
+                                              }).toString());
                                         },
 
                                         //  => _showEditRoomDialog(context, room),

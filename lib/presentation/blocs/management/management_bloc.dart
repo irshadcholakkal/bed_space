@@ -136,7 +136,9 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     try {
       await _repository.triggerSync(); // Try to sync pending changes first
       final buildings = await _repository.getBuildings();
-      emit(_currentState.copyWith(buildings: buildings, isLoading: false));
+      final rooms = await _repository.getRooms();
+      emit(_currentState.copyWith(
+          buildings: buildings, rooms: rooms, isLoading: false));
     } catch (e) {
       emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }

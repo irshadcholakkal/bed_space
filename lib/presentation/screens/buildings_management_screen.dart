@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/management/management_bloc.dart';
 import '../../data/models/building_model.dart';
@@ -125,7 +126,16 @@ class BuildingsManagementScreen extends StatelessWidget {
                     margin: const EdgeInsets.only(bottom: 16),
                     decoration: AppTheme.cardDecoration,
                     child: ListTile(
-                      onTap: () => _showEditBuildingDialog(context, building),
+                      onTap: () =>
+                          context.push(Uri(path: '/rooms', queryParameters: {
+                        'building': building.buildingId ?? '',
+                      }).toString()),
+                      trailing: IconButton(
+                        tooltip: 'Edit building',
+                        onPressed: () =>
+                            _showEditBuildingDialog(context, building),
+                        icon: const Icon(Icons.edit_outlined),
+                      ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
                         vertical: 12,
@@ -162,7 +172,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              'Total Rooms: ${building.totalRooms}',
+                              'Total Rooms: ${state.rooms.where((room) => room.buildingId == building.buildingId).length}',
                               style: const TextStyle(
                                 color: AppTheme.secondaryTextColor,
                                 fontSize: 13,
@@ -188,7 +198,6 @@ class BuildingsManagementScreen extends StatelessWidget {
     final managementBloc = context.read<ManagementBloc>();
     final nameController = TextEditingController();
     final addressController = TextEditingController();
-    final roomsController = TextEditingController(text: '0');
 
     showModalBottomSheet(
       context: context,
@@ -246,21 +255,16 @@ class BuildingsManagementScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: roomsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Total Rooms',
-                    prefixIcon: Icon(Icons.meeting_room_outlined),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
+                const Text(
+                    'Room totals update automatically as you add or remove rooms.',
+                    style: TextStyle(color: AppTheme.secondaryTextColor)),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () {
                     final building = BuildingModel(
                       buildingName: nameController.text,
                       address: addressController.text,
-                      totalRooms: int.tryParse(roomsController.text) ?? 0,
+                      totalRooms: 0,
                     );
                     managementBloc.add(AddBuilding(building));
                     Navigator.pop(context);
@@ -286,9 +290,6 @@ class BuildingsManagementScreen extends StatelessWidget {
     final managementBloc = context.read<ManagementBloc>();
     final nameController = TextEditingController(text: building.buildingName);
     final addressController = TextEditingController(text: building.address);
-    final roomsController = TextEditingController(
-      text: building.totalRooms.toString(),
-    );
 
     showModalBottomSheet(
       context: context,
@@ -361,21 +362,15 @@ class BuildingsManagementScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextField(
-                  controller: roomsController,
-                  decoration: const InputDecoration(
-                    labelText: 'Total Rooms',
-                    prefixIcon: Icon(Icons.meeting_room_outlined),
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
+                const Text(
+                    'Room totals update automatically as you add or remove rooms.',
+                    style: TextStyle(color: AppTheme.secondaryTextColor)),
                 const SizedBox(height: 32),
                 ElevatedButton(
                   onPressed: () {
                     final updated = building.copyWith(
                       buildingName: nameController.text,
                       address: addressController.text,
-                      totalRooms: int.tryParse(roomsController.text) ?? 0,
                     );
                     managementBloc.add(UpdateBuilding(updated));
                     Navigator.pop(context);

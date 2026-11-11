@@ -6,6 +6,8 @@ class AppRoutes {
     dashboard,
     '/rooms',
     '/financials',
+    '/financials/tenants',
+    '/rooms/occupancy',
     '/settings',
     '/buildings',
     '/rooms/manage',

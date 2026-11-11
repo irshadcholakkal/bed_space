@@ -7,7 +7,11 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key, this.child});
 
   static int tabFor(String path) {
-    if (path == '/financials' || path.endsWith('/rent-balance')) return 2;
+    if (path == '/financials' ||
+        path.startsWith('/financials/') ||
+        path.endsWith('/rent-balance')) {
+      return 2;
+    }
     if (path == '/settings') return 3;
     if (path == '/rooms' || path.startsWith('/rooms/')) return 1;
     return 0;

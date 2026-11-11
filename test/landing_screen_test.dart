@@ -54,10 +54,12 @@ void main() {
       expect(tester.takeException(), isNull);
       await tester.tap(find.text('Try free'));
       await tester.pumpAndSettle();
-      expect(find.text('Business name'), findsOneWidget);
+      expect(find.text('Continue with Google'), findsOneWidget);
+      // Business details are collected after sign-in, before workspace setup.
+      expect(find.text('Business name'), findsNothing);
       expect(
           find.text(
-              'Registration is not available yet. The account service needs to be configured.'),
+              'Account sign-in is not configured for this deployment. Please contact the site administrator.'),
           findsOneWidget);
       expect(tester.takeException(), isNull);
     });

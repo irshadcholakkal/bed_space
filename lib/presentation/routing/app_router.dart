@@ -13,6 +13,8 @@ import '../screens/home_screen.dart';
 import '../screens/dashboard_screen.dart';
 import '../screens/rooms_screen.dart';
 import '../screens/financials_screen.dart';
+import '../screens/tenant_payments_screen.dart';
+import '../screens/room_occupancy_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/buildings_management_screen.dart';
 import '../screens/rooms_management_screen.dart';
@@ -109,10 +111,24 @@ GoRouter createAppRouter(Listenable refresh) {
             GoRoute(
                 path: '/dashboard',
                 builder: (_, __) => const DashboardScreen()),
-            GoRoute(path: '/rooms', builder: (_, __) => const RoomsScreen()),
+            GoRoute(
+                path: '/rooms',
+                builder: (_, state) => RoomsScreen(
+                    period: state.uri.queryParameters['period'],
+                    buildingId: state.uri.queryParameters['building'],
+                    roomId: state.uri.queryParameters['room'])),
+            GoRoute(
+                path: '/rooms/occupancy',
+                builder: (_, __) => const RoomOccupancyScreen()),
+            GoRoute(
+                path: '/financials/tenants',
+                builder: (_, __) => const TenantPaymentsScreen()),
             GoRoute(
                 path: '/financials',
-                builder: (_, __) => const FinancialsScreen()),
+                builder: (_, state) => FinancialsScreen(
+                    period: state.uri.queryParameters['period'],
+                    buildingId: state.uri.queryParameters['building'],
+                    roomId: state.uri.queryParameters['room'])),
             GoRoute(
                 path: '/settings', builder: (_, __) => const SettingsScreen()),
             GoRoute(
