@@ -1,14 +1,34 @@
 // Replaced with a content-derived version by scripts/prepare_pwa.mjs.
 const CACHE = 'bed-space-__PWA_VERSION__';
 const ROOT = new URL('./', self.location.href);
+const SHELL = new URL('index.html', ROOT).href;
+
+async function isAppShell(response) {
+  return response?.ok &&
+    response.headers.get('content-type')?.includes('text/html') &&
+    (await response.clone().text()).includes('flutter_bootstrap.js');
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil((async () => {
     const response = await fetch(new URL('pwa-precache.json', ROOT), { cache: 'no-store' });
     if (!response.ok) throw new Error('Missing release precache manifest');
-    const { files } = await response.json();
+    const { version, files } = await response.json();
+    if (CACHE !== `bed-space-${version}`) throw new Error('Release changed during installation; retry later');
+    // Download and validate everything before writing the new release cache.
+    // SPA hosts can return HTML with status 200 for a missing JS/WASM asset.
+    const entries = await Promise.all(files.map(async (file) => {
+      const url = new URL(file, ROOT).href;
+      const asset = await fetch(url, { cache: 'no-store' });
+      if (!asset.ok ||
+          (file === 'index.html' && !(await isAppShell(asset))) ||
+          (!file.endsWith('.html') && asset.headers.get('content-type')?.includes('text/html'))) {
+        throw new Error(`Invalid release asset: ${file}`);
+      }
+      return [url, asset];
+    }));
     const cache = await caches.open(CACHE);
-    await cache.addAll(files.map((file) => new URL(file, ROOT).href));
+    await Promise.all(entries.map(([url, asset]) => cache.put(url, asset)));
     // Updates activate after all existing app windows close, avoiding mixed builds.
   })());
 });
@@ -30,7 +50,16 @@ self.addEventListener('fetch', (event) => {
   event.respondWith((async () => {
     const cache = await caches.open(CACHE);
     if (event.request.mode === 'navigate') {
-      return (await cache.match(new URL('index.html', ROOT).href)) || fetch(event.request);
+      const cached = await cache.match(SHELL);
+      if (await isAppShell(cached)) return cached;
+      // Keep the browser's callback URL intact, but fetch the root shell when
+      // the local cache was evicted. Deep URLs need not exist on the host.
+      try {
+        const shell = await fetch(new URL('./', ROOT), { cache: 'no-store' });
+        if (await isAppShell(shell)) return shell;
+      } catch (_) { /* Offer a useful response when the device is offline. */ }
+      return new Response('Bedspace is unavailable offline. Reconnect and reload to open your workspace.',
+        { status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8', 'Cache-Control': 'no-store' } });
     }
     return (await cache.match(event.request)) || fetch(event.request);
   })());

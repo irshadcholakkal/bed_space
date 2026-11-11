@@ -141,3 +141,17 @@ If the page says account sign-in is not configured, set `SUPABASE_URL` and
 Builds > Variables and secrets**. Then rebuild and redeploy. Setting Worker
 runtime variables alone cannot change Flutter's compiled configuration. The
 Cloudflare build now stops early when these required public values are missing.
+
+### Refresh or callback intermittently displays Not Found
+
+Keep `assets.not_found_handling` set to `single-page-application` in
+`wrangler.json`, and keep the custom domain bound to the same Worker. The
+service worker now validates release assets before caching them and fetches
+the root app shell if its local navigation cache has been evicted. Callback
+query parameters stay in the browser URL for Supabase to process.
+
+Deploy the updated release, then close all Bedspace browser tabs and installed
+app windows before reopening, allowing the waiting service worker to activate.
+If an older broken cache remains, use browser DevTools > Application > Service
+Workers > Unregister, then reload online. Avoid clearing all site data: it can
+remove pending local records and interrupt an OAuth flow in progress.

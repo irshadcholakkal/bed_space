@@ -106,3 +106,31 @@ automatic Drive document uploads remain follow-up work. The direct Google API
 path remains client-side; this does not implement the full backend architecture
 in `ARCHITECTURE.md`. Supabase credentials and a live project are required for
 end-to-end validation; no database changes are applied by the Flutter build.
+
+## Google sign-in: redirect_uri_mismatch
+
+For this project, the Google authorization request currently uses OAuth client
+`70192161390-94371ulkmu9qt4i26d01vp89220rsiia.apps.googleusercontent.com` and this
+exact Google callback:
+
+```text
+https://wyojharbgdxtiobwxvbf.supabase.co/auth/v1/callback
+```
+
+In Google Cloud Console > Google Auth Platform > Clients (or APIs & Services >
+Credentials), open that **Web application** OAuth client and add the callback
+above under **Authorized redirect URIs**, then save. The client ID and secret
+in Supabase Authentication > Sign In / Providers > Google must belong to that
+same client. If using a custom Supabase Auth domain, copy its actual callback
+from Supabase instead.
+
+Set `https://bedspace.thepercentagecompany.com` under Google's **Authorized
+JavaScript origins**. In Supabase Authentication > URL Configuration, use
+`https://bedspace.thepercentagecompany.com/` for Site URL and allowed Redirect
+URLs. These are different settings: Google returns to Supabase, then Supabase
+returns to Bedspace. Changing `android/app/google-services.json` cannot fix the
+Supabase web OAuth callback mismatch.
+
+After saving, start a fresh sign-in. If it still fails, Google error details
+show the actual `redirect_uri` and client ID to compare exactly. See
+[Supabase Google setup](https://supabase.com/docs/guides/auth/social-sign-in/auth-google).
