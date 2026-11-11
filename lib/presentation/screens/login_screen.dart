@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/services/saas_service.dart';
+import '../../data/services/business_profile_service.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/sheet/sheet_bloc.dart';
 
@@ -28,17 +29,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _restore() async {
     if (SaasService.userId == null) return;
     try {
-      final row = await SaasService.client
-          .from('profiles')
-          .select('business_name, phone_number')
-          .eq('user_id', SaasService.userId!)
-          .maybeSingle();
+      final row = await BusinessProfileService(SaasService.client).load();
       if (!mounted || _busy) return;
       if (_business.text.isEmpty) {
-        _business.text = row?['business_name'] as String? ?? '';
+        _business.text = row['business_name'] as String? ?? '';
       }
       if (_phone.text.isEmpty) {
-        _phone.text = row?['phone_number'] as String? ?? '';
+        _phone.text = row['phone_number'] as String? ?? '';
       }
     } catch (_) {
       // The user can enter details manually if restoring them fails.
@@ -61,19 +58,19 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       if (SaasService.userId != null) {
-        await SaasService.client.from('profiles').update({
-          'business_name': _business.text.trim(),
-          'phone_number': _phone.text.trim(),
-        }).eq('user_id', SaasService.userId!);
+        await BusinessProfileService(SaasService.client).save(
+          businessName: _business.text,
+          phoneNumber: _phone.text,
+        );
       }
       if (!mounted) return;
       context.read<SheetBloc>().add(SheetCreateRequested(
           accessToken: auth.accessToken, userEmail: auth.userEmail));
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         setState(() {
           _busy = false;
-          _error = 'Could not save your business details. Please try again.';
+          _error = BusinessProfileService.errorMessage(error);
         });
       }
     }
