@@ -65,7 +65,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
       if (!mounted) return;
       context.read<SheetBloc>().add(SheetCreateRequested(
-          accessToken: auth.accessToken, userEmail: auth.userEmail));
+          accessToken: auth.accessToken,
+          userEmail: auth.userEmail,
+          businessName: _business.text.trim()));
     } catch (error) {
       if (mounted) {
         setState(() {

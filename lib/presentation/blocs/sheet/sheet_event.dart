@@ -10,14 +10,16 @@ abstract class SheetEvent extends Equatable {
 class SheetCreateRequested extends SheetEvent {
   final String accessToken;
   final String userEmail;
+  final String businessName;
 
   const SheetCreateRequested({
     required this.accessToken,
     required this.userEmail,
+    required this.businessName,
   });
 
   @override
-  List<Object> get props => [accessToken, userEmail];
+  List<Object> get props => [accessToken, userEmail, businessName];
 }
 
 class SheetResetRequested extends SheetEvent {

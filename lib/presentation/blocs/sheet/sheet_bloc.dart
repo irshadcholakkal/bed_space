@@ -44,15 +44,22 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
   ) async {
     emit(SheetLoading());
     try {
-      final sheetName = SaasService.userId == null
+      final legacyName = SaasService.userId == null
           ? 'BedSpace_${event.userEmail}'
           : 'Bedspace_${SaasService.userId}';
+      final sheetName = event.businessName.trim();
+      if (sheetName.isEmpty) {
+        throw StateError(
+            'Enter your business name before creating a workspace.');
+      }
 
       // 1. Try to find existing sheet first
       String? sheetId = await GoogleSheetsService.findSheetByTitle(
         event.accessToken,
-        sheetName,
+        legacyName,
       );
+      sheetId ??= await GoogleSheetsService.findSheetByTitle(
+          event.accessToken, sheetName);
 
       // 2. If not found, create new
       sheetId ??= await GoogleSheetsService.createSheet(
@@ -63,7 +70,8 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
       final folderId = SaasService.userId == null
           ? null
           : await GoogleSheetsService.ensureDocumentFolder(
-              event.accessToken, SaasService.userId!);
+              event.accessToken, SaasService.userId!,
+              businessName: sheetName);
       await _sheetRepository.saveSheetId(sheetId, event.userEmail,
           driveFolderId: folderId);
 

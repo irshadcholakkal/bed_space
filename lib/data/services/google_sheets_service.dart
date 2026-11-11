@@ -25,16 +25,19 @@ import '../models/expense_model.dart';
 
 class GoogleSheetsService {
   /// Locate or create a private customer-owned document folder.
-  static Future<String> ensureDocumentFolder(
-      String token, String customerId) async {
-    final name = 'Bedspace_$customerId';
+  static Future<String> ensureDocumentFolder(String token, String customerId,
+      {String? businessName}) async {
+    final legacyName = 'Bedspace_$customerId';
+    final name = businessName?.trim().isNotEmpty == true
+        ? '${businessName!.trim()} - Documents'
+        : legacyName;
     final headers = {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json'
     };
     final uri = Uri.https('www.googleapis.com', '/drive/v3/files', {
       'q':
-          "name = '$name' and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+          "(name = '${_escapeDriveQuery(name)}' or name = '${_escapeDriveQuery(legacyName)}') and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
       'fields': 'files(id)',
     });
     final found = await http.get(uri, headers: headers);
@@ -72,14 +75,20 @@ class GoogleSheetsService {
       };
 
   /// Search for a sheet with a specific title in the user's Google Drive
+  static String _escapeDriveQuery(String value) =>
+      value.replaceAll(r'\', r'\\').replaceAll("'", r"\'");
+
   static Future<String?> findSheetByTitle(
       String accessToken, String title) async {
     try {
-      final url =
-          'https://www.googleapis.com/drive/v3/files?q=name = \'$title\' and mimeType = \'application/vnd.google-apps.spreadsheet\' and trashed = false';
+      final url = Uri.https('www.googleapis.com', '/drive/v3/files', {
+        'q':
+            "name = '${_escapeDriveQuery(title)}' and mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false",
+        'fields': 'files(id)',
+      });
 
       final response = await http.get(
-        Uri.parse(url),
+        url,
         headers: {
           'Authorization': 'Bearer $accessToken',
         },
