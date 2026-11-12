@@ -667,6 +667,8 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
               border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
             ),
             child: ListTile(
+              onTap: () => context.push(
+                  '/rooms/${Uri.encodeComponent(expense.roomId)}/expenses'),
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 8,
@@ -697,14 +699,20 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                   fontSize: 13,
                 ),
               ),
-              trailing: Text(
-                'د.إ${expense.amount.toStringAsFixed(0)}',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                  color: isRefund ? AppTheme.warningColor : AppTheme.errorColor,
+              trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                Text(
+                  'AED ${expense.amount.toStringAsFixed(2)}',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color:
+                        isRefund ? AppTheme.warningColor : AppTheme.errorColor,
+                  ),
                 ),
-              ),
+                const SizedBox(width: 8),
+                const Icon(CupertinoIcons.chevron_right,
+                    size: 16, color: AppTheme.secondaryTextColor),
+              ]),
             ),
           ),
         );

@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../data/models/expense_model.dart';
 import '../../../data/models/room_model.dart';
+import '../../../data/models/property_financials.dart';
 import '../../../presentation/blocs/management/management_bloc.dart';
 import '../../../presentation/theme/app_theme.dart';
 
@@ -210,7 +211,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                     .where((room) => room.roomId == widget.room.roomId)
                     .firstOrNull ??
                 widget.room;
-            return Text('Own expenses - ${room.displayName(rooms)}',
+            return Text('Income & expenses - ${room.displayName(rooms)}',
                 overflow: TextOverflow.ellipsis);
           },
         ),
@@ -243,16 +244,21 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
       body: BlocBuilder<ManagementBloc, ManagementState>(
         builder: (context, state) {
           if (state is ManagementLoaded) {
-            // Expenses for this room
+            final report = PropertyFinancials(
+                rooms: state.rooms,
+                tenants: state.tenants,
+                payments: state.payments,
+                expenses: state.expenses);
+            final roomIds = report.roomIds(roomId: widget.room.roomId);
+            // Parent room totals include each subroom exactly once.
             final expenses = state.expenses
-                .where((e) => e.roomId == widget.room.roomId)
+                .where((e) => roomIds.contains(e.roomId))
                 .toList()
               ..sort((a, b) => b.date.compareTo(a.date));
 
             // Income (payments) for tenants in this room
-            final tenants = state.tenants
-                .where((t) => t.roomId == widget.room.roomId)
-                .toList();
+            final tenants =
+                state.tenants.where((t) => roomIds.contains(t.roomId)).toList();
             final tenantIds = tenants.map((t) => t.tenantId).toSet();
             final payments = state.payments
                 .where((p) => tenantIds.contains(p.tenantId))
@@ -268,6 +274,16 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                 SliverToBoxAdapter(
                   child: _buildFinancialSummary(totalIncome, totalExpenses),
                 ),
+                SliverToBoxAdapter(
+                    child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Text(
+                      widget.room.isSubroom
+                          ? 'This subroom only · All time'
+                          : 'Includes this room and all its subrooms · All time. New expenses are added to this room.',
+                      style: const TextStyle(
+                          color: AppTheme.secondaryTextColor, fontSize: 12)),
+                )),
                 if (expenses.isEmpty)
                   SliverFillRemaining(
                     hasScrollBody: false,
@@ -298,7 +314,14 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate(
-                        (context, index) => _buildExpenseCard(expenses[index]),
+                        (context, index) {
+                          final expense = expenses[index];
+                          final source = state.rooms
+                              .where((r) => r.roomId == expense.roomId)
+                              .firstOrNull;
+                          return _buildExpenseCard(expense,
+                              roomName: source?.displayName(state.rooms));
+                        },
                         childCount: expenses.length,
                       ),
                     ),
@@ -447,7 +470,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
     );
   }
 
-  Widget _buildExpenseCard(ExpenseModel expense) {
+  Widget _buildExpenseCard(ExpenseModel expense, {String? roomName}) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
@@ -498,6 +521,11 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                             color: Colors.black87,
                           ),
                         ),
+                        if (roomName != null)
+                          Text(roomName,
+                              style: const TextStyle(
+                                  color: AppTheme.secondaryTextColor,
+                                  fontSize: 12)),
                         const SizedBox(height: 4),
                         Text(
                           '${expense.categoryName} · ${DateFormat('MMM d, yyyy').format(expense.date)}',
