@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -46,7 +47,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
         actions: [
           IconButton(
             icon: const Icon(
-              Icons.add_circle_outline,
+              CupertinoIcons.plus_circle,
               color: AppTheme.primaryColor,
             ),
             tooltip: 'Add Room',
@@ -89,7 +90,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.error_outline,
+                      CupertinoIcons.exclamationmark_circle,
                       size: 64,
                       color: AppTheme.errorColor,
                     ),
@@ -142,13 +143,13 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                       decoration: InputDecoration(
                         hintText: 'Search by building or room...',
                         prefixIcon: const Icon(
-                          Icons.search,
+                          CupertinoIcons.search,
                           color: AppTheme.softGrey,
                         ),
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(
-                                  Icons.clear,
+                                  CupertinoIcons.xmark,
                                   color: AppTheme.softGrey,
                                 ),
                                 onPressed: () {
@@ -177,7 +178,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               const Icon(
-                                Icons.meeting_room_outlined,
+                                CupertinoIcons.rectangle_split_3x1,
                                 size: 64,
                                 color: AppTheme.softGrey,
                               ),
@@ -194,7 +195,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                               const SizedBox(height: 16),
                               ElevatedButton.icon(
                                 onPressed: () => showAddRoomDialog(context),
-                                icon: const Icon(Icons.add),
+                                icon: const Icon(CupertinoIcons.plus),
                                 label: const Text('Add Room'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppTheme.primaryColor,
@@ -212,7 +213,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   const Icon(
-                                    Icons.search_off,
+                                    CupertinoIcons.search,
                                     size: 64,
                                     color: AppTheme.softGrey,
                                   ),
@@ -285,7 +286,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                             shape: BoxShape.circle,
                                           ),
                                           child: const Icon(
-                                            Icons.door_front_door,
+                                            CupertinoIcons.rectangle_split_3x1,
                                             color: AppTheme.primaryColor,
                                           ),
                                         ),
@@ -350,7 +351,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                             ? null
                                             : IconButton(
                                                 icon: const Icon(
-                                                    Icons.add_home_outlined),
+                                                    CupertinoIcons.house),
                                                 tooltip: 'Add Subroom',
                                                 onPressed: () =>
                                                     showAddRoomDialog(context,
@@ -358,7 +359,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                               ),
                                         // trailing: IconButton(
                                         //   icon: const Icon(
-                                        //     Icons.account_balance_wallet_outlined,
+                                        //     CupertinoIcons.creditcard,
                                         //     color: AppTheme.primaryColor,
                                         //   ),
                                         //   tooltip: 'Finance & Expenses',
@@ -461,10 +462,11 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                       ),
                       const SizedBox(height: 24),
                       DropdownButtonFormField<String>(
+                        icon: const Icon(CupertinoIcons.chevron_down),
                         initialValue: selectedBuildingId,
                         decoration: const InputDecoration(
                           labelText: 'Building',
-                          prefixIcon: Icon(Icons.business_outlined),
+                          prefixIcon: Icon(CupertinoIcons.building_2_fill),
                         ),
                         items: buildings
                             .map(
@@ -481,6 +483,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
+                        icon: const Icon(CupertinoIcons.chevron_down),
                         key: ValueKey('$selectedBuildingId/$selectedParentId'),
                         initialValue: selectedParentId ?? '',
                         isExpanded: true,
@@ -489,7 +492,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                           helperText:
                               'Leave as main room, or choose a room for this subroom.',
                           helperMaxLines: 2,
-                          prefixIcon: Icon(Icons.account_tree_outlined),
+                          prefixIcon: Icon(CupertinoIcons.arrow_branch),
                         ),
                         items: [
                           const DropdownMenuItem(
@@ -517,7 +520,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                               ? 'Room Number / Name'
                               : 'Subroom Number / Name',
                           prefixIcon:
-                              const Icon(Icons.door_front_door_outlined),
+                              const Icon(CupertinoIcons.rectangle_split_3x1),
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -528,7 +531,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                               controller: capacityController,
                               decoration: const InputDecoration(
                                 labelText: 'Capacity',
-                                prefixIcon: Icon(Icons.people_outline),
+                                prefixIcon: Icon(CupertinoIcons.person_2),
                               ),
                               keyboardType: TextInputType.number,
                             ),
@@ -543,7 +546,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                               controller: lowerBedsController,
                               decoration: const InputDecoration(
                                 labelText: 'Lower Beds',
-                                prefixIcon: Icon(Icons.bed_outlined),
+                                prefixIcon: Icon(CupertinoIcons.bed_double),
                               ),
                               keyboardType: TextInputType.number,
                             ),
@@ -554,7 +557,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                               controller: upperBedsController,
                               decoration: const InputDecoration(
                                 labelText: 'Upper Beds',
-                                prefixIcon: Icon(Icons.bed_outlined),
+                                prefixIcon: Icon(CupertinoIcons.bed_double),
                               ),
                               keyboardType: TextInputType.number,
                             ),
@@ -569,7 +572,8 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                               controller: lowerRentController,
                               decoration: const InputDecoration(
                                 labelText: 'Lower Rent',
-                                prefixIcon: Icon(Icons.currency_rupee),
+                                prefixIcon:
+                                    Icon(CupertinoIcons.money_dollar_circle),
                               ),
                               keyboardType: TextInputType.number,
                             ),
@@ -580,7 +584,8 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                               controller: upperRentController,
                               decoration: const InputDecoration(
                                 labelText: 'Upper Rent',
-                                prefixIcon: Icon(Icons.currency_rupee),
+                                prefixIcon:
+                                    Icon(CupertinoIcons.money_dollar_circle),
                               ),
                               keyboardType: TextInputType.number,
                             ),
@@ -741,7 +746,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
   //                   ),
   //                   IconButton(
   //                     icon: const Icon(
-  //                       Icons.delete_outline,
+  //                       CupertinoIcons.trash,
   //                       color: AppTheme.errorColor,
   //                     ),
   //                     onPressed: () {
@@ -756,7 +761,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
   //                 controller: roomNumberController,
   //                 decoration: const InputDecoration(
   //                   labelText: 'Room Number',
-  //                   prefixIcon: Icon(Icons.door_front_door_outlined),
+  //                   prefixIcon: Icon(CupertinoIcons.rectangle_split_3x1),
   //                 ),
   //               ),
   //               const SizedBox(height: 16),
@@ -764,7 +769,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
   //                 controller: capacityController,
   //                 decoration: const InputDecoration(
   //                   labelText: 'Total Capacity',
-  //                   prefixIcon: Icon(Icons.people_outline),
+  //                   prefixIcon: Icon(CupertinoIcons.person_2),
   //                 ),
   //                 keyboardType: TextInputType.number,
   //               ),
@@ -776,7 +781,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
   //                       controller: lowerBedsController,
   //                       decoration: const InputDecoration(
   //                         labelText: 'Lower Beds',
-  //                         prefixIcon: Icon(Icons.bed_outlined),
+  //                         prefixIcon: Icon(CupertinoIcons.bed_double),
   //                       ),
   //                       keyboardType: TextInputType.number,
   //                     ),
@@ -787,7 +792,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
   //                       controller: upperBedsController,
   //                       decoration: const InputDecoration(
   //                         labelText: 'Upper Beds',
-  //                         prefixIcon: Icon(Icons.bed_outlined),
+  //                         prefixIcon: Icon(CupertinoIcons.bed_double),
   //                       ),
   //                       keyboardType: TextInputType.number,
   //                     ),
@@ -802,7 +807,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
   //                       controller: lowerRentController,
   //                       decoration: const InputDecoration(
   //                         labelText: 'Lower Rent',
-  //                         prefixIcon: Icon(Icons.currency_rupee),
+  //                         prefixIcon: Icon(CupertinoIcons.money_dollar_circle),
   //                       ),
   //                       keyboardType: TextInputType.number,
   //                     ),
@@ -813,7 +818,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
   //                       controller: upperRentController,
   //                       decoration: const InputDecoration(
   //                         labelText: 'Upper Rent',
-  //                         prefixIcon: Icon(Icons.currency_rupee),
+  //                         prefixIcon: Icon(CupertinoIcons.money_dollar_circle),
   //                       ),
   //                       keyboardType: TextInputType.number,
   //                     ),

@@ -14,8 +14,19 @@ class GoogleTokenStore {
     return prefs.getString(_key(userId));
   }
 
+  static Future<void> saveRefreshToken(String userId, String token) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('${_key(userId)}_refresh', token);
+  }
+
+  static Future<String?> readRefreshToken(String userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('${_key(userId)}_refresh');
+  }
+
   static Future<void> clear(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_key(userId));
+    await prefs.remove('${_key(userId)}_refresh');
   }
 }

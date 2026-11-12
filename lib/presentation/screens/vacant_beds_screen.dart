@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/management/management_bloc.dart';
@@ -69,13 +70,13 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search by building or room...',
                   prefixIcon: const Icon(
-                    Icons.search,
+                    CupertinoIcons.search,
                     color: AppTheme.softGrey,
                   ),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
                           icon: const Icon(
-                            Icons.clear,
+                            CupertinoIcons.xmark,
                             color: AppTheme.softGrey,
                           ),
                           onPressed: () {
@@ -162,8 +163,8 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                         children: [
                           Icon(
                             _searchQuery.isEmpty
-                                ? Icons.bed_outlined
-                                : Icons.search_off,
+                                ? CupertinoIcons.bed_double
+                                : CupertinoIcons.search,
                             size: 64,
                             color: AppTheme.softGrey,
                           ),
@@ -209,8 +210,8 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                             ),
                             child: Icon(
                               bed.bedType == BedType.lower
-                                  ? Icons.south
-                                  : Icons.north,
+                                  ? CupertinoIcons.arrow_down
+                                  : CupertinoIcons.arrow_up,
                               color: AppTheme.secondaryColor,
                             ),
                           ),
@@ -243,7 +244,7 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                             ],
                           ),
                           trailing: IconButton(
-                            icon: const Icon(Icons.share_outlined,
+                            icon: const Icon(CupertinoIcons.square_arrow_up,
                                 color: AppTheme.primaryColor),
                             tooltip: 'Share vacancy on WhatsApp',
                             onPressed: () => showWhatsAppDraft(context,

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -175,7 +176,7 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.people_outline, color: AppTheme.textColor),
+          icon: const Icon(CupertinoIcons.person_2, color: AppTheme.textColor),
           onPressed: () {
             context.push('/tenants');
           },
@@ -205,7 +206,7 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.calendar_month,
+              CupertinoIcons.calendar,
               color: AppTheme.primaryColor,
               size: 20,
             ),
@@ -220,7 +221,7 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
             ),
             const SizedBox(width: 4),
             const Icon(
-              Icons.keyboard_arrow_down,
+              CupertinoIcons.chevron_down,
               color: AppTheme.secondaryTextColor,
               size: 20,
             ),
@@ -487,15 +488,15 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
     switch (status) {
       case PaymentStatus.paid:
         statusColor = AppTheme.successColor;
-        statusIcon = Icons.check;
+        statusIcon = CupertinoIcons.checkmark;
         break;
       case PaymentStatus.partial:
         statusColor = Colors.orange;
-        statusIcon = Icons.access_time_filled; // Or similar
+        statusIcon = CupertinoIcons.clock_fill; // Or similar
         break;
       case PaymentStatus.overdue:
         statusColor = AppTheme.errorColor;
-        statusIcon = Icons.priority_high;
+        statusIcon = CupertinoIcons.exclamationmark;
         break;
     }
 
@@ -617,7 +618,7 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                   ),
                   IconButton(
                       tooltip: 'WhatsApp, invoice & receipts',
-                      icon: const Icon(Icons.share_outlined),
+                      icon: const Icon(CupertinoIcons.square_arrow_up),
                       onPressed: () => openTenantSharing(context, item.tenant,
                           month: _selectedMonth)),
                 ]),
@@ -667,7 +668,9 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                     (isRefund ? AppTheme.warningColor : AppTheme.errorColor)
                         .withValues(alpha: 0.1),
                 child: Icon(
-                  isRefund ? Icons.keyboard_return : Icons.money_off,
+                  isRefund
+                      ? CupertinoIcons.arrow_uturn_left
+                      : CupertinoIcons.money_dollar_circle,
                   color: isRefund ? AppTheme.warningColor : AppTheme.errorColor,
                   size: 18,
                 ),
@@ -768,7 +771,7 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                       controller: amountController,
                       decoration: const InputDecoration(
                         labelText: 'Payment Amount',
-                        prefixIcon: Icon(Icons.currency_rupee),
+                        prefixIcon: Icon(CupertinoIcons.money_dollar_circle),
                       ),
                       keyboardType: TextInputType.number,
                       enabled: !isSubmitting,
@@ -783,7 +786,7 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                       child: Row(
                         children: [
                           const Icon(
-                            Icons.calendar_month,
+                            CupertinoIcons.calendar,
                             color: AppTheme.primaryColor,
                           ),
                           const SizedBox(width: 12),
@@ -948,7 +951,7 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.chevron_left,
+                          icon: const Icon(CupertinoIcons.chevron_left,
                               color: AppTheme.primaryColor),
                           onPressed: () => setModalState(() => selectedYear--),
                         ),
@@ -961,7 +964,7 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                           ),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.chevron_right,
+                          icon: const Icon(CupertinoIcons.chevron_right,
                               color: AppTheme.primaryColor),
                           onPressed: () => setModalState(() => selectedYear++),
                         ),

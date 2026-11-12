@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -42,7 +43,7 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
         actions: [
           IconButton(
             icon: const Icon(
-              Icons.meeting_room_outlined,
+              CupertinoIcons.rectangle_split_3x1,
               color: AppTheme.textColor,
             ),
             tooltip: 'Manage Rooms',
@@ -51,7 +52,8 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
             },
           ),
           IconButton(
-            icon: const Icon(Icons.people_outline, color: AppTheme.textColor),
+            icon:
+                const Icon(CupertinoIcons.person_2, color: AppTheme.textColor),
             tooltip: 'Manage Tenants',
             onPressed: () {
               context.push('/tenants');
@@ -86,13 +88,13 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search by building or room...',
                   prefixIcon: const Icon(
-                    Icons.search,
+                    CupertinoIcons.search,
                     color: AppTheme.softGrey,
                   ),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
                           icon: const Icon(
-                            Icons.clear,
+                            CupertinoIcons.xmark,
                             color: AppTheme.softGrey,
                           ),
                           onPressed: () {
@@ -138,7 +140,7 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.error_outline,
+                          CupertinoIcons.exclamationmark_circle,
                           size: 64,
                           color: AppTheme.errorColor,
                         ),
@@ -174,7 +176,7 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.business_outlined,
+                          CupertinoIcons.building_2_fill,
                           size: 64,
                           color: AppTheme.softGrey,
                         ),
@@ -220,7 +222,7 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.search_off,
+                          CupertinoIcons.search,
                           size: 64,
                           color: AppTheme.softGrey,
                         ),
@@ -297,7 +299,7 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
-                                Icons.business,
+                                CupertinoIcons.building_2_fill,
                                 color: AppTheme.primaryColor,
                               ),
                             ),
@@ -424,7 +426,7 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
                                                 ),
                                               )
                                             : const Icon(
-                                                Icons.check_circle_outline,
+                                                CupertinoIcons.checkmark_circle,
                                                 color: AppTheme.softGrey,
                                               ),
                                         onTap: () => widget._showRoomDetail(
@@ -573,8 +575,8 @@ extension on RoomOccupancyScreen {
                               ),
                               child: Icon(
                                 bedDetail.bed.bedType == BedType.lower
-                                    ? Icons.south
-                                    : Icons.north,
+                                    ? CupertinoIcons.arrow_down
+                                    : CupertinoIcons.arrow_up,
                                 size: 16,
                                 color: bedDetail.bed.status == BedStatus.vacant
                                     ? AppTheme.secondaryColor

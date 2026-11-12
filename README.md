@@ -252,3 +252,25 @@ checked for expiry and required scopes before opening the workspace. When access
 expires or is revoked, use the Google connection button to authorize again; this
 uses the same Supabase OAuth flow. Fully unattended Google token renewal would
 require a separate server-side refresh-token implementation.
+
+### Keep Google-connected accounts signed in
+
+Supabase persists the app login. Google Sheets and Drive use a separate access
+ token that expires; automatic renewal requires the `refresh-google-session`
+Edge Function.
+
+1. In Supabase Dashboard > Edge Functions > Secrets, set
+   `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET` to the same Google
+   Web OAuth credentials used by Supabase Auth > Google. Keep the secret out of
+   Flutter build variables and the repository.
+2. Deploy the function to the app's Supabase project:
+   `supabase functions deploy refresh-google-session --project-ref YOUR_PROJECT_REF`.
+3. Build/restart the updated app and connect Google once. The consent request
+   now includes offline access. Subsequent launches renew expired Google access
+   without another sign-in while the authorization remains valid. Explicit
+   logout removes the saved Google access and refresh tokens for that account.
+
+The renewal endpoint verifies the Supabase user, then checks the renewed Google
+ token's owner, OAuth client, expiry, and Sheets/Drive permissions. Revoked Google
+consent still requires reconnection; an unavailable renewal endpoint does not
+sign the Supabase account out.

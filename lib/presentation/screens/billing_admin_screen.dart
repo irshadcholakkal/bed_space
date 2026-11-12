@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:async';
 import 'dart:convert';
@@ -31,9 +32,9 @@ class _BillingAdminShortcutState extends State<BillingAdminShortcut> {
                     bottom: 16,
                     child: FloatingActionButton.extended(
                         heroTag: 'billing-admin',
-                        onPressed: () =>
-                            context.push('/admin'),
-                        icon: const Icon(Icons.admin_panel_settings_outlined),
+                        onPressed: () => context.push('/admin'),
+                        icon: const Icon(
+                            CupertinoIcons.person_crop_circle_badge_checkmark),
                         label: const Text('Administration')))
                 : const SizedBox()),
       ]);
@@ -111,63 +112,61 @@ class _BillingAdminScreenState extends State<BillingAdminScreen> {
     String? error;
     bool saving = false;
     final changed = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => StatefulBuilder(
-            builder: (context, update) => AlertDialog(
-                    title: Text(blocked
-                        ? 'Block workspace access'
-                        : 'Remove manual block'),
-                    content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                              '${account['email']}\n${blocked ? 'The workspace will be blocked.' : 'Removing a block does not extend the trial or paid period.'}'),
-                          const SizedBox(height: 16),
-                          TextField(
-                              enabled: !saving,
-                              maxLength: 1000,
-                              decoration:
-                                  const InputDecoration(labelText: 'Reason'),
-                              onChanged: (v) => reason = v),
-                          if (error != null) Text(error!),
-                        ]),
-                    actions: [
-                      TextButton(
-                          onPressed: saving
-                              ? null
-                              : () => Navigator.pop(dialogContext, false),
-                          child: const Text('Cancel')),
-                      FilledButton(
-                          onPressed: saving
-                              ? null
-                              : () async {
-                                  if (reason.trim().length < 3) {
-                                    update(() => error = 'Enter a reason.');
-                                    return;
-                                  }
-                                  update(() => saving = true);
-                                  try {
-                                    await widget.service.setBlocked(
-                                        account['user_id'] as String,
-                                        blocked,
-                                        reason.trim());
-                                    if (dialogContext.mounted) {
-                                      Navigator.pop(dialogContext, true);
-                                    }
-                                  } catch (_) {
-                                    if (dialogContext.mounted) {
-                                      update(() {
-                                        error =
-                                            'Could not update access. Please retry.';
-                                        saving = false;
-                                      });
-                                    }
-                                  }
-                                },
-                          child: Text(saving ? 'Saving…' : 'Confirm'))
-                    ]),),
-                    );
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, update) => AlertDialog(
+            title: Text(
+                blocked ? 'Block workspace access' : 'Remove manual block'),
+            content: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                      '${account['email']}\n${blocked ? 'The workspace will be blocked.' : 'Removing a block does not extend the trial or paid period.'}'),
+                  const SizedBox(height: 16),
+                  TextField(
+                      enabled: !saving,
+                      maxLength: 1000,
+                      decoration: const InputDecoration(labelText: 'Reason'),
+                      onChanged: (v) => reason = v),
+                  if (error != null) Text(error!),
+                ]),
+            actions: [
+              TextButton(
+                  onPressed:
+                      saving ? null : () => Navigator.pop(dialogContext, false),
+                  child: const Text('Cancel')),
+              FilledButton(
+                  onPressed: saving
+                      ? null
+                      : () async {
+                          if (reason.trim().length < 3) {
+                            update(() => error = 'Enter a reason.');
+                            return;
+                          }
+                          update(() => saving = true);
+                          try {
+                            await widget.service.setBlocked(
+                                account['user_id'] as String,
+                                blocked,
+                                reason.trim());
+                            if (dialogContext.mounted) {
+                              Navigator.pop(dialogContext, true);
+                            }
+                          } catch (_) {
+                            if (dialogContext.mounted) {
+                              update(() {
+                                error =
+                                    'Could not update access. Please retry.';
+                                saving = false;
+                              });
+                            }
+                          }
+                        },
+                  child: Text(saving ? 'Saving…' : 'Confirm'))
+            ]),
+      ),
+    );
     if (changed == true) await _load();
   }
 
@@ -256,7 +255,7 @@ class _BillingAdminScreenState extends State<BillingAdminScreen> {
           IconButton(
               tooltip: 'Refresh accounts',
               onPressed: _busy ? null : _load,
-              icon: const Icon(Icons.refresh))
+              icon: const Icon(CupertinoIcons.arrow_clockwise))
         ]),
         body: ListView(padding: const EdgeInsets.all(24), children: [
           const Text('Customer identity, payment history and membership access',
@@ -279,8 +278,9 @@ class _BillingAdminScreenState extends State<BillingAdminScreen> {
                             labelText: 'Search email, name or business',
                             suffixIcon: IconButton(
                                 onPressed: _busy ? null : _load,
-                                icon: const Icon(Icons.search))))),
+                                icon: const Icon(CupertinoIcons.search))))),
                 DropdownButton<String>(
+                    icon: const Icon(CupertinoIcons.chevron_down),
                     value: _filter,
                     items: [
                       for (final value in [
@@ -416,6 +416,7 @@ class _ManualPaymentDialogState extends State<_ManualPaymentDialog> {
                                 'This records money already received, extends access and removes access blocks. It does not charge the customer.'),
                             const SizedBox(height: 18),
                             DropdownButtonFormField<String>(
+                                icon: const Icon(CupertinoIcons.chevron_down),
                                 initialValue: _cycle,
                                 decoration: const InputDecoration(
                                     labelText: 'Billing cycle'),

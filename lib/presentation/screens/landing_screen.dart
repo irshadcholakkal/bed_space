@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -113,7 +114,8 @@ class _LandingScreenState extends State<LandingScreen> {
                           tooltip: 'Previous workflow',
                           onPressed: () =>
                               setState(() => _workflow = (_workflow + 1) % 2),
-                          icon: const Icon(Icons.arrow_back, size: 17)),
+                          icon:
+                              const Icon(CupertinoIcons.arrow_left, size: 17)),
                       const SizedBox(width: 18),
                       for (var i = 0; i < 2; i++)
                         AnimatedContainer(
@@ -131,7 +133,8 @@ class _LandingScreenState extends State<LandingScreen> {
                           tooltip: 'Next workflow',
                           onPressed: () =>
                               setState(() => _workflow = (_workflow + 1) % 2),
-                          icon: const Icon(Icons.arrow_forward, size: 17)),
+                          icon:
+                              const Icon(CupertinoIcons.arrow_right, size: 17)),
                     ]),
                   ]))),
                   _section(
@@ -299,21 +302,20 @@ class _LandingScreenState extends State<LandingScreen> {
                 const Positioned(
                     left: 70,
                     top: 235,
-                    child: _FloatingGlyph(Icons.folder_outlined, angle: -.15)),
+                    child: _FloatingGlyph(CupertinoIcons.folder, angle: -.15)),
                 const Positioned(
                     right: 90,
                     top: 210,
-                    child: _FloatingGlyph(Icons.receipt_long_outlined,
-                        angle: .12)),
+                    child: _FloatingGlyph(CupertinoIcons.doc_text, angle: .12)),
                 const Positioned(
                     left: 190,
                     bottom: 95,
-                    child: _FloatingGlyph(Icons.grid_view_outlined, angle: .1)),
+                    child: _FloatingGlyph(CupertinoIcons.square_grid_2x2,
+                        angle: .1)),
                 const Positioned(
                     right: 180,
                     bottom: 100,
-                    child:
-                        _FloatingGlyph(Icons.table_chart_outlined, angle: -.12))
+                    child: _FloatingGlyph(CupertinoIcons.table, angle: -.12))
               ],
             ]));
       });
@@ -399,7 +401,7 @@ class _LandingScreenState extends State<LandingScreen> {
               child: const Row(mainAxisSize: MainAxisSize.min, children: [
                 Text('Explore membership'),
                 SizedBox(width: 12),
-                Icon(Icons.arrow_outward, size: 16)
+                Icon(CupertinoIcons.arrow_up_right, size: 16)
               ]))
         ]);
         if (c.maxWidth < 760) {
@@ -428,13 +430,13 @@ class _LandingScreenState extends State<LandingScreen> {
                   'At the start of the day',
                   'See where there is room to grow.',
                   'Review buildings and vacancies before placing your next tenant.',
-                  Icons.bed_outlined
+                  CupertinoIcons.bed_double
                 ),
                 (
                   'When rent comes around',
                   'Keep every payment in perspective.',
                   'Bring rent, recorded payments and outstanding balances into one view.',
-                  Icons.payments_outlined
+                  CupertinoIcons.money_dollar_circle
                 )
               ]
             : [
@@ -442,13 +444,13 @@ class _LandingScreenState extends State<LandingScreen> {
                   'When it is time to share',
                   'A receipt, ready when you are.',
                   'Prepare an invoice or receipt and save a PDF copy to your own Drive folder.',
-                  Icons.receipt_long_outlined
+                  CupertinoIcons.doc_text
                 ),
                 (
                   'At the end of the month',
                   'Your records, still your records.',
                   'Open your accommodation spreadsheet in the Google account you connected.',
-                  Icons.table_chart_outlined
+                  CupertinoIcons.table
                 )
               ];
         return GestureDetector(
@@ -610,7 +612,8 @@ class _LandingScreenState extends State<LandingScreen> {
           Padding(
               padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
               child: value == 'check'
-                  ? const Icon(Icons.check, size: 17, color: Color(0xffb6c6bf))
+                  ? const Icon(CupertinoIcons.checkmark,
+                      size: 17, color: Color(0xffb6c6bf))
                   : Text(value,
                       style: TextStyle(
                           color: header ? _white : _muted,
@@ -697,9 +700,9 @@ class _LandingScreenState extends State<LandingScreen> {
                                     child: Center(
                                         child: Icon(
                                             [
-                                              Icons.rocket_launch_outlined,
-                                              Icons.table_chart_outlined,
-                                              Icons.credit_card_outlined
+                                              CupertinoIcons.paperplane,
+                                              CupertinoIcons.table,
+                                              CupertinoIcons.creditcard
                                             ][i],
                                             size: 56,
                                             color: const Color(0xffc2cdca)))),

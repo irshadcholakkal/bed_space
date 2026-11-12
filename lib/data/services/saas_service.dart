@@ -1,5 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 import 'auth_callback_error.dart';
+import 'google_token_store.dart';
 
 class SaasService {
   static const url = String.fromEnvironment('SUPABASE_URL');
@@ -8,6 +10,7 @@ class SaasService {
   static SupabaseClient get client => Supabase.instance.client;
   static String? get userId => configured ? client.auth.currentUser?.id : null;
   static String? startupAuthError;
+  static StreamSubscription<dynamic>? _googleSessionSubscription;
   static String get authRedirectUrl => callbackFor(Uri.base).toString();
   static Uri callbackFor(Uri page) => page.resolve(
       page.path == '/app' || page.path.startsWith('/app/') ? '/app/' : '/');
@@ -21,6 +24,27 @@ class SaasService {
           publishableKey: publicKey,
           authOptions: const FlutterAuthClientOptions(
               persistSession: true, autoRefreshToken: true));
+      await _rememberGoogleTokens(client.auth.currentSession);
+      await _googleSessionSubscription?.cancel();
+      _googleSessionSubscription =
+          client.auth.onAuthStateChange.listen((state) {
+        unawaited(_rememberGoogleTokens(state.session));
+      }, onError: (Object _) {});
+    }
+  }
+
+  static Future<void> _rememberGoogleTokens(Session? session) async {
+    if (session == null) return;
+    try {
+      if (session.providerToken?.isNotEmpty == true) {
+        await GoogleTokenStore.save(session.user.id, session.providerToken!);
+      }
+      if (session.providerRefreshToken?.isNotEmpty == true) {
+        await GoogleTokenStore.saveRefreshToken(
+            session.user.id, session.providerRefreshToken!);
+      }
+    } catch (_) {
+      // A storage failure must not discard an otherwise valid account session.
     }
   }
 }

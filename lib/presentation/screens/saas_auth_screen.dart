@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
@@ -223,12 +224,12 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
           IconButton(
             tooltip: 'Back to home',
             onPressed: _busy ? null : _goHome,
-            icon: const Icon(Icons.arrow_back, size: 18),
+            icon: const Icon(CupertinoIcons.arrow_left, size: 18),
           )
         else
           TextButton.icon(
             onPressed: _busy ? null : _goHome,
-            icon: const Icon(Icons.arrow_back, size: 15),
+            icon: const Icon(CupertinoIcons.arrow_left, size: 15),
             label: const Text('Back to home'),
           ),
       ]));
@@ -282,7 +283,7 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                       const Divider(color: Color(0x45ffffff)),
                       const SizedBox(height: 16),
                       const Row(children: [
-                        Icon(Icons.folder_outlined, color: _ink, size: 18),
+                        Icon(CupertinoIcons.folder, color: _ink, size: 18),
                         SizedBox(width: 10),
                         Expanded(
                             child: Text('Your records. Your Google account.',
@@ -407,7 +408,8 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                     const Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.lock_outline, size: 16, color: _secondary),
+                          Icon(CupertinoIcons.lock,
+                              size: 16, color: _secondary),
                           SizedBox(width: 10),
                           Expanded(
                               child: Text(
@@ -474,8 +476,8 @@ class _SaasAuthScreenState extends State<SaasAuthScreen> {
                       : () => setState(() => _hidePassword = !_hidePassword),
                   icon: Icon(
                       _hidePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+                          ? CupertinoIcons.eye
+                          : CupertinoIcons.eye_slash,
                       size: 20),
                 ),
               ),

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -186,7 +187,7 @@ class AccountRouteFrame extends StatelessWidget {
                       onPressed: () => context.canPop()
                           ? context.pop()
                           : context.go('/dashboard'),
-                      icon: const Icon(Icons.arrow_back),
+                      icon: const Icon(CupertinoIcons.arrow_left),
                       label: const Text('Back to workspace')),
                 ))),
         Expanded(child: child),

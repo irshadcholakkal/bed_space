@@ -5,3 +5,7 @@ verify_jwt = false
 [functions.paymob-webhook]
 verify_jwt = false
 # Paymob callbacks are authenticated by HMAC, not a Supabase user session.
+
+[functions.refresh-google-session]
+verify_jwt = false
+# The handler validates the user's JWT with Supabase Auth before renewing Google access.

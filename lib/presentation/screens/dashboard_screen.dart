@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:flutter/material.dart';
@@ -30,7 +31,7 @@ class DashboardScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   const Icon(
-                    Icons.error_outline,
+                    CupertinoIcons.exclamationmark_circle,
                     size: 64,
                     color: AppTheme.errorColor,
                   ),
@@ -87,7 +88,8 @@ class DashboardScreen extends StatelessWidget {
                           child: StatCard(
                             title: 'Buildings',
                             value: state.totalBuildings.toString(),
-                            icon: Icons.apartment, // More Airbnb-like icon
+                            icon: CupertinoIcons
+                                .building_2_fill, // More Airbnb-like icon
                             color: AppTheme.primaryColor,
                             onTap: () {
                               context.push('/buildings');
@@ -99,7 +101,7 @@ class DashboardScreen extends StatelessWidget {
                           child: StatCard(
                             title: 'Rooms',
                             value: state.totalRooms.toString(),
-                            icon: Icons.meeting_room,
+                            icon: CupertinoIcons.rectangle_split_3x1,
                             color: AppTheme.secondaryColor,
                             onTap: () {
                               context.push('/rooms/manage');
@@ -131,7 +133,7 @@ class DashboardScreen extends StatelessWidget {
                           child: StatCard(
                             title: 'Total Beds',
                             value: state.totalBeds.toString(),
-                            icon: Icons.single_bed,
+                            icon: CupertinoIcons.bed_double,
                             color: AppTheme.textColor, // Neutral for total
                           ),
                         ),
@@ -140,7 +142,7 @@ class DashboardScreen extends StatelessWidget {
                           child: StatCard(
                             title: 'Occupied',
                             value: state.occupiedBeds.toString(),
-                            icon: Icons.people,
+                            icon: CupertinoIcons.person_2_fill,
                             color: AppTheme.successColor,
                             onTap: () {
                               context.push('/tenants');
@@ -153,7 +155,7 @@ class DashboardScreen extends StatelessWidget {
                     StatCard(
                       title: 'Available Beds',
                       value: state.vacantBeds.toString(),
-                      icon: Icons.event_available,
+                      icon: CupertinoIcons.calendar_badge_plus,
                       color: AppTheme.primaryColor, // Highlight availability
                       fullWidth: true,
                       onTap: () {

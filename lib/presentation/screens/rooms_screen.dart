@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -50,7 +51,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
             appBar: AppBar(title: const Text('Rooms'), actions: [
               PopupMenuButton<String>(
                 tooltip: 'Add building, room or tenant',
-                icon: const Icon(Icons.more_vert),
+                icon: const Icon(CupertinoIcons.ellipsis_vertical),
                 onSelected: (action) {
                   switch (action) {
                     case 'building':
@@ -159,14 +160,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                             tooltip: 'Beds & availability',
                                             onPressed: () => context
                                                 .push('/rooms/occupancy'),
-                                            icon:
-                                                const Icon(Icons.bed_outlined)),
+                                            icon: const Icon(
+                                                CupertinoIcons.bed_double)),
                                         IconButton(
                                             tooltip: 'Manage rooms',
                                             onPressed: () =>
                                                 context.push('/rooms/manage'),
                                             icon: const Icon(
-                                                Icons.add_circle_outline)),
+                                                CupertinoIcons.plus_circle)),
                                       ]),
                                       const SizedBox(height: 8),
                                       const Text(
@@ -180,14 +181,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                           decoration: InputDecoration(
                                               hintText:
                                                   'Search room, subroom or building',
-                                              prefixIcon:
-                                                  const Icon(Icons.search),
+                                              prefixIcon: const Icon(
+                                                  CupertinoIcons.search),
                                               suffixIcon: _search
                                                       .text.isNotEmpty
                                                   ? IconButton(
                                                       tooltip: 'Clear search',
                                                       icon: const Icon(
-                                                          Icons.close),
+                                                          CupertinoIcons.xmark),
                                                       onPressed: () => setState(
                                                           _search.clear))
                                                   : null,
@@ -258,8 +259,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                                 const AlwaysScrollableScrollPhysics(),
                                             padding: const EdgeInsets.all(32),
                                             children: [
-                                                const Icon(Icons.search_off,
-                                                    size: 40, color: _muted),
+                                                const Icon(
+                                                    CupertinoIcons.search,
+                                                    size: 40,
+                                                    color: _muted),
                                                 const SizedBox(height: 16),
                                                 Text(
                                                     state.rooms.isEmpty

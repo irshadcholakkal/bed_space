@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 
 /// App Theme with Pastel Colors
 /// Minimalist design with soft, calming colors
@@ -38,6 +39,14 @@ class AppTheme {
   static ThemeData get theme {
     return ThemeData(
       useMaterial3: true,
+      actionIconTheme: ActionIconThemeData(
+        backButtonIconBuilder: (_) => const Icon(CupertinoIcons.chevron_left),
+        closeButtonIconBuilder: (_) => const Icon(CupertinoIcons.xmark),
+        drawerButtonIconBuilder: (_) =>
+            const Icon(CupertinoIcons.line_horizontal_3),
+        endDrawerButtonIconBuilder: (_) =>
+            const Icon(CupertinoIcons.line_horizontal_3),
+      ),
       scaffoldBackgroundColor: scaffoldColor,
       primaryColor: primaryColor,
 

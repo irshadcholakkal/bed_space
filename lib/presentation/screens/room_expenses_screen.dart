@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -111,17 +112,18 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.close),
+                        icon: const Icon(CupertinoIcons.xmark),
                         onPressed: () => Navigator.pop(context),
                       ),
                     ],
                   ),
                   const SizedBox(height: 24),
                   DropdownButtonFormField<ExpenseType>(
+                    icon: const Icon(CupertinoIcons.chevron_down),
                     initialValue: _selectedType,
                     decoration: const InputDecoration(
                       labelText: 'Expense Category',
-                      prefixIcon: Icon(Icons.category_outlined),
+                      prefixIcon: Icon(CupertinoIcons.square_grid_2x2),
                     ),
                     items: ExpenseType.values.map((type) {
                       return DropdownMenuItem(
@@ -142,7 +144,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                     controller: _amountController,
                     decoration: const InputDecoration(
                       labelText: 'Amount (د.إ)',
-                      prefixIcon: Icon(Icons.currency_rupee),
+                      prefixIcon: Icon(CupertinoIcons.money_dollar_circle),
                     ),
                     keyboardType:
                         const TextInputType.numberWithOptions(decimal: true),
@@ -159,7 +161,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                     controller: _descriptionController,
                     decoration: const InputDecoration(
                       labelText: 'Notes',
-                      prefixIcon: Icon(Icons.description_outlined),
+                      prefixIcon: Icon(CupertinoIcons.doc_text),
                     ),
                     maxLines: 2,
                   ),
@@ -169,7 +171,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                     child: InputDecorator(
                       decoration: const InputDecoration(
                         labelText: 'Date',
-                        prefixIcon: Icon(Icons.calendar_today),
+                        prefixIcon: Icon(CupertinoIcons.calendar),
                       ),
                       child: Text(
                         DateFormat('MMM d, yyyy').format(_selectedDate),
@@ -217,7 +219,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              Icons.edit_note_outlined,
+              CupertinoIcons.square_pencil,
               size: 30,
             ),
             onPressed: () {
@@ -235,7 +237,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _showAddExpenseBottomSheet,
-        icon: const Icon(Icons.add),
+        icon: const Icon(CupertinoIcons.plus),
         label: const Text('Add Expense'),
       ),
       body: BlocBuilder<ManagementBloc, ManagementState>(
@@ -274,7 +276,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Icon(
-                            Icons.receipt_long_outlined,
+                            CupertinoIcons.doc_text,
                             size: 80,
                             color: Colors.grey.shade300,
                           ),
@@ -369,14 +371,14 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                 'Income',
                 income,
                 Colors.blue.shade600,
-                Icons.arrow_downward,
+                CupertinoIcons.arrow_down,
               ),
               const SizedBox(width: 16),
               _buildSummaryItem(
                 'Expenses',
                 expenses,
                 Colors.orange.shade600,
-                Icons.arrow_upward,
+                CupertinoIcons.arrow_up,
               ),
             ],
           ),
@@ -537,7 +539,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.delete_outline,
+                        icon: const Icon(CupertinoIcons.trash,
                             size: 20, color: Colors.grey),
                         onPressed: () => _confirmDelete(context, expense.id!),
                         padding: EdgeInsets.zero,
@@ -576,19 +578,19 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
   IconData _getIconForType(ExpenseType type) {
     switch (type) {
       case ExpenseType.rent:
-        return Icons.home_work_outlined;
+        return CupertinoIcons.house;
       case ExpenseType.sewa:
-        return Icons.lightbulb_outline;
+        return CupertinoIcons.lightbulb;
       case ExpenseType.maintenance:
-        return Icons.build_outlined;
+        return CupertinoIcons.hammer;
       case ExpenseType.internet:
-        return Icons.wifi_outlined;
+        return CupertinoIcons.wifi;
       case ExpenseType.cleaning:
-        return Icons.cleaning_services_outlined;
+        return CupertinoIcons.paintbrush;
       case ExpenseType.refund:
-        return Icons.keyboard_return_outlined;
+        return CupertinoIcons.arrow_uturn_left;
       case ExpenseType.other:
-        return Icons.miscellaneous_services_outlined;
+        return CupertinoIcons.gear;
     }
   }
 
@@ -745,7 +747,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                             ),
                             IconButton(
                               icon: const Icon(
-                                Icons.delete_outline,
+                                CupertinoIcons.trash,
                                 color: AppTheme.errorColor,
                               ),
                               onPressed: () {
@@ -757,6 +759,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                         ),
                         const SizedBox(height: 24),
                         DropdownButtonFormField<String>(
+                          icon: const Icon(CupertinoIcons.chevron_down),
                           initialValue: selectedParentId ?? '',
                           isExpanded: true,
                           decoration: const InputDecoration(
@@ -784,7 +787,8 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                           controller: roomNumberController,
                           decoration: const InputDecoration(
                             labelText: 'Room Number',
-                            prefixIcon: Icon(Icons.door_front_door_outlined),
+                            prefixIcon:
+                                Icon(CupertinoIcons.rectangle_split_3x1),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -792,7 +796,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                           controller: capacityController,
                           decoration: const InputDecoration(
                             labelText: 'Total Capacity',
-                            prefixIcon: Icon(Icons.people_outline),
+                            prefixIcon: Icon(CupertinoIcons.person_2),
                           ),
                           keyboardType: TextInputType.number,
                         ),
@@ -804,7 +808,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                                 controller: lowerBedsController,
                                 decoration: const InputDecoration(
                                   labelText: 'Lower Beds',
-                                  prefixIcon: Icon(Icons.bed_outlined),
+                                  prefixIcon: Icon(CupertinoIcons.bed_double),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),
@@ -815,7 +819,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                                 controller: upperBedsController,
                                 decoration: const InputDecoration(
                                   labelText: 'Upper Beds',
-                                  prefixIcon: Icon(Icons.bed_outlined),
+                                  prefixIcon: Icon(CupertinoIcons.bed_double),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),
@@ -830,7 +834,8 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                                 controller: lowerRentController,
                                 decoration: const InputDecoration(
                                   labelText: 'Lower Rent',
-                                  prefixIcon: Icon(Icons.currency_rupee),
+                                  prefixIcon:
+                                      Icon(CupertinoIcons.money_dollar_circle),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),
@@ -841,7 +846,8 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                                 controller: upperRentController,
                                 decoration: const InputDecoration(
                                   labelText: 'Upper Rent',
-                                  prefixIcon: Icon(Icons.currency_rupee),
+                                  prefixIcon:
+                                      Icon(CupertinoIcons.money_dollar_circle),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),

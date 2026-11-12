@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'dashboard_screen.dart';
@@ -30,14 +31,14 @@ class HomeScreen extends StatelessWidget {
             .go(['/dashboard', '/rooms', '/financials', '/settings'][index]),
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.grid_view), label: 'Dashboard'),
+              icon: Icon(CupertinoIcons.square_grid_2x2_fill),
+              label: 'Dashboard'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.meeting_room_outlined), label: 'Rooms'),
+              icon: Icon(CupertinoIcons.rectangle_split_3x1), label: 'Rooms'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              label: 'Financials'),
+              icon: Icon(CupertinoIcons.creditcard), label: 'Financials'),
           BottomNavigationBarItem(
-              icon: Icon(Icons.settings_outlined), label: 'Settings'),
+              icon: Icon(CupertinoIcons.gear), label: 'Settings'),
         ],
       ),
     );

@@ -77,7 +77,7 @@ class _PlanCard extends StatelessWidget {
                           child: Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.check,
+                                const Icon(CupertinoIcons.checkmark,
                                     size: 15, color: Color(0xffb5c3bf)),
                                 const SizedBox(width: 9),
                                 Expanded(
@@ -145,9 +145,9 @@ class _ProductGraphic extends StatelessWidget {
                     const Divider(height: 32, color: _border),
                     Icon(
                         [
-                          Icons.hub_outlined,
-                          Icons.receipt_long_outlined,
-                          Icons.folder_outlined
+                          CupertinoIcons.arrow_branch,
+                          CupertinoIcons.doc_text,
+                          CupertinoIcons.folder
                         ][kind],
                         size: 28,
                         color: const Color(0xffb2c5c3)),
@@ -188,9 +188,9 @@ class _ProductGraphic extends StatelessWidget {
                           child: Row(children: [
                             Icon(
                                 [
-                                  Icons.grid_view_outlined,
-                                  Icons.payments_outlined,
-                                  Icons.cloud_done_outlined
+                                  CupertinoIcons.square_grid_2x2,
+                                  CupertinoIcons.money_dollar_circle,
+                                  CupertinoIcons.cloud
                                 ][kind],
                                 size: 15,
                                 color: const Color(0xff7f9c95)),
@@ -211,7 +211,7 @@ class _ProductGraphic extends StatelessWidget {
                           ])),
                     const SizedBox(height: 12),
                     const Row(children: [
-                      Icon(Icons.lock_outline, size: 12, color: _muted),
+                      Icon(CupertinoIcons.lock, size: 12, color: _muted),
                       SizedBox(width: 8),
                       Expanded(
                           child: Text('Your workspace. Your Google account.',

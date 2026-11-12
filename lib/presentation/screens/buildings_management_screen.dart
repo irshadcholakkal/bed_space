@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -26,7 +27,7 @@ class BuildingsManagementScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(
-              Icons.add_circle_outline,
+              CupertinoIcons.plus_circle,
               color: AppTheme.primaryColor,
             ),
             tooltip: 'Add Building',
@@ -49,7 +50,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.error_outline,
+                      CupertinoIcons.exclamationmark_circle,
                       size: 64,
                       color: AppTheme.errorColor,
                     ),
@@ -84,7 +85,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
-                      Icons.business_outlined,
+                      CupertinoIcons.building_2_fill,
                       size: 64,
                       color: AppTheme.softGrey,
                     ),
@@ -98,7 +99,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: () => showAddBuildingDialog(context),
-                      icon: const Icon(Icons.add),
+                      icon: const Icon(CupertinoIcons.plus),
                       label: const Text('Add Building'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppTheme.primaryColor,
@@ -134,7 +135,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                         tooltip: 'Edit building',
                         onPressed: () =>
                             _showEditBuildingDialog(context, building),
-                        icon: const Icon(Icons.edit_outlined),
+                        icon: const Icon(CupertinoIcons.pencil),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 20,
@@ -147,7 +148,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
-                          Icons.business,
+                          CupertinoIcons.building_2_fill,
                           color: AppTheme.primaryColor,
                         ),
                       ),
@@ -243,7 +244,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                   controller: nameController,
                   decoration: const InputDecoration(
                     labelText: 'Building Name',
-                    prefixIcon: Icon(Icons.business_outlined),
+                    prefixIcon: Icon(CupertinoIcons.building_2_fill),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -251,7 +252,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                   controller: addressController,
                   decoration: const InputDecoration(
                     labelText: 'Address',
-                    prefixIcon: Icon(Icons.location_on_outlined),
+                    prefixIcon: Icon(CupertinoIcons.location),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -335,7 +336,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                     ),
                     IconButton(
                       icon: const Icon(
-                        Icons.delete_outline,
+                        CupertinoIcons.trash,
                         color: AppTheme.errorColor,
                       ),
                       onPressed: () {
@@ -350,7 +351,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                   controller: nameController,
                   decoration: const InputDecoration(
                     labelText: 'Building Name',
-                    prefixIcon: Icon(Icons.business_outlined),
+                    prefixIcon: Icon(CupertinoIcons.building_2_fill),
                   ),
                 ),
                 const SizedBox(height: 16),
@@ -358,7 +359,7 @@ class BuildingsManagementScreen extends StatelessWidget {
                   controller: addressController,
                   decoration: const InputDecoration(
                     labelText: 'Address',
-                    prefixIcon: Icon(Icons.location_on_outlined),
+                    prefixIcon: Icon(CupertinoIcons.location),
                   ),
                 ),
                 const SizedBox(height: 16),

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -116,7 +117,7 @@ class SettingsScreen extends StatelessWidget {
                             vertical: 8,
                           ),
                           leading: const Icon(
-                            Icons.grid_on_outlined,
+                            CupertinoIcons.table,
                             color: AppTheme.primaryColor,
                           ),
                           title: const Text(
@@ -142,7 +143,7 @@ class SettingsScreen extends StatelessWidget {
                             vertical: 8,
                           ),
                           leading: const Icon(
-                            Icons.link,
+                            CupertinoIcons.link,
                             color: AppTheme.primaryColor,
                           ),
                           title: const Text(
@@ -154,7 +155,7 @@ class SettingsScreen extends StatelessWidget {
                           ),
                           trailing: IconButton(
                             icon: const Icon(
-                              Icons.copy,
+                              CupertinoIcons.doc_on_doc,
                               size: 20,
                               color: AppTheme.primaryColor,
                             ),
@@ -195,7 +196,7 @@ class SettingsScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         leading: const Icon(
-                          Icons.sync_outlined,
+                          CupertinoIcons.arrow_2_circlepath,
                           color: AppTheme.primaryColor,
                         ),
                         title: const Text(
@@ -226,7 +227,7 @@ class SettingsScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         leading: const Icon(
-                          Icons.delete_outline,
+                          CupertinoIcons.trash,
                           color: AppTheme.errorColor,
                         ),
                         title: const Text(
@@ -252,7 +253,7 @@ class SettingsScreen extends StatelessWidget {
                           vertical: 8,
                         ),
                         leading: const Icon(
-                          Icons.logout,
+                          CupertinoIcons.square_arrow_right,
                           color: AppTheme.textColor,
                         ),
                         title: const Text(
@@ -283,7 +284,7 @@ class SettingsScreen extends StatelessWidget {
                       Row(
                         children: [
                           const Icon(
-                            Icons.info_outline,
+                            CupertinoIcons.info_circle,
                             color: AppTheme.warningColor,
                           ),
                           const SizedBox(width: 12),
@@ -346,7 +347,7 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Row(
               children: [
-                const Icon(Icons.warning_amber_rounded,
+                const Icon(CupertinoIcons.exclamationmark_triangle,
                     color: AppTheme.errorColor),
                 const SizedBox(width: 12),
                 const Text(
@@ -434,7 +435,8 @@ class SettingsScreen extends StatelessWidget {
             const SizedBox(height: 24),
             Row(
               children: [
-                const Icon(Icons.logout, color: AppTheme.textColor),
+                const Icon(CupertinoIcons.square_arrow_right,
+                    color: AppTheme.textColor),
                 const SizedBox(width: 12),
                 const Text(
                   'Logout',

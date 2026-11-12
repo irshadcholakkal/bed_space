@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -114,7 +115,7 @@ class TenantsManagementScreen extends StatefulWidget {
                           controller: nameController,
                           decoration: const InputDecoration(
                             labelText: 'Tenant Name',
-                            prefixIcon: Icon(Icons.person_outline),
+                            prefixIcon: Icon(CupertinoIcons.person),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -122,17 +123,18 @@ class TenantsManagementScreen extends StatefulWidget {
                           controller: phoneController,
                           decoration: const InputDecoration(
                             labelText: 'Phone Number',
-                            prefixIcon: Icon(Icons.phone_outlined),
+                            prefixIcon: Icon(CupertinoIcons.phone),
                           ),
                           keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
+                          icon: const Icon(CupertinoIcons.chevron_down),
                           isExpanded: true,
                           initialValue: selectedBuildingId,
                           decoration: const InputDecoration(
                             labelText: 'Building',
-                            prefixIcon: Icon(Icons.business_outlined),
+                            prefixIcon: Icon(CupertinoIcons.building_2_fill),
                           ),
                           items: buildings
                               .map<DropdownMenuItem<String>>(
@@ -160,12 +162,13 @@ class TenantsManagementScreen extends StatefulWidget {
                             )
                           else
                             DropdownButtonFormField<String>(
+                              icon: const Icon(CupertinoIcons.chevron_down),
                               isExpanded: true,
                               initialValue: selectedRoomId,
                               decoration: const InputDecoration(
                                 labelText: 'Room',
                                 prefixIcon:
-                                    Icon(Icons.door_front_door_outlined),
+                                    Icon(CupertinoIcons.rectangle_split_3x1),
                               ),
                               items: filteredRooms
                                   .map<DropdownMenuItem<String>>(
@@ -328,7 +331,8 @@ class TenantsManagementScreen extends StatefulWidget {
                                 controller: rentController,
                                 decoration: const InputDecoration(
                                   labelText: 'Monthly Rent',
-                                  prefixIcon: Icon(Icons.currency_rupee),
+                                  prefixIcon:
+                                      Icon(CupertinoIcons.money_dollar_circle),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),
@@ -339,7 +343,8 @@ class TenantsManagementScreen extends StatefulWidget {
                                 controller: advanceController,
                                 decoration: const InputDecoration(
                                   labelText: 'Advance',
-                                  prefixIcon: Icon(Icons.payments_outlined),
+                                  prefixIcon:
+                                      Icon(CupertinoIcons.money_dollar_circle),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),
@@ -354,8 +359,7 @@ class TenantsManagementScreen extends StatefulWidget {
                                 controller: dueDayController,
                                 decoration: const InputDecoration(
                                   labelText: 'Rent Due Day',
-                                  prefixIcon:
-                                      Icon(Icons.calendar_month_outlined),
+                                  prefixIcon: Icon(CupertinoIcons.calendar),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),
@@ -394,7 +398,7 @@ class TenantsManagementScreen extends StatefulWidget {
                                 child: InputDecorator(
                                   decoration: const InputDecoration(
                                     labelText: 'Joining Date',
-                                    prefixIcon: Icon(Icons.today_outlined),
+                                    prefixIcon: Icon(CupertinoIcons.calendar),
                                   ),
                                   child: Text(
                                     DateFormat('dd MMM yyyy')
@@ -484,7 +488,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
         actions: [
           IconButton(
             icon: const Icon(
-              Icons.person_add_outlined,
+              CupertinoIcons.person_badge_plus,
               color: AppTheme.primaryColor,
             ),
             tooltip: 'Add Tenant',
@@ -520,13 +524,13 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                 decoration: InputDecoration(
                   hintText: 'Search by name, phone or room...',
                   prefixIcon: const Icon(
-                    Icons.search,
+                    CupertinoIcons.search,
                     color: AppTheme.softGrey,
                   ),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
                           icon: const Icon(
-                            Icons.clear,
+                            CupertinoIcons.xmark,
                             color: AppTheme.softGrey,
                           ),
                           onPressed: () {
@@ -566,7 +570,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           const Icon(
-                            Icons.error_outline,
+                            CupertinoIcons.exclamationmark_circle,
                             size: 64,
                             color: AppTheme.errorColor,
                           ),
@@ -629,8 +633,8 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                         children: [
                           Icon(
                             _searchQuery.isEmpty
-                                ? Icons.people_outline
-                                : Icons.search_off,
+                                ? CupertinoIcons.person_2
+                                : CupertinoIcons.search,
                             size: 64,
                             color: AppTheme.softGrey,
                           ),
@@ -651,7 +655,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                   TenantsManagementScreen.showAddTenantDialog(
                                 context,
                               ),
-                              icon: const Icon(Icons.add),
+                              icon: const Icon(CupertinoIcons.plus),
                               label: const Text('Add Tenant'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryColor,
@@ -712,7 +716,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                Icons.person,
+                                CupertinoIcons.person_fill,
                                 color: AppTheme.primaryColor,
                               ),
                             ),
@@ -805,7 +809,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                             trailing: PopupMenuButton<String>(
                               padding: EdgeInsets.zero,
                               icon: const Icon(
-                                Icons.more_vert,
+                                CupertinoIcons.ellipsis_vertical,
                                 color: AppTheme.textColor,
                               ),
                               onSelected: (value) {
@@ -844,7 +848,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                   child: Row(
                                     children: [
                                       Icon(
-                                        Icons.account_balance_wallet_outlined,
+                                        CupertinoIcons.creditcard,
                                         color: AppTheme.secondaryColor,
                                         size: 20,
                                       ),
@@ -858,7 +862,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                   child: Row(
                                     children: [
                                       Icon(
-                                        Icons.edit_outlined,
+                                        CupertinoIcons.pencil,
                                         color: AppTheme.primaryColor,
                                         size: 20,
                                       ),
@@ -872,7 +876,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                   child: Row(
                                     children: [
                                       Icon(
-                                        Icons.exit_to_app,
+                                        CupertinoIcons.square_arrow_right,
                                         color: AppTheme.warningColor,
                                         size: 20,
                                       ),
@@ -886,7 +890,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                   child: Row(
                                     children: [
                                       Icon(
-                                        Icons.delete_outlined,
+                                        CupertinoIcons.trash,
                                         color: AppTheme.errorColor,
                                         size: 20,
                                       ),
@@ -942,7 +946,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            Icons.check_circle,
+            CupertinoIcons.checkmark_circle_fill,
             color: AppTheme.successColor,
             size: 14,
           ),
@@ -965,7 +969,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Icon(
-            Icons.warning_amber_rounded,
+            CupertinoIcons.exclamationmark_triangle,
             color: AppTheme.warningColor,
             size: 14,
           ),
@@ -991,7 +995,8 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Icon(Icons.error_outline, color: AppTheme.errorColor, size: 14),
+          const Icon(CupertinoIcons.exclamationmark_circle,
+              color: AppTheme.errorColor, size: 14),
           const SizedBox(width: 4),
           Text(
             'Overdue - د.إ${expectedRent.toStringAsFixed(0)}',
@@ -1015,7 +1020,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(
-          Icons.access_time,
+          CupertinoIcons.clock,
           color: daysUntilDue <= 3
               ? AppTheme.warningColor
               : AppTheme.secondaryTextColor,
@@ -1129,7 +1134,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                           controller: nameController,
                           decoration: const InputDecoration(
                             labelText: 'Tenant Name',
-                            prefixIcon: Icon(Icons.person_outline),
+                            prefixIcon: Icon(CupertinoIcons.person),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -1137,17 +1142,18 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                           controller: phoneController,
                           decoration: const InputDecoration(
                             labelText: 'Phone Number',
-                            prefixIcon: Icon(Icons.phone_outlined),
+                            prefixIcon: Icon(CupertinoIcons.phone),
                           ),
                           keyboardType: TextInputType.phone,
                         ),
                         const SizedBox(height: 16),
                         DropdownButtonFormField<String>(
+                          icon: const Icon(CupertinoIcons.chevron_down),
                           isExpanded: true,
                           initialValue: selectedBuildingId,
                           decoration: const InputDecoration(
                             labelText: 'Building',
-                            prefixIcon: Icon(Icons.business_outlined),
+                            prefixIcon: Icon(CupertinoIcons.building_2_fill),
                           ),
                           items: buildings
                               .map<DropdownMenuItem<String>>(
@@ -1175,12 +1181,13 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                             )
                           else
                             DropdownButtonFormField<String>(
+                              icon: const Icon(CupertinoIcons.chevron_down),
                               isExpanded: true,
                               initialValue: selectedRoomId,
                               decoration: const InputDecoration(
                                 labelText: 'Room',
                                 prefixIcon:
-                                    Icon(Icons.door_front_door_outlined),
+                                    Icon(CupertinoIcons.rectangle_split_3x1),
                               ),
                               items: filteredRooms
                                   .map<DropdownMenuItem<String>>(
@@ -1336,7 +1343,8 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                 controller: rentController,
                                 decoration: const InputDecoration(
                                   labelText: 'Monthly Rent',
-                                  prefixIcon: Icon(Icons.currency_rupee),
+                                  prefixIcon:
+                                      Icon(CupertinoIcons.money_dollar_circle),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),
@@ -1347,7 +1355,8 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                 controller: advanceController,
                                 decoration: const InputDecoration(
                                   labelText: 'Advance',
-                                  prefixIcon: Icon(Icons.payments_outlined),
+                                  prefixIcon:
+                                      Icon(CupertinoIcons.money_dollar_circle),
                                 ),
                                 keyboardType: TextInputType.number,
                               ),
@@ -1359,7 +1368,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                           controller: dueDayController,
                           decoration: const InputDecoration(
                             labelText: 'Rent Due Day',
-                            prefixIcon: Icon(Icons.calendar_month_outlined),
+                            prefixIcon: Icon(CupertinoIcons.calendar),
                           ),
                           keyboardType: TextInputType.number,
                         ),
@@ -1494,7 +1503,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                   const SizedBox(height: 24),
                   Row(
                     children: [
-                      const Icon(Icons.exit_to_app,
+                      const Icon(CupertinoIcons.square_arrow_right,
                           color: AppTheme.warningColor),
                       const SizedBox(width: 12),
                       const Text(
@@ -1532,7 +1541,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                     child: InputDecorator(
                       decoration: const InputDecoration(
                         labelText: 'Checkout Date',
-                        prefixIcon: Icon(Icons.calendar_today_outlined),
+                        prefixIcon: Icon(CupertinoIcons.calendar),
                       ),
                       child: Text(
                         DateFormat('dd MMM yyyy').format(checkoutDate),
@@ -1793,7 +1802,7 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
         actions: [
           IconButton(
             icon: const Icon(
-              Icons.add_circle_outline,
+              CupertinoIcons.plus_circle,
               color: AppTheme.primaryColor,
             ),
             tooltip: 'Add Payment',
@@ -2158,7 +2167,7 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
                   ),
                   IconButton(
                       tooltip: 'WhatsApp, invoice & receipts',
-                      icon: const Icon(Icons.share_outlined),
+                      icon: const Icon(CupertinoIcons.square_arrow_up),
                       onPressed: () =>
                           openTenantSharing(context, tenant, month: monthKey)),
                   Container(
@@ -2336,7 +2345,7 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
             shape: BoxShape.circle,
           ),
           child: const Icon(
-            Icons.check,
+            CupertinoIcons.checkmark,
             color: AppTheme.successColor,
             size: 20,
           ),
@@ -2363,7 +2372,7 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
           ),
           IconButton(
               tooltip: 'Payment receipt',
-              icon: const Icon(Icons.receipt_long_outlined),
+              icon: const Icon(CupertinoIcons.doc_text),
               onPressed: () {
                 final state = context.read<ManagementBloc>().state;
                 if (state is ManagementLoaded) {
@@ -2398,7 +2407,9 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
             shape: BoxShape.circle,
           ),
           child: Icon(
-            isRefund ? Icons.keyboard_return : Icons.money_off,
+            isRefund
+                ? CupertinoIcons.arrow_uturn_left
+                : CupertinoIcons.money_dollar_circle,
             color: isRefund ? AppTheme.warningColor : AppTheme.errorColor,
             size: 20,
           ),
@@ -2488,7 +2499,7 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
                       controller: amountController,
                       decoration: const InputDecoration(
                         labelText: 'Payment Amount',
-                        prefixIcon: Icon(Icons.currency_rupee),
+                        prefixIcon: Icon(CupertinoIcons.money_dollar_circle),
                       ),
                       keyboardType: TextInputType.number,
                       enabled: !isSubmitting,
@@ -2533,7 +2544,7 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
                         child: Row(
                           children: [
                             const Icon(
-                              Icons.calendar_month,
+                              CupertinoIcons.calendar,
                               color: AppTheme.primaryColor,
                             ),
                             const SizedBox(width: 12),

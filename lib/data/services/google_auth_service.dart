@@ -48,7 +48,7 @@ class GoogleAuthService {
         OAuthProvider.google,
         redirectTo: kIsWeb ? SaasService.authRedirectUrl : callback,
         scopes: _scopes.join(' '),
-        queryParams: const {'prompt': 'consent'},
+        queryParams: const {'prompt': 'consent', 'access_type': 'offline'},
       );
       if (!launched) throw StateError('Could not open Google sign-in.');
       return null; // Completion arrives through the Supabase auth callback.
@@ -74,25 +74,45 @@ class GoogleAuthService {
       // Supabase refreshes its own JWT, but not Google's provider token.
       final session = SaasService.client.auth.currentSession;
       if (session == null) return null;
-      final token =
-          session.providerToken ?? await GoogleTokenStore.read(session.user.id);
-      if (token == null || token.isEmpty) return null;
+      final refreshToken = session.providerRefreshToken;
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        await GoogleTokenStore.saveRefreshToken(session.user.id, refreshToken);
+      }
+      final candidates = <String>{
+        if (session.providerToken?.isNotEmpty == true) session.providerToken!,
+        if (await GoogleTokenStore.read(session.user.id)
+            case final String cached)
+          cached,
+      };
+      for (final token in candidates) {
+        if (await _validGoogleToken(token, session.user.email)) {
+          if (SaasService.userId != session.user.id) return null;
+          await GoogleTokenStore.save(session.user.id, token);
+          return token;
+        }
+      }
+      final savedRefresh =
+          await GoogleTokenStore.readRefreshToken(session.user.id);
+      if (savedRefresh == null || savedRefresh.isEmpty) return null;
       try {
-        final response = await http
-            .get(Uri.https(
-                'oauth2.googleapis.com', '/tokeninfo', {'access_token': token}))
-            .timeout(const Duration(seconds: 10));
-        if (response.statusCode != 200) return null;
-        final info = jsonDecode(response.body) as Map<String, dynamic>;
-        final scopes = (info['scope'] as String? ?? '').split(' ');
-        if (!_scopes.skip(3).every(scopes.contains) ||
-            info['email'] != session.user.email ||
-            (int.tryParse('${info['expires_in']}') ?? 0) <= 60) {
+        final response = await SaasService.client.functions.invoke(
+            'refresh-google-session',
+            body: {'refresh_token': savedRefresh});
+        final result = response.data as Map<String, dynamic>;
+        final token = result['access_token'] as String?;
+        if (token == null ||
+            SaasService.userId != session.user.id ||
+            !await _validGoogleToken(token, session.user.email)) {
           return null;
         }
         await GoogleTokenStore.save(session.user.id, token);
+        final rotated = result['refresh_token'] as String?;
+        if (rotated != null && rotated.isNotEmpty) {
+          await GoogleTokenStore.saveRefreshToken(session.user.id, rotated);
+        }
         return token;
       } catch (_) {
+        // Keep the app's account session. Only Google may need reconnecting.
         return null;
       }
     }
@@ -107,6 +127,24 @@ class GoogleAuthService {
       return auth.accessToken;
     } catch (e) {
       return null;
+    }
+  }
+
+  Future<bool> _validGoogleToken(String token, String? email) async {
+    try {
+      final response = await http
+          .get(Uri.https(
+              'oauth2.googleapis.com', '/tokeninfo', {'access_token': token}))
+          .timeout(const Duration(seconds: 10));
+      if (response.statusCode != 200) return false;
+      final info = jsonDecode(response.body) as Map<String, dynamic>;
+      final scopes = (info['scope'] as String? ?? '').split(' ');
+      return _scopes.skip(3).every(scopes.contains) &&
+          email != null &&
+          info['email'] == email &&
+          (int.tryParse('${info['expires_in']}') ?? 0) > 60;
+    } catch (_) {
+      return false;
     }
   }
 

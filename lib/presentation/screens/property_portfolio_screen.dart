@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -156,13 +157,16 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                               onPressed: () =>
                                                   context.go(_base),
                                               icon: const Icon(
-                                                  Icons.grid_view_outlined,
+                                                  CupertinoIcons
+                                                      .square_grid_2x2,
                                                   size: 16),
                                               label:
                                                   const Text('All buildings')),
                                           if (building != null) ...[
-                                            const Icon(Icons.chevron_right,
-                                                size: 16, color: _muted),
+                                            const Icon(
+                                                CupertinoIcons.chevron_right,
+                                                size: 16,
+                                                color: _muted),
                                             TextButton(
                                                 onPressed: () =>
                                                     _open(building: buildingId),
@@ -171,8 +175,10 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                           ],
                                           if (room != null &&
                                               room.isSubroom) ...[
-                                            const Icon(Icons.chevron_right,
-                                                size: 16, color: _muted),
+                                            const Icon(
+                                                CupertinoIcons.chevron_right,
+                                                size: 16,
+                                                color: _muted),
                                             TextButton(
                                                 onPressed: () => _open(
                                                     building: buildingId,
@@ -181,8 +187,10 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                                     'Room ${state.rooms.where((r) => r.roomId == room.parentRoomId).firstOrNull?.roomNumber ?? ''}')),
                                           ],
                                           if (room != null) ...[
-                                            const Icon(Icons.chevron_right,
-                                                size: 16, color: _muted),
+                                            const Icon(
+                                                CupertinoIcons.chevron_right,
+                                                size: 16,
+                                                color: _muted),
                                             Text(
                                                 '${room.isSubroom ? 'Subroom' : 'Room'} ${room.roomNumber}',
                                                 style: const TextStyle(
@@ -222,7 +230,8 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                               onPressed: () => context
                                                   .push('/financials/tenants'),
                                               icon: const Icon(
-                                                  Icons.payments_outlined,
+                                                  CupertinoIcons
+                                                      .money_dollar_circle,
                                                   size: 18),
                                               label: const Text(
                                                   'Tenant payments')),
@@ -230,7 +239,8 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                             OutlinedButton.icon(
                                                 onPressed: () => context.push(
                                                     '/rooms/${room.roomId}/expenses'),
-                                                icon: const Icon(Icons.add,
+                                                icon: const Icon(
+                                                    CupertinoIcons.plus,
                                                     size: 18),
                                                 label: Text(
                                                     'Expenses for ${room.isSubroom ? 'subroom' : 'room'} ${room.roomNumber}')),
@@ -253,8 +263,8 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                                         ? 'Manage buildings'
                                                         : 'Manage rooms')),
                                               ],
-                                              icon:
-                                                  const Icon(Icons.more_horiz),
+                                              icon: const Icon(
+                                                  CupertinoIcons.ellipsis),
                                             ),
                                           if (MediaQuery.sizeOf(context)
                                                   .width >=
@@ -263,7 +273,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                                 onPressed: () => context
                                                     .push('/rooms/occupancy'),
                                                 icon: const Icon(
-                                                    Icons.bed_outlined,
+                                                    CupertinoIcons.bed_double,
                                                     size: 18),
                                                 label: const Text(
                                                     'Beds & availability')),
@@ -275,7 +285,9 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                                     building == null
                                                         ? '/buildings'
                                                         : '/rooms/manage'),
-                                                icon: const Icon(Icons.tune,
+                                                icon: const Icon(
+                                                    CupertinoIcons
+                                                        .slider_horizontal_3,
                                                     size: 18),
                                                 label: Text(building == null
                                                     ? 'Manage buildings'
@@ -327,7 +339,8 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                               _search =
                                                   value.trim().toLowerCase()),
                                           decoration: const InputDecoration(
-                                              prefixIcon: Icon(Icons.search),
+                                              prefixIcon:
+                                                  Icon(CupertinoIcons.search),
                                               hintText:
                                                   'Find a building, room or subroom')),
                                       const SizedBox(height: 16),
@@ -377,8 +390,10 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                                       .withValues(alpha: .1),
                                                   child: Icon(
                                                       entry.isIncome
-                                                          ? Icons.south_west
-                                                          : Icons.north_east,
+                                                          ? CupertinoIcons
+                                                              .arrow_down_left
+                                                          : CupertinoIcons
+                                                              .arrow_up_right,
                                                       color: entry.isIncome
                                                           ? _green
                                                           : _cost,
@@ -436,7 +451,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
         child: DropdownButton<String>(
             value: _month ?? 'all',
             underline: const SizedBox.shrink(),
-            icon: const Icon(Icons.keyboard_arrow_down, size: 18),
+            icon: const Icon(CupertinoIcons.chevron_down, size: 18),
             items: [
               const DropdownMenuItem(value: 'all', child: Text('All time')),
               ...months.map((m) => DropdownMenuItem(
@@ -514,7 +529,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
             building.buildingName,
             '${children.where((r) => !r.isSubroom).length} rooms | ${children.where((r) => r.isSubroom).length} subrooms',
             report.totals(report.roomIds(buildingId: building.buildingId)),
-            Icons.apartment_outlined,
+            CupertinoIcons.building_2_fill,
             () => _open(building: building.buildingId)));
       }
     } else if (room == null) {
@@ -533,7 +548,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
             'Room ${child.roomNumber}',
             '${subs.length} subrooms | Totals include subrooms',
             report.totals(report.roomIds(roomId: child.roomId)),
-            Icons.meeting_room_outlined,
+            CupertinoIcons.rectangle_split_3x1,
             () => _open(building: buildingId, room: child.roomId)));
       }
     } else {
@@ -543,7 +558,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
             'This room only, excluding subrooms',
             report.totals(
                 report.roomIds(roomId: room.roomId, includeSubrooms: false)),
-            Icons.meeting_room_outlined,
+            CupertinoIcons.rectangle_split_3x1,
             () => context.push('/rooms/${room.roomId}/expenses')));
       }
       for (final sub in subrooms) {
@@ -552,7 +567,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
             'Subroom ${sub.roomNumber}',
             'Only this subroom',
             report.totals(report.roomIds(roomId: sub.roomId)),
-            Icons.subdirectory_arrow_right,
+            CupertinoIcons.arrow_turn_down_right,
             () => _open(building: buildingId, room: sub.roomId)));
       }
     }
@@ -605,7 +620,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                             color: _muted,
                                             height: 1.5)),
                                   ])),
-                              const Icon(Icons.arrow_forward,
+                              const Icon(CupertinoIcons.arrow_right,
                                   size: 18, color: _muted)
                             ]),
                             const SizedBox(height: 20),
@@ -630,7 +645,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
       decoration: BoxDecoration(
           color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(children: [
-        const Icon(Icons.auto_awesome_outlined, color: _muted),
+        const Icon(CupertinoIcons.sparkles, color: _muted),
         const SizedBox(height: 16),
         Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),

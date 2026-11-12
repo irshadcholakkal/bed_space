@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -59,7 +60,7 @@ Future<void> showWhatsAppDraft(BuildContext context,
                       const SizedBox(height: 12),
                       Wrap(spacing: 12, children: [
                         OutlinedButton.icon(
-                            icon: const Icon(Icons.copy),
+                            icon: const Icon(CupertinoIcons.doc_on_doc),
                             label: const Text('Copy'),
                             onPressed: () async {
                               await Clipboard.setData(
@@ -71,7 +72,7 @@ Future<void> showWhatsAppDraft(BuildContext context,
                               }
                             }),
                         FilledButton.icon(
-                            icon: const Icon(Icons.chat_outlined),
+                            icon: const Icon(CupertinoIcons.chat_bubble),
                             label: const Text('Open WhatsApp'),
                             onPressed: () async {
                               try {
@@ -234,7 +235,7 @@ class _BillingActionsScreenState extends State<BillingActionsScreen> {
           Wrap(spacing: 8, children: [
             FilledButton.icon(
                 onPressed: busy ? null : () => document(),
-                icon: const Icon(Icons.picture_as_pdf_outlined),
+                icon: const Icon(CupertinoIcons.doc_richtext),
                 label: Text(kIsWeb ? 'Download invoice' : 'Share invoice PDF')),
             OutlinedButton(
                 onPressed: busy ? null : () => document(print: true),
@@ -242,7 +243,7 @@ class _BillingActionsScreenState extends State<BillingActionsScreen> {
             if (SaasService.userId != null)
               OutlinedButton.icon(
                   onPressed: busy ? null : () => document(drive: true),
-                  icon: const Icon(Icons.cloud_upload_outlined),
+                  icon: const Icon(CupertinoIcons.cloud_upload),
                   label: const Text('Save copy to Drive')),
           ]),
           const Divider(height: 32),
