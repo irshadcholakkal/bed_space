@@ -9,6 +9,7 @@ import '../../data/models/property_financials.dart';
 import '../../data/models/room_model.dart';
 import '../blocs/management/management_bloc.dart';
 import '../theme/app_theme.dart';
+import '../widgets/room_delete_dialog.dart';
 
 const _paper = AppTheme.backgroundColor;
 const _ink = AppTheme.textColor;
@@ -43,6 +44,58 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
   String _search = '';
   bool _showAll = false;
   bool _showActivity = false;
+  bool _deleting = false;
+
+  Future<void> _deleteRoom(RoomModel room) async {
+    if (_deleting) return;
+    final bloc = context.read<ManagementBloc>();
+    final state = bloc.state;
+    if (state is! ManagementLoaded || room.roomId == null) return;
+    String? reason;
+    if (state.rooms.any((r) => r.parentRoomId == room.roomId)) {
+      reason = 'Delete the subrooms before deleting this room.';
+    } else if (state.tenants.any((t) => t.roomId == room.roomId && t.active) ||
+        state.beds.any(
+            (b) => b.roomId == room.roomId && b.status == BedStatus.occupied)) {
+      reason = 'Check out the tenants before deleting this room.';
+    }
+    if (reason != null) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(reason)));
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (_) =>
+            RoomDeleteDialog(roomName: room.displayName(state.rooms)));
+    if (confirmed != true || !mounted) return;
+    setState(() => _deleting = true);
+    try {
+      final result = bloc.stream.firstWhere((s) =>
+          s is ManagementLoaded &&
+          (s.error != null || !s.rooms.any((r) => r.roomId == room.roomId)));
+      bloc.add(DeleteRoom(room.roomId!));
+      final outcome = await result as ManagementLoaded;
+      if (!mounted) return;
+      if (outcome.error != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(outcome.error!)));
+      } else {
+        context.go(Uri(path: '/rooms', queryParameters: {
+          'building': room.buildingId,
+          if (room.isSubroom) 'room': room.parentRoomId!,
+        }).toString());
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Could not delete the room. Please try again.')));
+      }
+    } finally {
+      if (mounted) setState(() => _deleting = false);
+    }
+  }
+
   String get _base => widget.financial ? '/financials' : '/rooms';
   String _money(double value) =>
       'AED ${NumberFormat('#,##0.00').format(value)}';
@@ -182,9 +235,23 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                         tooltip: 'More actions',
                                         icon: const Icon(
                                             CupertinoIcons.ellipsis_vertical),
-                                        onSelected: (path) =>
-                                            context.push(path),
+                                        onSelected: (path) {
+                                          if (path == 'delete_room' &&
+                                              room != null) {
+                                            _deleteRoom(room);
+                                          } else {
+                                            context.push(path);
+                                          }
+                                        },
                                         itemBuilder: (_) => [
+                                          if (room != null)
+                                            PopupMenuItem(
+                                                value: 'delete_room',
+                                                enabled: !_deleting,
+                                                child: const Text('Delete room',
+                                                    style: TextStyle(
+                                                        color: AppTheme
+                                                            .errorColor))),
                                           if (room != null)
                                             PopupMenuItem(
                                                 value:

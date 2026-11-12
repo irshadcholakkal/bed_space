@@ -252,6 +252,12 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
       // Cascade delete: Delete associated beds first
       final allBeds = await _repository.getBeds();
       final roomBeds = allBeds.where((b) => b.roomId == event.roomId).toList();
+      final tenants = await _repository.getTenants();
+      if (roomBeds.any((bed) => bed.status == BedStatus.occupied) ||
+          tenants.any(
+              (tenant) => tenant.roomId == event.roomId && tenant.active)) {
+        throw StateError('Check out the tenants before deleting this room.');
+      }
 
       for (final bed in roomBeds) {
         if (bed.bedId != null) {
