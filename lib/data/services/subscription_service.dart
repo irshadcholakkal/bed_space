@@ -1,5 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'saas_service.dart';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'offline_status.dart';
 
 class MembershipCheckFailure implements Exception {
   final String reference, message;
@@ -52,12 +55,31 @@ class SubscriptionService {
       if (SaasService.client.auth.currentSession == null) {
         throw MembershipCheckFailure.session;
       }
+      final key = 'bedspace_offline_access_${SaasService.userId}';
+      final prefs = await SharedPreferences.getInstance();
+      if (await isDeviceOffline()) {
+        final cached = prefs.getString(key);
+        if (cached == null) throw MembershipCheckFailure.connection;
+        final access =
+            AccountAccess.fromJson(jsonDecode(cached) as Map<String, dynamic>);
+        if (!access.allowed ||
+            access.suspended ||
+            !access.accessUntil.isAfter(DateTime.now().toUtc())) {
+          throw MembershipCheckFailure.connection;
+        }
+        return AccountAccess.fromJson({
+          ...jsonDecode(cached) as Map<String, dynamic>,
+          'server_now': DateTime.now().toUtc().toIso8601String(),
+        });
+      }
       final result = await SaasService.client
           .rpc('account_access')
           .timeout(const Duration(seconds: 15));
       if (result == null) throw MembershipCheckFailure.missing;
       if (result is! Map<String, dynamic>) throw MembershipCheckFailure.setup;
-      return AccountAccess.fromJson(result);
+      final access = AccountAccess.fromJson(result);
+      await prefs.setString(key, jsonEncode(result));
+      return access;
     } catch (error) {
       throw MembershipCheckFailure.fromError(error);
     }

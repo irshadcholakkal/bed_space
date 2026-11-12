@@ -10,6 +10,19 @@ enum ExpenseType {
 }
 
 class ExpenseModel {
+  String get categoryName => switch (expenseType) {
+        ExpenseType.rent => 'Rent',
+        ExpenseType.sewa => 'Electricity & water (SEWA)',
+        ExpenseType.maintenance => 'Maintenance',
+        ExpenseType.internet => 'Internet',
+        ExpenseType.cleaning => 'Cleaning',
+        ExpenseType.refund => 'Refund',
+        ExpenseType.other => 'Other expense',
+      };
+
+  String get displayName => description?.trim().isNotEmpty == true
+      ? description!.trim()
+      : categoryName;
   final String? id;
   final String roomId;
   final String?

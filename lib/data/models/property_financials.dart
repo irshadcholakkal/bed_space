@@ -90,9 +90,7 @@ class PropertyFinancials {
         continue;
       }
       result.add(PropertyTransaction(
-          title: expense.description?.trim().isNotEmpty == true
-              ? '${expense.expenseType.name} · ${expense.description}'
-              : expense.expenseType.name,
+          title: expense.displayName,
           roomId: expense.roomId,
           date: expense.date,
           amount: expense.amount,

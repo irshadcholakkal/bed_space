@@ -684,14 +684,14 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                 ),
               ),
               title: Text(
-                isRefund ? 'Money Returned (Refund)' : expense.description!,
+                expense.displayName,
                 style: const TextStyle(
                   fontWeight: FontWeight.w600,
                   color: AppTheme.textColor,
                 ),
               ),
               subtitle: Text(
-                DateFormat('dd MMM yyyy').format(expense.date),
+                '${expense.categoryName} · ${DateFormat('dd MMM yyyy').format(expense.date)}',
                 style: const TextStyle(
                   color: AppTheme.secondaryTextColor,
                   fontSize: 13,

@@ -40,7 +40,8 @@ self.addEventListener('install', (event) => {
     }));
     const cache = await caches.open(CACHE);
     await Promise.all(entries.map(([url, asset]) => cache.put(url, asset)));
-    // Updates activate after all existing app windows close, avoiding mixed builds.
+    // Activate only after the complete new release has been cached successfully.
+    await self.skipWaiting();
   })());
 });
 

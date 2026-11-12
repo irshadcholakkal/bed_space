@@ -11,7 +11,7 @@ function worker(fetcher, cached, scope = '/', cacheUnavailable = false) {
   const cache = { match: async (url) => stored.get(url), put: async (url, value) => stored.set(url, value) };
   runInNewContext(readFileSync(new URL('../web/pwa-sw.js', import.meta.url), 'utf8')
     .replace('__PWA_VERSION__', 'test'), {
-    self: { location: { href: `https://example.com${scope}pwa-sw.js` },
+    self: { skipWaiting: async () => {}, location: { href: `https://example.com${scope}pwa-sw.js` },
       addEventListener: (name, callback) => { events[name] = callback; } },
     URL, Response, Headers, fetch: fetcher, caches: { open: async () => {
       if (cacheUnavailable) throw new Error('Cache storage unavailable');

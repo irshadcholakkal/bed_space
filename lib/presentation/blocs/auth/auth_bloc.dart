@@ -3,6 +3,7 @@ import 'package:equatable/equatable.dart';
 import '../../../data/services/google_auth_service.dart';
 import '../../../data/repositories/sheet_repository.dart';
 import '../../../data/services/saas_service.dart';
+import '../../../data/services/offline_status.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -27,6 +28,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     try {
+      if (SaasService.configured && await isDeviceOffline()) {
+        await _handleOfflineAuthFallback(emit, null);
+        return;
+      }
       // Try silent sign-in to restore session
       final accessToken = await _authService.signInSilently();
 
@@ -71,6 +76,17 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     // SaaS workspaces require a current Google session; legacy cached tokens
     // must never restore a different customer's workspace.
     if (SaasService.configured) {
+      final email = await _authService.getCurrentUserEmail();
+      final sheetId = await _sheetRepository.getCachedSheetId();
+      if (await isDeviceOffline() &&
+          SaasService.userId != null &&
+          email != null &&
+          sheetId != null &&
+          await _sheetRepository.isSheetIdForUser(email)) {
+        emit(AuthAuthenticated(
+            userEmail: email, accessToken: '', sheetId: sheetId));
+        return;
+      }
       emit(AuthUnauthenticated());
       return;
     }

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
@@ -27,10 +28,26 @@ class SaasGate extends StatefulWidget {
 
 class _SaasGateState extends State<SaasGate> {
   StreamSubscription<dynamic>? _subscription;
+  StreamSubscription<List<ConnectivityResult>>? _connectivity;
+  bool _offline = false;
   int _authRevision = 0;
   @override
   void initState() {
     super.initState();
+    Connectivity().checkConnectivity().then((connections) {
+      if (mounted) {
+        setState(() =>
+            _offline = connections.every((c) => c == ConnectivityResult.none));
+      }
+    });
+    _connectivity = Connectivity().onConnectivityChanged.listen((connections) {
+      if (!mounted) return;
+      final offline = connections.every((c) => c == ConnectivityResult.none);
+      setState(() {
+        if (_offline && !offline) _authRevision++;
+        _offline = offline;
+      });
+    });
     if (SaasService.configured) {
       _subscription = SaasService.client.auth.onAuthStateChange.listen((data) {
         if (!mounted) return;
@@ -63,6 +80,7 @@ class _SaasGateState extends State<SaasGate> {
   @override
   void dispose() {
     _subscription?.cancel();
+    _connectivity?.cancel();
     super.dispose();
   }
 
@@ -100,8 +118,28 @@ class _SaasGateState extends State<SaasGate> {
                       create: (_) =>
                           SheetBloc(sheetRepository: SheetRepository())),
                 ],
-                child: AuthWrapper(
-                    key: ValueKey(SaasService.userId), child: widget.child))));
+                child: Column(children: [
+                  if (_offline)
+                    const Material(
+                        color: Color(0xfffff3cd),
+                        child: SafeArea(
+                            bottom: false,
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 6),
+                              child: Row(children: [
+                                Expanded(
+                                    child: Text('Offline · Showing saved data',
+                                        style: TextStyle(
+                                            fontSize: 12,
+                                            color: Color(0xff664d03))))
+                              ]),
+                            ))),
+                  Expanded(
+                      child: AuthWrapper(
+                          key: ValueKey(SaasService.userId),
+                          child: widget.child)),
+                ]))));
   }
 }
 

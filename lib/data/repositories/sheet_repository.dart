@@ -3,6 +3,7 @@ library;
 
 import 'package:shared_preferences/shared_preferences.dart';
 import '../services/saas_service.dart';
+import '../services/offline_status.dart';
 
 class SheetRepository {
   final String? _ownerId = SaasService.userId;
@@ -47,6 +48,7 @@ class SheetRepository {
 
   /// Get saved sheet ID
   Future<String?> getSheetId() async {
+    if (await isDeviceOffline()) return getCachedSheetId();
     if (_ownerId != null) {
       final binding = await SaasService.client
           .from('storage_bindings')
@@ -64,6 +66,9 @@ class SheetRepository {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_sheetIdKey);
   }
+
+  Future<String?> getCachedSheetId() async =>
+      (await SharedPreferences.getInstance()).getString(_sheetIdKey);
 
   /// Get saved user email
   Future<String?> getUserEmail() async {

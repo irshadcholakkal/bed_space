@@ -30,3 +30,22 @@ test('Dismissing installation does not mark the app installed', async () => {
   assert.equal(await window.bedspaceInstallApp(), 'dismissed');
   assert.equal(window.bedspaceIsInstalled(), false);
 });
+
+test('New controller reloads an existing app once, but not first installation', async () => {
+  for (const initialController of [null, {}]) {
+    const handlers = {};
+    let reloads = 0;
+    const serviceWorker = { controller: initialController,
+      addEventListener(name, callback) { handlers[name] = callback; } };
+    const window = { isSecureContext: true,
+      addEventListener() {}, location: { reload() { reloads++; } } };
+    runInNewContext(readFileSync(new URL('../web/pwa.js', import.meta.url), 'utf8'), {
+      window, navigator: { serviceWorker },
+    });
+    handlers.controllerchange();
+    assert.equal(reloads, initialController ? 1 : 0);
+    handlers.controllerchange();
+    handlers.controllerchange();
+    assert.equal(reloads, 1);
+  }
+});

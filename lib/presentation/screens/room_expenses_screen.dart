@@ -160,7 +160,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                   TextFormField(
                     controller: _descriptionController,
                     decoration: const InputDecoration(
-                      labelText: 'Notes',
+                      labelText: 'Expense name / description',
                       prefixIcon: Icon(CupertinoIcons.doc_text),
                     ),
                     maxLines: 2,
@@ -490,11 +490,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          expense.expenseType
-                              .toString()
-                              .split('.')
-                              .last
-                              .toUpperCase(),
+                          expense.displayName,
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
@@ -504,26 +500,12 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          DateFormat('MMM d, yyyy').format(expense.date),
+                          '${expense.categoryName} · ${DateFormat('MMM d, yyyy').format(expense.date)}',
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 12,
                           ),
                         ),
-                        if (expense.description != null &&
-                            expense.description!.isNotEmpty) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            expense.description!,
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 13,
-                              fontStyle: FontStyle.italic,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
                       ],
                     ),
                   ),
