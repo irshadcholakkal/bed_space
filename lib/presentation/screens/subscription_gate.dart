@@ -16,6 +16,9 @@ class SubscriptionGate extends StatefulWidget {
 
 class _SubscriptionGateState extends State<SubscriptionGate>
     with WidgetsBindingObserver {
+  static bool _noticeShownThisLaunch = false;
+  bool _showNotice = false;
+  Timer? _noticeTimer;
   AccountAccess? _access;
   MembershipCheckFailure _failure = MembershipCheckFailure.connection;
   Timer? _timer;
@@ -31,6 +34,7 @@ class _SubscriptionGateState extends State<SubscriptionGate>
   @override
   void dispose() {
     _timer?.cancel();
+    _noticeTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -47,6 +51,13 @@ class _SubscriptionGateState extends State<SubscriptionGate>
       final access = await (widget.loadAccess ?? SubscriptionService.access)();
       if (!mounted) return;
       if (access.allowed) _closedForDenial = false;
+      if (access.allowed && !_noticeShownThisLaunch) {
+        _noticeShownThisLaunch = true;
+        _showNotice = true;
+        _noticeTimer = Timer(const Duration(seconds: 5), () {
+          if (mounted) setState(() => _showNotice = false);
+        });
+      }
       setState(() {
         _access = access;
         _loading = false;
@@ -122,10 +133,11 @@ class _SubscriptionGateState extends State<SubscriptionGate>
       return BillingScreen(access: _access, onRefresh: _refresh);
     }
     return Column(children: [
-      MembershipBanner(
-        isTrial: _access!.paidUntil == null,
-        onPressed: () => context.push('/billing'),
-      ),
+      if (_showNotice)
+        MembershipBanner(
+          isTrial: _access!.paidUntil == null,
+          onPressed: () => context.push('/billing'),
+        ),
       Expanded(child: widget.child),
     ]);
   }

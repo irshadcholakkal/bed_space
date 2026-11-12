@@ -13,10 +13,10 @@ class MembershipBanner extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(
       bottom: false,
       child: Padding(
-          padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
           child: Container(
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                       color: AppTheme.primaryColor.withValues(alpha: .07),
@@ -24,7 +24,7 @@ class MembershipBanner extends StatelessWidget {
                       offset: const Offset(0, 5))
                 ]),
             child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(16),
                 child: Stack(children: [
                   Positioned.fill(
                       child: DecoratedBox(
@@ -41,10 +41,10 @@ class MembershipBanner extends StatelessWidget {
                       filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 12),
+                            horizontal: 12, vertical: 4),
                         decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: .48),
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(16),
                             border: Border.all(
                                 color: Colors.white.withValues(alpha: .85))),
                         child: LayoutBuilder(builder: (context, constraints) {
@@ -53,8 +53,8 @@ class MembershipBanner extends StatelessWidget {
                               type: MaterialType.transparency,
                               child: Row(children: [
                                 Container(
-                                    width: 38,
-                                    height: 38,
+                                    width: 28,
+                                    height: 28,
                                     decoration: BoxDecoration(
                                         color:
                                             Colors.white.withValues(alpha: .7),
@@ -66,33 +66,18 @@ class MembershipBanner extends StatelessWidget {
                                             ? CupertinoIcons.gift
                                             : CupertinoIcons.checkmark_seal,
                                         color: AppTheme.primaryColor,
-                                        size: 20)),
-                                const SizedBox(width: 12),
+                                        size: 16)),
+                                const SizedBox(width: 10),
                                 Expanded(
-                                    child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                      Text(
-                                          isTrial
-                                              ? 'Your one-month free trial is active'
-                                              : 'Your membership is active',
-                                          style: const TextStyle(
-                                              color: AppTheme.textColor,
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              height: 1.4)),
-                                      const SizedBox(height: 3),
-                                      Text(
-                                          isTrial
-                                              ? 'A little more room to get started.'
-                                              : 'Your workspace, ready when you are.',
-                                          style: const TextStyle(
-                                              color:
-                                                  AppTheme.secondaryTextColor,
-                                              fontSize: 10,
-                                              height: 1.4)),
-                                    ])),
+                                    child: Text(
+                                        isTrial
+                                            ? 'Your one-month free trial is active'
+                                            : 'Your membership is active',
+                                        style: const TextStyle(
+                                            color: AppTheme.textColor,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                            height: 1.35))),
                                 const SizedBox(width: 8),
                                 if (compact)
                                   IconButton(

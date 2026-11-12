@@ -15,6 +15,28 @@ AccountAccess access(bool allowed, {int remainingSeconds = 20}) =>
     });
 
 void main() {
+  testWidgets(
+      'Trial notice hides after five seconds and stays hidden this launch',
+      (tester) async {
+    Widget workspace() => MaterialApp(
+        home: SubscriptionGate(
+            loadAccess: () async => access(true, remainingSeconds: 100),
+            child: const Scaffold(body: Text('Protected workspace'))));
+    await tester.pumpWidget(workspace());
+    await tester.pumpAndSettle();
+    expect(find.text('Your one-month free trial is active'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 4));
+    expect(find.text('Your one-month free trial is active'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 1));
+    expect(find.text('Your one-month free trial is active'), findsNothing);
+    expect(find.text('Protected workspace'), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(workspace());
+    await tester.pumpAndSettle();
+    expect(find.text('Your one-month free trial is active'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
   testWidgets('Trial expiry hides workspace; confirmed renewal reopens it',
       (tester) async {
     var status = access(true);
