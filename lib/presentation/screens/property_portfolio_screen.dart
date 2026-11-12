@@ -66,6 +66,13 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
         data: AppTheme.theme,
         child: Scaffold(
             backgroundColor: _paper,
+            appBar: AppBar(
+              title: Text(widget.roomId != null
+                  ? 'Room details'
+                  : widget.buildingId != null
+                      ? 'Building overview'
+                      : 'Properties'),
+            ),
             body: SafeArea(child: BlocBuilder<ManagementBloc, ManagementState>(
                 builder: (context, state) {
               if (state is! ManagementLoaded) {
@@ -185,17 +192,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                                     color: _muted)),
                                           ],
                                         ]),
-                                    const SizedBox(height: 24),
-                                    Text(
-                                        widget.financial
-                                            ? 'PROPERTY FINANCES'
-                                            : 'YOUR PROPERTY PORTFOLIO',
-                                        style: const TextStyle(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 10,
-                                            letterSpacing: 1.8,
-                                            color: _muted)),
-                                    const SizedBox(height: 12),
+                                    const SizedBox(height: 16),
                                     Text(title, style: _heading(40)),
                                     const SizedBox(height: 12),
                                     Text(
@@ -212,10 +209,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                     if (building != null && room == null) ...[
                                       Container(
                                         padding: const EdgeInsets.all(20),
-                                        decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(16)),
+                                        decoration: AppTheme.cardDecoration,
                                         child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
@@ -511,58 +505,84 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                 })));
   }
 
-  Widget _summary(PropertyTotals totals, String caption) => Container(
-      padding: const EdgeInsets.all(24),
-      decoration: AppTheme.cardDecoration,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(_month == null ? 'ALL TIME OVERVIEW' : 'MONTHLY OVERVIEW',
+  Widget _summary(PropertyTotals totals, String caption) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(
+            _month == null
+                ? 'Financial overview · All time'
+                : 'Financial overview · This period',
             style: const TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 10,
-                color: AppTheme.secondaryTextColor,
-                letterSpacing: 1.4)),
-        const SizedBox(height: 24),
-        LayoutBuilder(
-            builder: (context, size) =>
-                Wrap(spacing: 20, runSpacing: 24, children: [
-                  _metric('Income', totals.income, size.maxWidth,
-                      AppTheme.successColor),
-                  _metric('Expenses', totals.expenses, size.maxWidth,
-                      AppTheme.errorColor),
-                  _metric(
-                      'Net income',
-                      totals.net,
-                      size.maxWidth,
-                      totals.net >= 0
-                          ? AppTheme.successColor
-                          : AppTheme.errorColor),
-                ])),
-        const SizedBox(height: 24),
-        const Divider(color: Color(0xffdddddd)),
-        const SizedBox(height: 8),
-        Text(caption,
-            style: const TextStyle(
-                color: AppTheme.secondaryTextColor, fontSize: 12, height: 1.7)),
-      ]));
+                fontSize: 18, fontWeight: FontWeight.w700, color: _ink)),
+        const SizedBox(height: 16),
+        LayoutBuilder(builder: (context, size) {
+          final width = size.maxWidth >= 800
+              ? (size.maxWidth - 32) / 3
+              : size.maxWidth >= 500
+                  ? (size.maxWidth - 16) / 2
+                  : size.maxWidth;
+          return Wrap(spacing: 16, runSpacing: 16, children: [
+            _metric('Income', totals.income, width, AppTheme.secondaryColor,
+                CupertinoIcons.arrow_down_left),
+            _metric('Expenses', totals.expenses, width, AppTheme.primaryColor,
+                CupertinoIcons.arrow_up_right),
+            _metric(
+                'Net income',
+                totals.net,
+                width,
+                totals.net >= 0 ? AppTheme.successColor : AppTheme.errorColor,
+                CupertinoIcons.chart_bar),
+          ]);
+        }),
+        const SizedBox(height: 16),
+        Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+                color: const Color(0xfff7f7f7),
+                borderRadius: BorderRadius.circular(12)),
+            child: Row(children: [
+              const Icon(CupertinoIcons.bed_double,
+                  color: AppTheme.primaryColor, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(caption,
+                      style: const TextStyle(
+                          color: _muted, fontSize: 12, height: 1.6)))
+            ])),
+      ]);
 
-  Widget _metric(String label, double value, double width, Color color) =>
+  Widget _metric(String label, double value, double width, Color color,
+          IconData icon) =>
       SizedBox(
-          width: width > 650
-              ? (width - 40) / 3
-              : width > 400
-                  ? (width - 20) / 2
-                  : width,
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(label,
-                style: const TextStyle(
-                    color: AppTheme.secondaryTextColor, fontSize: 12)),
-            const SizedBox(height: 8),
-            Text(_money(value),
-                style: TextStyle(
-                    color: color, fontSize: 25, fontWeight: FontWeight.w500)),
-          ]));
-
+          width: width,
+          child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: AppTheme.cardDecoration,
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Expanded(
+                          child: Text(label,
+                              style: const TextStyle(
+                                  color: _muted,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600))),
+                      Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                              color: color.withValues(alpha: .08),
+                              borderRadius: BorderRadius.circular(10)),
+                          child: Icon(icon, color: color, size: 20))
+                    ]),
+                    const SizedBox(height: 12),
+                    Text(_money(value),
+                        style: const TextStyle(
+                            color: _ink,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: -.5)),
+                  ])));
   List<Widget> _spaceCards(ManagementLoaded state, PropertyFinancials report,
       String? buildingId, RoomModel? room, List<RoomModel> subrooms) {
     final result = <Widget>[];
