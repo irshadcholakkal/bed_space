@@ -138,7 +138,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                           children: [
                             Padding(
                                 padding:
-                                    const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                                    const EdgeInsets.fromLTRB(20, 4, 20, 16),
                                 child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
