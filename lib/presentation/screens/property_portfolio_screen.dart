@@ -42,6 +42,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
           : DateFormat('yyyy-MM').format(DateTime.now());
   String _search = '';
   bool _showAll = false;
+  bool _showActivity = false;
   String get _base => widget.financial ? '/financials' : '/rooms';
   String _money(double value) =>
       'AED ${NumberFormat('#,##0.00').format(value)}';
@@ -142,57 +143,6 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                   crossAxisAlignment:
                                       CrossAxisAlignment.stretch,
                                   children: [
-                                    Wrap(
-                                        spacing: 8,
-                                        runSpacing: 4,
-                                        crossAxisAlignment:
-                                            WrapCrossAlignment.center,
-                                        children: [
-                                          TextButton.icon(
-                                              onPressed: () =>
-                                                  context.go(_base),
-                                              icon: const Icon(
-                                                  CupertinoIcons
-                                                      .square_grid_2x2,
-                                                  size: 16),
-                                              label:
-                                                  const Text('All buildings')),
-                                          if (building != null) ...[
-                                            const Icon(
-                                                CupertinoIcons.chevron_right,
-                                                size: 16,
-                                                color: _muted),
-                                            TextButton(
-                                                onPressed: () =>
-                                                    _open(building: buildingId),
-                                                child: Text(
-                                                    building.buildingName)),
-                                          ],
-                                          if (room != null &&
-                                              room.isSubroom) ...[
-                                            const Icon(
-                                                CupertinoIcons.chevron_right,
-                                                size: 16,
-                                                color: _muted),
-                                            TextButton(
-                                                onPressed: () => _open(
-                                                    building: buildingId,
-                                                    room: room.parentRoomId),
-                                                child: Text(
-                                                    'Room ${state.rooms.where((r) => r.roomId == room.parentRoomId).firstOrNull?.roomNumber ?? ''}')),
-                                          ],
-                                          if (room != null) ...[
-                                            const Icon(
-                                                CupertinoIcons.chevron_right,
-                                                size: 16,
-                                                color: _muted),
-                                            Text(
-                                                '${room.isSubroom ? 'Subroom' : 'Room'} ${room.roomNumber}',
-                                                style: const TextStyle(
-                                                    color: _muted)),
-                                          ],
-                                        ]),
-                                    const SizedBox(height: 16),
                                     Text(title, style: _heading(40)),
                                     const SizedBox(height: 12),
                                     Text(
@@ -207,133 +157,58 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                             color: _muted, height: 1.7)),
                                     const SizedBox(height: 24),
                                     if (building != null && room == null) ...[
-                                      Container(
-                                        padding: const EdgeInsets.all(20),
-                                        decoration: AppTheme.cardDecoration,
-                                        child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Text('Building details',
-                                                  style: _heading(23)),
-                                              const SizedBox(height: 12),
-                                              Row(
-                                                  crossAxisAlignment:
-                                                      CrossAxisAlignment.start,
-                                                  children: [
-                                                    const Icon(
-                                                        CupertinoIcons.location,
-                                                        size: 18,
-                                                        color: _muted),
-                                                    const SizedBox(width: 8),
-                                                    Expanded(
-                                                        child: Text(
-                                                            building.address
-                                                                    .trim()
-                                                                    .isEmpty
-                                                                ? 'No address added'
-                                                                : building
-                                                                    .address,
-                                                            style:
-                                                                const TextStyle(
-                                                                    color:
-                                                                        _muted,
-                                                                    height:
-                                                                        1.6))),
-                                                  ]),
-                                              const SizedBox(height: 16),
-                                              Wrap(
-                                                  spacing: 20,
-                                                  runSpacing: 12,
-                                                  children: [
-                                                    Text(
-                                                        '${scopedRooms.where((r) => !r.isSubroom).length} rooms'),
-                                                    Text(
-                                                        '${scopedRooms.where((r) => r.isSubroom).length} subrooms'),
-                                                    Text(
-                                                        '${beds.length - vacant} occupied beds'),
-                                                    Text(
-                                                        '$vacant available beds'),
-                                                    Text(
-                                                        '${state.tenants.where((t) => t.active && ids.contains(t.roomId)).length} active tenants'),
-                                                  ]),
-                                            ]),
-                                      ),
-                                      const SizedBox(height: 20),
+                                      ListTile(
+                                          contentPadding: EdgeInsets.zero,
+                                          dense: true,
+                                          leading: const Icon(
+                                              CupertinoIcons.location,
+                                              color: _muted,
+                                              size: 20),
+                                          title: const Text('Building details',
+                                              style: TextStyle(
+                                                  fontSize: 13,
+                                                  fontWeight: FontWeight.w600)),
+                                          subtitle: Text(
+                                              '${building.address.trim().isEmpty ? 'No address added' : building.address}\n${state.tenants.where((t) => t.active && ids.contains(t.roomId)).length} active tenants',
+                                              style: const TextStyle(
+                                                  color: _muted,
+                                                  fontSize: 12,
+                                                  height: 1.5))),
+                                      const SizedBox(height: 12),
                                     ],
-                                    Wrap(
-                                        spacing: 10,
-                                        runSpacing: 10,
-                                        children: [
-                                          _periodControl(state),
-                                          OutlinedButton.icon(
-                                              onPressed: () => context
-                                                  .push('/financials/tenants'),
-                                              icon: const Icon(
-                                                  CupertinoIcons
-                                                      .money_dollar_circle,
-                                                  size: 18),
-                                              label: const Text(
-                                                  'Tenant payments')),
+                                    Row(children: [
+                                      Expanded(child: _periodControl(state)),
+                                      PopupMenuButton<String>(
+                                        tooltip: 'More actions',
+                                        icon: const Icon(
+                                            CupertinoIcons.ellipsis_vertical),
+                                        onSelected: (path) =>
+                                            context.push(path),
+                                        itemBuilder: (_) => [
                                           if (room != null)
-                                            OutlinedButton.icon(
-                                                onPressed: () => context.push(
-                                                    '/rooms/${room.roomId}/expenses'),
-                                                icon: const Icon(
-                                                    CupertinoIcons.plus,
-                                                    size: 18),
-                                                label: Text(
-                                                    'Expenses for ${room.isSubroom ? 'subroom' : 'room'} ${room.roomNumber}')),
-                                          if (MediaQuery.sizeOf(context).width <
-                                              600)
-                                            PopupMenuButton<String>(
-                                              tooltip: 'More property actions',
-                                              onSelected: (path) =>
-                                                  context.push(path),
-                                              itemBuilder: (_) => [
-                                                const PopupMenuItem(
-                                                    value: '/rooms/occupancy',
-                                                    child: Text(
-                                                        'Beds & availability')),
-                                                PopupMenuItem(
-                                                    value: building == null
-                                                        ? '/buildings'
-                                                        : '/rooms/manage',
-                                                    child: Text(building == null
-                                                        ? 'Manage buildings'
-                                                        : 'Manage rooms')),
-                                              ],
-                                              icon: const Icon(
-                                                  CupertinoIcons.ellipsis),
-                                            ),
-                                          if (MediaQuery.sizeOf(context)
-                                                  .width >=
-                                              600)
-                                            OutlinedButton.icon(
-                                                onPressed: () => context
-                                                    .push('/rooms/occupancy'),
-                                                icon: const Icon(
-                                                    CupertinoIcons.bed_double,
-                                                    size: 18),
-                                                label: const Text(
-                                                    'Beds & availability')),
-                                          if (MediaQuery.sizeOf(context)
-                                                  .width >=
-                                              600)
-                                            OutlinedButton.icon(
-                                                onPressed: () => context.push(
-                                                    building == null
-                                                        ? '/buildings'
-                                                        : '/rooms/manage'),
-                                                icon: const Icon(
-                                                    CupertinoIcons
-                                                        .slider_horizontal_3,
-                                                    size: 18),
-                                                label: Text(building == null
-                                                    ? 'Manage buildings'
-                                                    : 'Manage rooms')),
-                                        ]),
-                                    const SizedBox(height: 24),
+                                            PopupMenuItem(
+                                                value:
+                                                    '/rooms/${room.roomId}/expenses',
+                                                child: const Text(
+                                                    'Add or view expenses')),
+                                          const PopupMenuItem(
+                                              value: '/financials/tenants',
+                                              child: Text('Tenant payments')),
+                                          const PopupMenuItem(
+                                              value: '/rooms/occupancy',
+                                              child:
+                                                  Text('Beds & availability')),
+                                          PopupMenuItem(
+                                              value: building == null
+                                                  ? '/buildings'
+                                                  : '/rooms/manage',
+                                              child: Text(building == null
+                                                  ? 'Manage buildings'
+                                                  : 'Manage rooms')),
+                                        ],
+                                      ),
+                                    ]),
+                                    const SizedBox(height: 16),
                                     if (state.isLoading)
                                       const LinearProgressIndicator(
                                           minHeight: 2),
@@ -374,96 +249,102 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                           style: const TextStyle(
                                               color: _muted, height: 1.6)),
                                       const SizedBox(height: 16),
-                                      TextField(
-                                          onChanged: (value) => setState(() =>
-                                              _search =
-                                                  value.trim().toLowerCase()),
-                                          decoration: const InputDecoration(
-                                              prefixIcon:
-                                                  Icon(CupertinoIcons.search),
-                                              hintText:
-                                                  'Find a building, room or subroom')),
+                                      if (scopedRooms.length > 6 ||
+                                          building == null)
+                                        TextField(
+                                            onChanged: (value) => setState(() =>
+                                                _search =
+                                                    value.trim().toLowerCase()),
+                                            decoration: const InputDecoration(
+                                                prefixIcon:
+                                                    Icon(CupertinoIcons.search),
+                                                hintText:
+                                                    'Find a building, room or subroom')),
                                       const SizedBox(height: 16),
                                       ..._spaceCards(state, report, buildingId,
                                           room, subrooms),
                                       const SizedBox(height: 24),
                                     ],
-                                    Text('Income & expense activity',
-                                        style: _heading(25)),
-                                    const SizedBox(height: 8),
-                                    Text(
-                                        room != null && !room.isSubroom
-                                            ? 'Includes this room and its subrooms. Each entry shows its space.'
-                                            : 'Recorded transactions for this selection.',
-                                        style: const TextStyle(
-                                            color: _muted, height: 1.6)),
-                                    const SizedBox(height: 16),
-                                    if (transactions.isEmpty)
-                                      _empty('No transactions in this period',
-                                          'Choose another month or record a payment or expense.'),
-                                    if (transactions.isNotEmpty)
-                                      Container(
-                                          decoration: BoxDecoration(
-                                              color: Colors.white,
-                                              borderRadius:
-                                                  BorderRadius.circular(16)),
-                                          child: Column(
-                                              children: transactions
-                                                  .take(_showAll
-                                                      ? transactions.length
-                                                      : 15)
-                                                  .map((entry) {
-                                            final source = state.rooms
-                                                .where((r) =>
-                                                    r.roomId == entry.roomId)
-                                                .firstOrNull;
-                                            return ListTile(
-                                              contentPadding:
-                                                  const EdgeInsets.symmetric(
-                                                      horizontal: 20,
-                                                      vertical: 6),
-                                              leading: CircleAvatar(
-                                                  backgroundColor: (entry
-                                                              .isIncome
-                                                          ? _green
-                                                          : _cost)
-                                                      .withValues(alpha: .1),
-                                                  child: Icon(
-                                                      entry.isIncome
-                                                          ? CupertinoIcons
-                                                              .arrow_down_left
-                                                          : CupertinoIcons
-                                                              .arrow_up_right,
-                                                      color: entry.isIncome
-                                                          ? _green
-                                                          : _cost,
-                                                      size: 18)),
-                                              title: Text(entry.title,
-                                                  style: const TextStyle(
-                                                      fontSize: 13,
-                                                      fontWeight:
-                                                          FontWeight.w500)),
-                                              subtitle: Text(
-                                                  '${source?.displayName(state.rooms) ?? 'Unknown room'} | ${DateFormat('d MMM yyyy').format(entry.date)}',
-                                                  style: const TextStyle(
-                                                      fontSize: 11,
-                                                      color: _muted)),
-                                              trailing: Text(
-                                                  '${entry.isIncome ? '+' : '-'}${_money(entry.amount)}',
-                                                  style: TextStyle(
-                                                      fontSize: 12,
-                                                      color: entry.isIncome
-                                                          ? _green
-                                                          : _cost)),
-                                            );
-                                          }).toList())),
-                                    if (transactions.length > 15)
-                                      TextButton(
-                                          onPressed: () => setState(
-                                              () => _showAll = !_showAll),
-                                          child: Text(_showAll
-                                              ? 'Show less'
-                                              : 'Show all ${transactions.length} transactions')),
+                                    TextButton.icon(
+                                      onPressed: () => setState(
+                                          () => _showActivity = !_showActivity),
+                                      icon: Icon(
+                                          _showActivity
+                                              ? CupertinoIcons.chevron_up
+                                              : CupertinoIcons.chevron_down,
+                                          size: 16),
+                                      label: Text(_showActivity
+                                          ? 'Hide transactions'
+                                          : 'View transactions (${transactions.length})'),
+                                    ),
+                                    if (_showActivity) ...[
+                                      if (transactions.isEmpty)
+                                        _empty('No transactions in this period',
+                                            'Choose another month or record a payment or expense.'),
+                                      if (transactions.isNotEmpty)
+                                        Container(
+                                            decoration: BoxDecoration(
+                                                color: Colors.white,
+                                                borderRadius:
+                                                    BorderRadius.circular(16)),
+                                            child: Column(
+                                                children: transactions
+                                                    .take(_showAll
+                                                        ? transactions.length
+                                                        : 15)
+                                                    .map((entry) {
+                                              final source = state.rooms
+                                                  .where((r) =>
+                                                      r.roomId == entry.roomId)
+                                                  .firstOrNull;
+                                              return ListTile(
+                                                contentPadding:
+                                                    const EdgeInsets.symmetric(
+                                                        horizontal: 20,
+                                                        vertical: 6),
+                                                leading: CircleAvatar(
+                                                    backgroundColor: (entry
+                                                                .isIncome
+                                                            ? _green
+                                                            : _cost)
+                                                        .withValues(alpha: .1),
+                                                    child: Icon(
+                                                        entry.isIncome
+                                                            ? CupertinoIcons
+                                                                .arrow_down_left
+                                                            : CupertinoIcons
+                                                                .arrow_up_right,
+                                                        color: entry.isIncome
+                                                            ? _green
+                                                            : _cost,
+                                                        size: 18)),
+                                                title: Text(entry.title,
+                                                    style: const TextStyle(
+                                                        fontSize: 13,
+                                                        fontWeight:
+                                                            FontWeight.w500)),
+                                                subtitle: Text(
+                                                    '${source?.displayName(state.rooms) ?? 'Unknown room'} | ${DateFormat('d MMM yyyy').format(entry.date)}',
+                                                    style: const TextStyle(
+                                                        fontSize: 11,
+                                                        color: _muted)),
+                                                trailing: Text(
+                                                    '${entry.isIncome ? '+' : '-'}${_money(entry.amount)}',
+                                                    style: TextStyle(
+                                                        fontSize: 12,
+                                                        color: entry.isIncome
+                                                            ? _green
+                                                            : _cost)),
+                                              );
+                                            }).toList())),
+                                      if (transactions.length > 15)
+                                        TextButton(
+                                            onPressed: () => setState(
+                                                () => _showAll = !_showAll),
+                                            child: Text(_showAll
+                                                ? 'Show less'
+                                                : 'Show all ${transactions.length} transactions')),
+                                    ],
                                     const SizedBox(height: 48),
                                   ]))),
                     ]),
@@ -489,6 +370,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
         decoration: BoxDecoration(
             color: Colors.white, borderRadius: BorderRadius.circular(30)),
         child: DropdownButton<String>(
+            isExpanded: true,
             value: _month ?? 'all',
             underline: const SizedBox.shrink(),
             icon: const Icon(CupertinoIcons.chevron_down, size: 18),
@@ -505,84 +387,37 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                 })));
   }
 
-  Widget _summary(PropertyTotals totals, String caption) =>
-      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(
-            _month == null
-                ? 'Financial overview · All time'
-                : 'Financial overview · This period',
-            style: const TextStyle(
-                fontSize: 18, fontWeight: FontWeight.w700, color: _ink)),
+  Widget _summary(PropertyTotals totals, String caption) => Container(
+      padding: const EdgeInsets.all(20),
+      decoration: AppTheme.cardDecoration,
+      child: Column(children: [
+        _totalRow('Income', totals.income, AppTheme.secondaryColor),
+        const SizedBox(height: 12),
+        _totalRow('Expenses', totals.expenses, AppTheme.primaryColor),
+        const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
+        _totalRow('Balance', totals.net, _ink, bold: true),
         const SizedBox(height: 16),
-        LayoutBuilder(builder: (context, size) {
-          final width = size.maxWidth >= 800
-              ? (size.maxWidth - 32) / 3
-              : size.maxWidth >= 500
-                  ? (size.maxWidth - 16) / 2
-                  : size.maxWidth;
-          return Wrap(spacing: 16, runSpacing: 16, children: [
-            _metric('Income', totals.income, width, AppTheme.secondaryColor,
-                CupertinoIcons.arrow_down_left),
-            _metric('Expenses', totals.expenses, width, AppTheme.primaryColor,
-                CupertinoIcons.arrow_up_right),
-            _metric(
-                'Net income',
-                totals.net,
-                width,
-                totals.net >= 0 ? AppTheme.successColor : AppTheme.errorColor,
-                CupertinoIcons.chart_bar),
-          ]);
-        }),
-        const SizedBox(height: 16),
-        Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-                color: const Color(0xfff7f7f7),
-                borderRadius: BorderRadius.circular(12)),
-            child: Row(children: [
-              const Icon(CupertinoIcons.bed_double,
-                  color: AppTheme.primaryColor, size: 20),
-              const SizedBox(width: 12),
-              Expanded(
-                  child: Text(caption,
-                      style: const TextStyle(
-                          color: _muted, fontSize: 12, height: 1.6)))
-            ])),
-      ]);
+        Text(caption,
+            style: const TextStyle(color: _muted, fontSize: 11, height: 1.5)),
+      ]));
 
-  Widget _metric(String label, double value, double width, Color color,
-          IconData icon) =>
-      SizedBox(
-          width: width,
-          child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: AppTheme.cardDecoration,
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Expanded(
-                          child: Text(label,
-                              style: const TextStyle(
-                                  color: _muted,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600))),
-                      Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                              color: color.withValues(alpha: .08),
-                              borderRadius: BorderRadius.circular(10)),
-                          child: Icon(icon, color: color, size: 20))
-                    ]),
-                    const SizedBox(height: 12),
-                    Text(_money(value),
-                        style: const TextStyle(
-                            color: _ink,
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -.5)),
-                  ])));
+  Widget _totalRow(String label, double value, Color color,
+          {bool bold = false}) =>
+      Row(children: [
+        Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    color: _ink,
+                    fontSize: 14,
+                    fontWeight: bold ? FontWeight.w700 : FontWeight.w500))),
+        Flexible(
+            child: Text(_money(value),
+                style: TextStyle(
+                    color: color,
+                    fontSize: bold ? 20 : 16,
+                    fontWeight: bold ? FontWeight.w700 : FontWeight.w500))),
+      ]);
   List<Widget> _spaceCards(ManagementLoaded state, PropertyFinancials report,
       String? buildingId, RoomModel? room, List<RoomModel> subrooms) {
     final result = <Widget>[];
