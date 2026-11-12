@@ -572,6 +572,14 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
                         fontSize: 13,
                       ),
                     ),
+                    TextButton.icon(
+                      icon: const Icon(CupertinoIcons.chat_bubble, size: 16),
+                      label: const Text('WhatsApp'),
+                      style: TextButton.styleFrom(
+                          foregroundColor: const Color(0xff128c7e)),
+                      onPressed: () => openTenantWhatsApp(context, item.tenant,
+                          month: _selectedMonth),
+                    ),
                     if (status == PaymentStatus.partial)
                       Text(
                         'Paid: د.إ${item.paidAmount.toStringAsFixed(0)} / د.إ${item.rentAmount.toStringAsFixed(0)}',

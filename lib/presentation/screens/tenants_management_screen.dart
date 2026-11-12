@@ -803,6 +803,19 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                     tenant,
                                     state.payments,
                                   ),
+                                  const SizedBox(height: 8),
+                                  TextButton.icon(
+                                    icon: const Icon(CupertinoIcons.chat_bubble,
+                                        size: 18),
+                                    label: const Text('WhatsApp'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: const Color(0xff128c7e),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8),
+                                    ),
+                                    onPressed: () =>
+                                        openTenantWhatsApp(context, tenant),
+                                  ),
                                 ],
                               ),
                             ),

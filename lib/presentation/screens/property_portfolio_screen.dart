@@ -8,12 +8,13 @@ import '../../data/repositories/management_repository.dart';
 import '../../data/models/property_financials.dart';
 import '../../data/models/room_model.dart';
 import '../blocs/management/management_bloc.dart';
+import '../theme/app_theme.dart';
 
-const _paper = Color(0xfff5f5f0);
-const _ink = Color(0xff172c29);
-const _muted = Color(0xff6b7773);
-const _green = Color(0xff23745c);
-const _cost = Color(0xffa45837);
+const _paper = AppTheme.backgroundColor;
+const _ink = AppTheme.textColor;
+const _muted = AppTheme.secondaryTextColor;
+const _green = AppTheme.successColor;
+const _cost = AppTheme.errorColor;
 
 /// Shared building > room > subroom navigation for property and finance views.
 class PropertyPortfolioScreen extends StatefulWidget {
@@ -54,29 +55,15 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
   }
 
   TextStyle _heading(double size) => TextStyle(
-      fontFamily: 'HedvigLetters',
-      fontSize: size,
+      fontWeight: FontWeight.w700,
+      fontSize: size.clamp(20, 28).toDouble(),
       height: 1.15,
       letterSpacing: -.7,
       color: _ink);
 
   @override
   Widget build(BuildContext context) => Theme(
-        data: ThemeData(
-            useMaterial3: true,
-            fontFamily: 'Inter',
-            scaffoldBackgroundColor: _paper,
-            colorScheme: const ColorScheme.light(
-                primary: _ink,
-                surface: Colors.white,
-                onSurface: _ink,
-                onPrimary: Colors.white),
-            inputDecorationTheme: InputDecorationTheme(
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none))),
+        data: AppTheme.theme,
         child: Scaffold(
             backgroundColor: _paper,
             body: SafeArea(child: BlocBuilder<ManagementBloc, ManagementState>(
@@ -204,7 +191,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                             ? 'PROPERTY FINANCES'
                                             : 'YOUR PROPERTY PORTFOLIO',
                                         style: const TextStyle(
-                                            fontFamily: 'GeistMono',
+                                            fontWeight: FontWeight.w600,
                                             fontSize: 10,
                                             letterSpacing: 1.8,
                                             color: _muted)),
@@ -228,7 +215,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                         decoration: BoxDecoration(
                                             color: Colors.white,
                                             borderRadius:
-                                                BorderRadius.circular(20)),
+                                                BorderRadius.circular(16)),
                                         child: Column(
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
@@ -425,7 +412,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                           decoration: BoxDecoration(
                                               color: Colors.white,
                                               borderRadius:
-                                                  BorderRadius.circular(20)),
+                                                  BorderRadius.circular(16)),
                                           child: Column(
                                               children: transactions
                                                   .take(_showAll
@@ -526,32 +513,36 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
 
   Widget _summary(PropertyTotals totals, String caption) => Container(
       padding: const EdgeInsets.all(24),
-      decoration:
-          BoxDecoration(color: _ink, borderRadius: BorderRadius.circular(24)),
+      decoration: AppTheme.cardDecoration,
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(_month == null ? 'ALL TIME OVERVIEW' : 'MONTHLY OVERVIEW',
             style: const TextStyle(
-                fontFamily: 'GeistMono',
+                fontWeight: FontWeight.w600,
                 fontSize: 10,
-                color: Color(0xffb7cbc2),
+                color: AppTheme.secondaryTextColor,
                 letterSpacing: 1.4)),
         const SizedBox(height: 24),
         LayoutBuilder(
             builder: (context, size) =>
                 Wrap(spacing: 20, runSpacing: 24, children: [
                   _metric('Income', totals.income, size.maxWidth,
-                      const Color(0xffbce1c9)),
+                      AppTheme.successColor),
                   _metric('Expenses', totals.expenses, size.maxWidth,
-                      const Color(0xfff0cbb2)),
+                      AppTheme.errorColor),
                   _metric(
-                      'Net income', totals.net, size.maxWidth, Colors.white),
+                      'Net income',
+                      totals.net,
+                      size.maxWidth,
+                      totals.net >= 0
+                          ? AppTheme.successColor
+                          : AppTheme.errorColor),
                 ])),
         const SizedBox(height: 24),
-        const Divider(color: Color(0x30ffffff)),
+        const Divider(color: Color(0xffdddddd)),
         const SizedBox(height: 8),
         Text(caption,
             style: const TextStyle(
-                color: Color(0xffb7cbc2), fontSize: 12, height: 1.7)),
+                color: AppTheme.secondaryTextColor, fontSize: 12, height: 1.7)),
       ]));
 
   Widget _metric(String label, double value, double width, Color color) =>
@@ -564,7 +555,8 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
           child:
               Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(label,
-                style: const TextStyle(color: Color(0xffb7cbc2), fontSize: 12)),
+                style: const TextStyle(
+                    color: AppTheme.secondaryTextColor, fontSize: 12)),
             const SizedBox(height: 8),
             Text(_money(value),
                 style: TextStyle(
@@ -668,10 +660,15 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
           padding: const EdgeInsets.only(bottom: 12),
           child: Material(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(color: Colors.grey.withValues(alpha: .1)),
+              ),
+              elevation: 1,
+              shadowColor: Colors.black.withValues(alpha: .08),
               child: InkWell(
                   onTap: onTap,
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                   child: Padding(
                       padding: const EdgeInsets.all(20),
                       child: Column(
@@ -724,7 +721,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
   Widget _empty(String title, String detail) => Container(
       padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(20)),
+          color: Colors.white, borderRadius: BorderRadius.circular(16)),
       child: Column(children: [
         const Icon(CupertinoIcons.sparkles, color: _muted),
         const SizedBox(height: 16),

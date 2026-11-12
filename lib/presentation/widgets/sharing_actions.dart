@@ -116,6 +116,20 @@ BillingSnapshot billingFromState(
       payments: state.payments);
 }
 
+Future<void> openTenantWhatsApp(BuildContext context, TenantModel tenant,
+    {String? month}) async {
+  final state = context.read<ManagementBloc>().state;
+  if (state is! ManagementLoaded) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Tenant data is still loading. Please try again.')));
+    return;
+  }
+  await showWhatsAppDraft(context,
+      phone: tenant.phone,
+      message: StatusMessageService.paymentStatus(billingFromState(state,
+          tenant, month ?? DateFormat('yyyy-MM').format(DateTime.now()))));
+}
+
 Future<void> openTenantSharing(BuildContext context, TenantModel tenant,
     {String? month, PaymentModel? payment}) async {
   final state = context.read<ManagementBloc>().state;
