@@ -18,8 +18,8 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   List<TenantModel> _cachedTenants = [];
 
   RoomBloc({required ManagementRepository repository})
-    : _repository = repository,
-      super(const RoomInitial()) {
+      : _repository = repository,
+        super(const RoomInitial()) {
     on<RoomLoadRequested>(_onRoomLoadRequested);
     on<RoomDetailRequested>(_onRoomDetailRequested);
   }
@@ -47,12 +47,12 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         final Map<String, List<RoomWithStats>> roomsByBuilding = {};
 
         for (final building in buildings) {
-          final buildingRooms = rooms
-              .where((r) => r.buildingId == building.buildingId)
-              .toList();
+          final buildingRooms =
+              rooms.where((r) => r.buildingId == building.buildingId).toList();
           final roomsWithStats = buildingRooms.map((room) {
             final roomBeds = beds
-                .where((b) => b.roomId == room.roomId)
+                .where(
+                    (b) => b.roomId == room.roomId && room.isAvailable(rooms))
                 .toList();
             final vacantLower = roomBeds
                 .where(
@@ -133,9 +133,8 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
     final roomBeds = _cachedBeds.where((b) => b.roomId == roomId).toList();
     if (roomBeds.isEmpty) return [];
 
-    final roomTenants = _cachedTenants
-        .where((t) => t.roomId == roomId)
-        .toList();
+    final roomTenants =
+        _cachedTenants.where((t) => t.roomId == roomId).toList();
 
     return roomBeds.map((bed) {
       final tenant = roomTenants.firstWhere(

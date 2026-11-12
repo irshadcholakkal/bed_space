@@ -293,6 +293,12 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
   ) async {
     emit(_currentState.copyWith(isLoading: true));
     try {
+      final rooms = await _repository.getRooms();
+      final room =
+          rooms.where((r) => r.roomId == event.tenant.roomId).firstOrNull;
+      if (room == null || !room.isAvailable(rooms)) {
+        throw StateError('Choose an available room for this tenant.');
+      }
       await _repository.addTenant(event.tenant);
       await _repository.updateBedStatus(event.tenant.bedId, BedStatus.occupied);
     } catch (e) {
@@ -308,6 +314,25 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
     try {
       final oldTenant = await _repository.getTenantById(event.tenant.tenantId!);
       if (oldTenant != null && oldTenant.bedId != event.tenant.bedId) {
+        final rooms = await _repository.getRooms();
+        final beds = await _repository.getBeds();
+        final tenants = await _repository.getTenants();
+        final destination =
+            beds.where((b) => b.bedId == event.tenant.bedId).firstOrNull;
+        final room =
+            rooms.where((r) => r.roomId == event.tenant.roomId).firstOrNull;
+        if (destination == null ||
+            room == null ||
+            !room.isAvailable(rooms) ||
+            destination.roomId != room.roomId ||
+            room.buildingId != event.tenant.buildingId ||
+            destination.status != BedStatus.vacant ||
+            tenants.any((t) =>
+                t.active &&
+                t.tenantId != event.tenant.tenantId &&
+                t.bedId == destination.bedId)) {
+          throw StateError('Choose a vacant bed in an available room.');
+        }
         await _repository.updateBedStatus(oldTenant.bedId, BedStatus.vacant);
         await _repository.updateBedStatus(
           event.tenant.bedId,

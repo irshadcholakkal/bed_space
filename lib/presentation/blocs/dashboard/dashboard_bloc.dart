@@ -39,7 +39,11 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         final totalBeds = beds.length;
         final occupiedBeds =
             beds.where((b) => b.status == BedStatus.occupied).length;
-        final vacantBeds = totalBeds - occupiedBeds;
+        final vacantBeds = beds
+            .where((b) =>
+                b.status == BedStatus.vacant &&
+                rooms.any((r) => r.roomId == b.roomId && r.isAvailable(rooms)))
+            .length;
 
         // Current month calculations
         final now = DateTime.now();

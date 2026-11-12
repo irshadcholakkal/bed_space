@@ -201,7 +201,8 @@ class GoogleSheetsService {
         'upper_bed_rent',
         'utility_cost_monthly',
         'monthly_rent',
-        'parent_room_id'
+        'parent_room_id',
+        'available'
       ],
       'Beds': ['bed_id', 'room_id', 'bed_type', 'status'],
       'Tenants': [
@@ -318,7 +319,7 @@ class GoogleSheetsService {
 
   // Rooms CRUD
   Future<List<RoomModel>> getRooms() async {
-    final rows = await _readRange('Rooms', 'A2:K');
+    final rows = await _readRange('Rooms', 'A2:L');
     return rows.where((row) => row.isNotEmpty && row[0].isNotEmpty).map((row) {
       return RoomModel.fromJson({
         'room_id': row[0],
@@ -332,15 +333,16 @@ class GoogleSheetsService {
         'utility_cost_monthly': row.length > 8 ? row[8] : '0',
         'monthly_rent': row.length > 9 ? row[9] : '0',
         'parent_room_id': row.length > 10 ? row[10] : null,
+        'available': row.length > 11 ? row[11] : 'TRUE',
       });
     }).toList();
   }
 
   Future<void> addRoom(RoomModel room) async {
     await _writeRange('Rooms', 'K1', [
-      ['parent_room_id']
+      ['parent_room_id', 'available']
     ]);
-    final rows = await _readRange('Rooms', 'A:K');
+    final rows = await _readRange('Rooms', 'A:L');
     final newRow = [
       (room.roomId != null && room.roomId!.isNotEmpty)
           ? room.roomId!
@@ -355,9 +357,10 @@ class GoogleSheetsService {
       room.utilityCostMonthly.toString(),
       room.monthlyRent.toString(),
       room.parentRoomId ?? '',
+      room.available ? 'TRUE' : 'FALSE',
     ];
     await _writeRange(
-        'Rooms', 'A${rows.length + 1}:K${rows.length + 1}', [newRow]);
+        'Rooms', 'A${rows.length + 1}:L${rows.length + 1}', [newRow]);
   }
 
   // Beds CRUD
@@ -552,9 +555,9 @@ class GoogleSheetsService {
   Future<void> updateRoom(RoomModel room) async {
     if (room.roomId == null) return;
     await _writeRange('Rooms', 'K1', [
-      ['parent_room_id']
+      ['parent_room_id', 'available']
     ]);
-    final rows = await _readRange('Rooms', 'A2:K');
+    final rows = await _readRange('Rooms', 'A2:L');
     for (int i = 0; i < rows.length; i++) {
       if (rows[i][0] == room.roomId) {
         rows[i] = [
@@ -569,8 +572,9 @@ class GoogleSheetsService {
           room.utilityCostMonthly.toString(),
           room.monthlyRent.toString(),
           room.parentRoomId ?? '',
+          room.available ? 'TRUE' : 'FALSE',
         ];
-        await _writeRange('Rooms', 'A${i + 2}:K${i + 2}', [rows[i]]);
+        await _writeRange('Rooms', 'A${i + 2}:L${i + 2}', [rows[i]]);
         break;
       }
     }
@@ -615,11 +619,11 @@ class GoogleSheetsService {
   }
 
   Future<void> deleteRoom(String roomId) async {
-    final rows = await _readRange('Rooms', 'A2:K');
+    final rows = await _readRange('Rooms', 'A2:L');
     for (int i = 0; i < rows.length; i++) {
       if (rows[i][0] == roomId) {
-        await _writeRange('Rooms', 'A${i + 2}:K${i + 2}', [
-          ['', '', '', '', '', '', '', '', '', '', '']
+        await _writeRange('Rooms', 'A${i + 2}:L${i + 2}', [
+          ['', '', '', '', '', '', '', '', '', '', '', '']
         ]);
         break;
       }
@@ -636,7 +640,7 @@ class GoogleSheetsService {
         }
         // Mark tenant as inactive instead of deleting
         rows[i][10] = 'FALSE';
-        await _writeRange('Tenants', 'A${i + 2}:K${i + 2}', [rows[i]]);
+        await _writeRange('Tenants', 'A${i + 2}:L${i + 2}', [rows[i]]);
         break;
       }
     }

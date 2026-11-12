@@ -12,7 +12,7 @@ import 'buildings_management_screen.dart';
 import 'rooms_management_screen.dart';
 import 'tenants_management_screen.dart';
 
-enum _RoomFilter { all, available, full, noBeds, rooms, subrooms }
+enum _RoomFilter { all, available, unavailable, full, noBeds, rooms, subrooms }
 
 class RoomsScreen extends StatefulWidget {
   final String? buildingId;
@@ -94,9 +94,12 @@ class _RoomsScreenState extends State<RoomsScreen> {
               bool matches(RoomModel room, _RoomFilter filter) =>
                   switch (filter) {
                     _RoomFilter.all => true,
-                    _RoomFilter.available => vacant(room) > 0,
-                    _RoomFilter.full =>
-                      beds(room).isNotEmpty && vacant(room) == 0,
+                    _RoomFilter.available =>
+                      room.isAvailable(state.rooms) && vacant(room) > 0,
+                    _RoomFilter.unavailable => !room.isAvailable(state.rooms),
+                    _RoomFilter.full => room.isAvailable(state.rooms) &&
+                        beds(room).isNotEmpty &&
+                        vacant(room) == 0,
                     _RoomFilter.noBeds => beds(room).isEmpty,
                     _RoomFilter.rooms => !room.isSubroom,
                     _RoomFilter.subrooms => room.isSubroom,
@@ -126,6 +129,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
               final labels = <_RoomFilter, String>{
                 _RoomFilter.all: 'All',
                 _RoomFilter.available: 'Available',
+                _RoomFilter.unavailable: 'Unavailable',
                 _RoomFilter.full: 'Full',
                 _RoomFilter.noBeds: 'No beds',
                 _RoomFilter.rooms: 'Rooms',
@@ -309,7 +313,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                             itemBuilder: (context, index) {
                                               final room = filtered[index];
                                               final total = beds(room).length;
-                                              final available = vacant(room);
+                                              final available =
+                                                  room.isAvailable(state.rooms)
+                                                      ? vacant(room)
+                                                      : 0;
                                               final lower = beds(room)
                                                   .where((b) =>
                                                       b.status ==
@@ -318,11 +325,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                                           BedType.lower)
                                                   .length;
                                               final upper = available - lower;
-                                              final status = total == 0
-                                                  ? 'No beds'
-                                                  : available > 0
-                                                      ? 'Available'
-                                                      : 'Full';
+                                              final status =
+                                                  !room.isAvailable(state.rooms)
+                                                      ? 'Unavailable'
+                                                      : total == 0
+                                                          ? 'No beds'
+                                                          : available > 0
+                                                              ? 'Available'
+                                                              : 'Full';
                                               final color = total == 0
                                                   ? _muted
                                                   : available > 0
@@ -429,7 +439,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                                                               color: color,
                                                                               fontSize: 12)),
                                                                       Text(
-                                                                          '${total - available} occupied',
+                                                                          '${beds(room).where((b) => b.status == BedStatus.occupied).length} occupied',
                                                                           style: const TextStyle(
                                                                               color: _muted,
                                                                               fontSize: 12)),

@@ -112,7 +112,11 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
 
                   // Find vacant beds and filter them
                   final vacantBedsWithInfo = state.beds
-                      .where((b) => b.status == BedStatus.vacant)
+                      .where((b) =>
+                          b.status == BedStatus.vacant &&
+                          state.rooms.any((room) =>
+                              room.roomId == b.roomId &&
+                              room.isAvailable(state.rooms)))
                       .map((bed) {
                     final room = state.rooms.firstWhere(
                       (r) => r.roomId == bed.roomId,

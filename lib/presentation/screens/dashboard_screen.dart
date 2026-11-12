@@ -203,6 +203,37 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 32),
+                    Text('Quick links',
+                        style: Theme.of(context)
+                            .textTheme
+                            .headlineMedium
+                            ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppTheme.textColor)),
+                    const SizedBox(height: 16),
+                    Container(
+                        decoration: AppTheme.cardDecoration,
+                        child: Column(children: [
+                          _quickLink(context, 'Buildings',
+                              CupertinoIcons.building_2_fill, '/buildings'),
+                          const Divider(height: 1),
+                          _quickLink(
+                              context,
+                              'Manage rooms',
+                              CupertinoIcons.rectangle_split_3x1,
+                              '/rooms/manage'),
+                          const Divider(height: 1),
+                          _quickLink(context, 'Tenants',
+                              CupertinoIcons.person_2, '/tenants'),
+                          const Divider(height: 1),
+                          _quickLink(context, 'Available beds',
+                              CupertinoIcons.bed_double, '/vacant-beds'),
+                          const Divider(height: 1),
+                          _quickLink(context, 'Financials',
+                              CupertinoIcons.creditcard, '/financials'),
+                        ])),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),
@@ -214,6 +245,16 @@ class DashboardScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _quickLink(
+          BuildContext context, String label, IconData icon, String route) =>
+      ListTile(
+        leading: Icon(icon, color: AppTheme.primaryColor, size: 22),
+        title: Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+        trailing: const Icon(CupertinoIcons.chevron_right, size: 16),
+        onTap: () => context.push(route),
+      );
 
   Widget _buildFinancialRow(
     String label,

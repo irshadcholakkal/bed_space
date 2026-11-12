@@ -4,6 +4,16 @@ import 'dart:js_interop';
 external JSPromise<JSString> _install();
 @JS('bedspaceIsInstalled')
 external JSBoolean _installed();
+@JS('bedspaceForceUpdate')
+external JSPromise<JSString> _forceUpdate();
+
+Future<String> forcePwaUpdate() async {
+  try {
+    return (await _forceUpdate().toDart).toDart;
+  } catch (_) {
+    return 'failed';
+  }
+}
 
 Future<String> installPwa() async {
   try {

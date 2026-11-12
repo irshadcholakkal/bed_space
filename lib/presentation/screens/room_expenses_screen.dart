@@ -872,6 +872,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                         ElevatedButton(
                           onPressed: () {
                             final updated = RoomModel(
+                              available: room.available,
                               roomId: room.roomId,
                               buildingId: room.buildingId,
                               parentRoomId: selectedParentId,

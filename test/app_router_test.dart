@@ -90,7 +90,13 @@ void main() {
       (tester) async {
     final router = GoRouter(initialLocation: '/dashboard', routes: [
       ShellRoute(builder: (_, __, child) => HomeScreen(child: child), routes: [
-        for (final page in ['dashboard', 'rooms', 'financials', 'settings'])
+        for (final page in [
+          'dashboard',
+          'rooms',
+          'financials',
+          'tenants',
+          'settings'
+        ])
           GoRoute(
               path: '/$page',
               builder: (_, __) => Center(child: Text('page:$page'))),
@@ -106,7 +112,7 @@ void main() {
         tester
             .widget<BottomNavigationBar>(find.byType(BottomNavigationBar))
             .currentIndex,
-        3);
+        4);
     final back = router.push<void>('/rooms');
     await tester.pumpAndSettle();
     expect(find.text('page:rooms'), findsOneWidget);

@@ -49,3 +49,20 @@ test('New controller reloads an existing app once, but not first installation', 
     assert.equal(reloads, 1);
   }
 });
+
+test('Force update checks the service worker without clearing offline data', async () => {
+  let checked = 0, reloaded = 0;
+  const window = { addEventListener() {}, location: { reload() { reloaded++; } } };
+  const navigator = { onLine: true, serviceWorker: {
+    addEventListener() {}, async getRegistration() { return { async update() { checked++; } }; }
+  } };
+  runInNewContext(readFileSync(new URL('../web/pwa.js', import.meta.url), 'utf8'), {
+    window, navigator, URL, document: { baseURI: 'https://example.com/app/' },
+  });
+  assert.equal(await window.bedspaceForceUpdate(), 'updating');
+  assert.equal(checked, 1);
+  assert.equal(reloaded, 1);
+  navigator.onLine = false;
+  assert.equal(await window.bedspaceForceUpdate(), 'failed');
+  assert.equal(reloaded, 1);
+});

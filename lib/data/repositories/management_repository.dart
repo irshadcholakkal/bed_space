@@ -81,7 +81,10 @@ class ManagementRepository {
       'rooms': results[1] as List<RoomModel>,
       'tenants': results[2] as List<TenantModel>,
       'payments': results[3] as List<PaymentModel>,
-      'beds': results[4] as List<BedModel>,
+      'beds': (results[4] as List<BedModel>)
+          .where((bed) => (results[1] as List<RoomModel>)
+              .any((room) => room.roomId == bed.roomId))
+          .toList(),
       'expenses': results[5] as List<ExpenseModel>,
     };
   }
@@ -101,7 +104,11 @@ class ManagementRepository {
       await _localService.saveRooms(results[1] as List<RoomModel>);
       await _localService.saveTenants(results[2] as List<TenantModel>);
       await _localService.savePayments(results[3] as List<PaymentModel>);
-      await _localService.saveBeds(results[4] as List<BedModel>);
+      final roomIds =
+          (results[1] as List<RoomModel>).map((r) => r.roomId).toSet();
+      await _localService.saveBeds((results[4] as List<BedModel>)
+          .where((bed) => roomIds.contains(bed.roomId))
+          .toList());
       await _localService.saveExpenses(results[5] as List<ExpenseModel>);
 
       _dataChangeController.add(null);
@@ -204,6 +211,7 @@ class ManagementRepository {
     room.validateHierarchy(await _localService.getRooms());
     final roomWithId = room.roomId == null || room.roomId!.isEmpty
         ? RoomModel(
+            available: room.available,
             roomId: const Uuid().v4(),
             buildingId: room.buildingId,
             roomNumber: room.roomNumber,

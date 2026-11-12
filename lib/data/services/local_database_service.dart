@@ -38,13 +38,17 @@ class LocalDatabaseService {
     final path = kIsWeb ? name : join(await getDatabasesPath(), name);
     return await openDatabase(
       path,
-      version: 7,
+      version: 8,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2 && oldVersion < 8) {
+      await db.execute(
+          "ALTER TABLE rooms ADD COLUMN available TEXT NOT NULL DEFAULT 'TRUE'");
+    }
     if (oldVersion >= 2 && oldVersion < 7) {
       await db.execute('ALTER TABLE rooms ADD COLUMN parent_room_id TEXT');
     }
@@ -131,7 +135,8 @@ class LocalDatabaseService {
         upper_bed_rent REAL,
         utility_cost_monthly REAL,
         monthly_rent REAL,
-        parent_room_id TEXT
+        parent_room_id TEXT,
+        available TEXT NOT NULL DEFAULT 'TRUE'
       )
     ''');
 

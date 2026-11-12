@@ -50,3 +50,19 @@ window.bedspaceInstallApp = async () => {
   return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
     (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'manual_ios' : 'manual_browser';
 };
+
+window.bedspaceForceUpdate = async () => {
+  if (!navigator.onLine || !('serviceWorker' in navigator)) return 'failed';
+  try {
+    const registration = await navigator.serviceWorker.getRegistration(new URL('./', document.baseURI).href);
+    if (!registration) { window.location.reload(); return 'updating'; }
+    await registration.update();
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      return 'updating';
+    }
+    if (registration.installing) return 'updating';
+    window.location.reload();
+    return 'updating';
+  } catch (_) { return 'failed'; }
+};

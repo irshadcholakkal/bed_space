@@ -210,11 +210,12 @@ void main() {
     final rows = writes
         .map((request) =>
             (jsonDecode(request.body)['values'] as List).first as List)
-        .where((row) => row.length > 1)
+        .where((row) => row.length > 2)
         .toList();
     expect(rows[0][10], 'parent');
     expect(rows[1][10], 'parent');
     expect(rows[2], everyElement(''));
-    expect(rows[2], hasLength(11));
+    expect(rows[2], hasLength(12));
+    expect(rows[0][11], 'TRUE');
   });
 }

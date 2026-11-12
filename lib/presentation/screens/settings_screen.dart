@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../widgets/pwa_install_tile.dart';
+import '../../data/services/pwa_install.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
@@ -42,6 +43,25 @@ class SettingsScreen extends StatelessWidget {
               children: [
                 if (kIsWeb) ...[
                   const PwaInstallTile(),
+                  const SizedBox(height: 12),
+                  Container(
+                      decoration: AppTheme.cardDecoration,
+                      child: ListTile(
+                        leading: const Icon(CupertinoIcons.arrow_clockwise,
+                            color: AppTheme.primaryColor),
+                        title: const Text('Force update'),
+                        subtitle: const Text(
+                            'Check for the latest app version and reload.'),
+                        onTap: () async {
+                          final result = await forcePwaUpdate();
+                          if (context.mounted && result != 'updating') {
+                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                                content: Text(result == 'latest'
+                                    ? 'You are using the latest version.'
+                                    : 'Could not update. Check your internet connection and try again.')));
+                          }
+                        },
+                      )),
                   const SizedBox(height: 24),
                 ],
                 // Account Section
@@ -274,48 +294,6 @@ class SettingsScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // Disclaimer
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: AppTheme.warningColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: AppTheme.warningColor.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            CupertinoIcons.info_circle,
-                            color: AppTheme.warningColor,
-                          ),
-                          const SizedBox(width: 12),
-                          Text(
-                            'Disclaimer',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.textColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'This application does not guarantee data uniqueness across devices and is intended for prototyping purposes. Not for high-security financial data.',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: AppTheme.textColor.withValues(alpha: 0.8),
-                          height: 1.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             );
           }

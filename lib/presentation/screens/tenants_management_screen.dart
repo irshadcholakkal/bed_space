@@ -12,6 +12,7 @@ import '../../data/models/payment_model.dart';
 import '../../data/models/expense_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/sharing_actions.dart';
+import '../widgets/tenant_transfer_dialog.dart';
 import '../../data/models/billing_snapshot.dart';
 
 class TenantsManagementScreen extends StatefulWidget {
@@ -71,7 +72,9 @@ class TenantsManagementScreen extends StatefulWidget {
                     ? rooms
                         .where(
                           (r) =>
-                              r.buildingId.trim() == selectedBuildingId!.trim(),
+                              r.buildingId.trim() ==
+                                  selectedBuildingId!.trim() &&
+                              r.isAvailable(rooms),
                         )
                         .toList()
                     : <RoomModel>[];
@@ -827,6 +830,9 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                               ),
                               onSelected: (value) {
                                 switch (value) {
+                                  case 'transfer':
+                                    showTenantTransfer(context, tenant);
+                                    break;
                                   case 'share':
                                     openTenantSharing(context, tenant);
                                     break;
@@ -852,6 +858,10 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                 }
                               },
                               itemBuilder: (context) => [
+                                if (tenant.active)
+                                  const PopupMenuItem(
+                                      value: 'transfer',
+                                      child: Text('Transfer tenant')),
                                 const PopupMenuItem(
                                     value: 'share',
                                     child:

@@ -178,8 +178,12 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                   state.rooms.where((r) => ids.contains(r.roomId)).toList();
               final beds =
                   state.beds.where((b) => ids.contains(b.roomId)).toList();
-              final vacant =
-                  beds.where((b) => b.status == BedStatus.vacant).length;
+              final vacant = beds
+                  .where((b) =>
+                      b.status == BedStatus.vacant &&
+                      state.rooms.any((r) =>
+                          r.roomId == b.roomId && r.isAvailable(state.rooms)))
+                  .length;
               return RefreshIndicator(
                 onRefresh: () =>
                     context.read<ManagementRepository>().triggerSync(),
@@ -197,6 +201,15 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                       CrossAxisAlignment.stretch,
                                   children: [
                                     Text(title, style: _heading(40)),
+                                    if (room != null &&
+                                        !room.isAvailable(state.rooms))
+                                      const Padding(
+                                          padding: EdgeInsets.only(top: 8),
+                                          child: Text(
+                                              'Unavailable · Not offered for new tenants',
+                                              style: TextStyle(
+                                                  color: AppTheme.errorColor,
+                                                  fontSize: 12))),
                                     const SizedBox(height: 12),
                                     Text(
                                         room != null
@@ -236,6 +249,18 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                         icon: const Icon(
                                             CupertinoIcons.ellipsis_vertical),
                                         onSelected: (path) {
+                                          if (path == 'availability' &&
+                                              room != null) {
+                                            context.read<ManagementBloc>().add(
+                                                    UpdateRoom(
+                                                        RoomModel.fromJson({
+                                                  ...room.toJson(),
+                                                  'available': room.available
+                                                      ? 'FALSE'
+                                                      : 'TRUE',
+                                                })));
+                                            return;
+                                          }
                                           if (path == 'delete_room' &&
                                               room != null) {
                                             _deleteRoom(room);
@@ -244,6 +269,12 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                           }
                                         },
                                         itemBuilder: (_) => [
+                                          if (room != null)
+                                            PopupMenuItem(
+                                                value: 'availability',
+                                                child: Text(room.available
+                                                    ? 'Make unavailable'
+                                                    : 'Make available')),
                                           if (room != null)
                                             PopupMenuItem(
                                                 value: 'delete_room',

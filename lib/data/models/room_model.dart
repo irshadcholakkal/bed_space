@@ -1,5 +1,6 @@
 /// Room data model
 class RoomModel {
+  final bool available;
   final String? roomId;
   final String buildingId;
   final String roomNumber;
@@ -14,6 +15,7 @@ class RoomModel {
   final double monthlyRent; // Base rent paid to landlord
 
   RoomModel({
+    this.available = true,
     this.roomId,
     required this.buildingId,
     required this.roomNumber,
@@ -29,6 +31,7 @@ class RoomModel {
 
   Map<String, dynamic> toJson() {
     return {
+      'available': available ? 'TRUE' : 'FALSE',
       'room_id': roomId ?? '',
       'building_id': buildingId,
       'room_number': roomNumber,
@@ -45,6 +48,8 @@ class RoomModel {
 
   factory RoomModel.fromJson(Map<String, dynamic> json) {
     return RoomModel(
+      available:
+          !['FALSE', '0'].contains(json['available']?.toString().toUpperCase()),
       roomId: json['room_id']?.toString(),
       buildingId: json['building_id']?.toString() ?? '',
       roomNumber: json['room_number']?.toString() ?? '',
@@ -70,6 +75,11 @@ class RoomModel {
   }
 
   bool get isSubroom => parentRoomId != null && parentRoomId!.isNotEmpty;
+  bool isAvailable(Iterable<RoomModel> rooms) =>
+      available &&
+      (!isSubroom ||
+          rooms.where((r) => r.roomId == parentRoomId).firstOrNull?.available ==
+              true);
 
   String displayName(Iterable<RoomModel> rooms) {
     if (!isSubroom) return 'Room $roomNumber';

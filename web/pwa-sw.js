@@ -3,6 +3,9 @@ const ROOT = new URL('./', self.location.href);
 const CACHE_PREFIX = ROOT.pathname === '/' ? 'bed-space-' : 'bed-space-app-';
 const CACHE = `${CACHE_PREFIX}__PWA_VERSION__`;
 const SHELL = new URL('index.html', ROOT).href;
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
 
 async function isAppShell(response) {
   return response?.ok &&
