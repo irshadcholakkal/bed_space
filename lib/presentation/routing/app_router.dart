@@ -61,7 +61,9 @@ GoRouter createAppRouter(Listenable refresh) {
           if (state.uri.queryParameters['billing'] == 'return') {
             return '/billing';
           }
-          return AppRouteIntent.take() ?? AppRoutes.dashboard;
+          return AppRouteIntent.take() ??
+              AppSessionRoute.lastRoute ??
+              AppRoutes.dashboard;
         }
         if (state.uri.queryParameters['billing'] == 'return') {
           return '/login?from=%2Fbilling';
@@ -77,6 +79,7 @@ GoRouter createAppRouter(Listenable refresh) {
       if (signedIn && authPage) {
         return AppRoutes.safeDestination(state.uri.queryParameters['from']) ??
             AppRouteIntent.take() ??
+            AppSessionRoute.lastRoute ??
             AppRoutes.dashboard;
       }
       return null;

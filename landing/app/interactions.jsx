@@ -17,6 +17,14 @@ export function HostingTransition() {
       return;
     }
     // Existing Flutter root workers must update to the retirement worker.
+    try {
+      // This is only a routing hint. Flutter still restores and verifies the
+      // actual Supabase session before opening any protected workspace.
+      if (localStorage.getItem('flutter.bedspace_session_user')) {
+        location.replace('/app/');
+        return;
+      }
+    } catch { /* The public landing page works with storage disabled. */ }
     // Do not touch IndexedDB, auth sessions or the new /app/ worker.
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(registrations => {

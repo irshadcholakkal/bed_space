@@ -74,7 +74,19 @@ class _BedSpaceAppState extends State<BedSpaceApp> {
   late final GoRouter _router = createAppRouter(_refresh);
 
   @override
+  void initState() {
+    super.initState();
+    _router.routeInformationProvider.addListener(_rememberScreen);
+  }
+
+  void _rememberScreen() {
+    AppSessionRoute.save(SaasService.userId,
+        _router.routeInformationProvider.value.uri.toString());
+  }
+
+  @override
   void dispose() {
+    _router.routeInformationProvider.removeListener(_rememberScreen);
     _router.dispose();
     _refresh.dispose();
     super.dispose();

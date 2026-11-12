@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
 import 'auth_callback_error.dart';
 import 'google_token_store.dart';
+import '../../presentation/routing/app_routes.dart';
 
 class SaasService {
   static const url = String.fromEnvironment('SUPABASE_URL');
@@ -25,10 +26,12 @@ class SaasService {
           authOptions: const FlutterAuthClientOptions(
               persistSession: true, autoRefreshToken: true));
       await _rememberGoogleTokens(client.auth.currentSession);
+      await AppSessionRoute.restore(userId);
       await _googleSessionSubscription?.cancel();
       _googleSessionSubscription =
           client.auth.onAuthStateChange.listen((state) {
         unawaited(_rememberGoogleTokens(state.session));
+        unawaited(AppSessionRoute.restore(state.session?.user.id));
       }, onError: (Object _) {});
     }
   }

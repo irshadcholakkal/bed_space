@@ -71,3 +71,54 @@ class AppRouteIntent {
     return path;
   }
 }
+
+/// Remember only workspace routes, separately for each authenticated account.
+class AppSessionRoute {
+  static String? _userId;
+  static String? _lastRoute;
+  static String? get lastRoute => _lastRoute;
+  static Future<void> restore(String? userId) async {
+    if (_userId == userId && userId != null) return;
+    _userId = userId;
+    _lastRoute = null;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (userId == null) {
+        await prefs.remove('bedspace_session_user');
+      } else {
+        await prefs.setString('bedspace_session_user', userId);
+        if (_userId == userId && _lastRoute == null) {
+          _lastRoute = safeRoute(prefs.getString('bedspace_last_route_$userId'));
+        }
+      }
+    } catch (_) {/* Storage availability must not change authentication. */}
+  }
+
+  static String? safeRoute(String? value) {
+    final path = AppRoutes.safeDestination(value);
+    if (path == null) return null;
+    final uri = Uri.parse(value!);
+    final parameters = <String, String>{};
+    if (path == '/rooms' || path == '/financials') {
+      for (final key in ['building', 'room', 'period']) {
+        final data = uri.queryParameters[key];
+        if (data != null && data.length <= 200) parameters[key] = data;
+      }
+    }
+    return Uri(
+            path: path, queryParameters: parameters.isEmpty ? null : parameters)
+        .toString();
+  }
+
+  static Future<void> save(String? userId, String value) async {
+    if (userId == null) return;
+    if (_userId != userId) await restore(userId);
+    final safe = safeRoute(value);
+    if (safe == null || _lastRoute == safe) return;
+    _lastRoute = safe;
+    try {
+      await (await SharedPreferences.getInstance())
+          .setString('bedspace_last_route_$userId', safe);
+    } catch (_) {/* Keep navigation working when storage is unavailable. */}
+  }
+}

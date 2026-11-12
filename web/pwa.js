@@ -12,3 +12,23 @@ if ('serviceWorker' in navigator && window.isSecureContext) {
     }
   });
 }
+
+// Capture the browser's install event before Flutter starts.
+let bedspaceInstallPrompt = null;
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  bedspaceInstallPrompt = event;
+});
+window.addEventListener('appinstalled', () => { bedspaceInstallPrompt = null; });
+window.bedspaceIsInstalled = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+window.bedspaceInstallApp = async () => {
+  if (window.bedspaceIsInstalled()) return 'installed';
+  if (bedspaceInstallPrompt) {
+    const prompt = bedspaceInstallPrompt;
+    bedspaceInstallPrompt = null;
+    await prompt.prompt();
+    return (await prompt.userChoice).outcome === 'accepted' ? 'accepted' : 'dismissed';
+  }
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'manual_ios' : 'manual_browser';
+};

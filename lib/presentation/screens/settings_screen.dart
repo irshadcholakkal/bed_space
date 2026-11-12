@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import '../widgets/pwa_install_tile.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/auth/auth_bloc.dart';
@@ -38,6 +40,10 @@ class SettingsScreen extends StatelessWidget {
             return ListView(
               padding: const EdgeInsets.all(24),
               children: [
+                if (kIsWeb) ...[
+                  const PwaInstallTile(),
+                  const SizedBox(height: 24),
+                ],
                 // Account Section
                 Text(
                   'Account',
