@@ -38,7 +38,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.roomId != null) {
+    if (widget.roomId != null || widget.buildingId != null) {
       return PropertyPortfolioScreen(
           buildingId: widget.buildingId,
           roomId: widget.roomId,

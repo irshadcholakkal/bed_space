@@ -225,6 +225,8 @@ void main() {
       await tester.tap(find.text('Palm Residence'));
       await tester.pumpAndSettle();
       expect(find.text('Rooms in this building'), findsOneWidget);
+      expect(find.text('Building details'), findsOneWidget);
+      expect(find.text('Branch of Room 101 | This subroom only'), findsOneWidget);
       await tester.scrollUntilVisible(find.text('Room 101'), 300,
           scrollable: find.byType(Scrollable).first);
       await tester.pumpAndSettle();

@@ -33,7 +33,8 @@ class PropertyPortfolioScreen extends StatefulWidget {
 }
 
 class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
-  late String? _month = widget.period == 'all'
+  late String? _month = widget.period == 'all' ||
+          (widget.period == null && widget.buildingId != null)
       ? null
       : RegExp(r'^\d{4}-(0[1-9]|1[0-2])$').hasMatch(widget.period ?? '')
           ? widget.period
@@ -221,6 +222,64 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                         style: const TextStyle(
                                             color: _muted, height: 1.7)),
                                     const SizedBox(height: 24),
+                                    if (building != null && room == null) ...[
+                                      Container(
+                                        padding: const EdgeInsets.all(20),
+                                        decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            borderRadius:
+                                                BorderRadius.circular(20)),
+                                        child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text('Building details',
+                                                  style: _heading(23)),
+                                              const SizedBox(height: 12),
+                                              Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Icon(
+                                                        CupertinoIcons.location,
+                                                        size: 18,
+                                                        color: _muted),
+                                                    const SizedBox(width: 8),
+                                                    Expanded(
+                                                        child: Text(
+                                                            building.address
+                                                                    .trim()
+                                                                    .isEmpty
+                                                                ? 'No address added'
+                                                                : building
+                                                                    .address,
+                                                            style:
+                                                                const TextStyle(
+                                                                    color:
+                                                                        _muted,
+                                                                    height:
+                                                                        1.6))),
+                                                  ]),
+                                              const SizedBox(height: 16),
+                                              Wrap(
+                                                  spacing: 20,
+                                                  runSpacing: 12,
+                                                  children: [
+                                                    Text(
+                                                        '${scopedRooms.where((r) => !r.isSubroom).length} rooms'),
+                                                    Text(
+                                                        '${scopedRooms.where((r) => r.isSubroom).length} subrooms'),
+                                                    Text(
+                                                        '${beds.length - vacant} occupied beds'),
+                                                    Text(
+                                                        '$vacant available beds'),
+                                                    Text(
+                                                        '${state.tenants.where((t) => t.active && ids.contains(t.roomId)).length} active tenants'),
+                                                  ]),
+                                            ]),
+                                      ),
+                                      const SizedBox(height: 20),
+                                    ],
                                     Wrap(
                                         spacing: 10,
                                         runSpacing: 10,
@@ -550,6 +609,28 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
             report.totals(report.roomIds(roomId: child.roomId)),
             CupertinoIcons.rectangle_split_3x1,
             () => _open(building: buildingId, room: child.roomId)));
+        for (final sub in subs) {
+          if (_search.isNotEmpty &&
+              !child.roomNumber.toLowerCase().contains(_search) &&
+              !sub.roomNumber.toLowerCase().contains(_search)) {
+            continue;
+          }
+          result.add(Padding(
+            padding: const EdgeInsets.only(left: 24),
+            child: Container(
+              padding: const EdgeInsets.only(left: 12),
+              decoration: const BoxDecoration(
+                  border: Border(
+                      left: BorderSide(color: Color(0xffcbd5ce), width: 2))),
+              child: _card(
+                  'Subroom ${sub.roomNumber}',
+                  'Branch of Room ${child.roomNumber} | This subroom only',
+                  report.totals(report.roomIds(roomId: sub.roomId)),
+                  CupertinoIcons.arrow_turn_down_right,
+                  () => _open(building: buildingId, room: sub.roomId)),
+            ),
+          ));
+        }
       }
     } else {
       if ('room ${room.roomNumber}'.toLowerCase().contains(_search)) {
