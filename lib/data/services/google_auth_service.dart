@@ -21,6 +21,9 @@ import 'saas_service.dart';
 import 'google_token_store.dart';
 
 class GoogleAuthService {
+  GoogleAuthService({http.Client? httpClient}) : _httpClient = httpClient;
+  final http.Client? _httpClient;
+  String? connectionError;
   String? get accountUserId => SaasService.userId;
   static final Map<String, Future<String?>> _renewals = {};
   static final Map<String, (String, DateTime)> _validated = {};
@@ -73,6 +76,7 @@ class GoogleAuthService {
 
   /// Attempt silent sign-in (no UI). Returns access token if successful.
   Future<String?> signInSilently() async {
+    connectionError = null;
     final owner = accountUserId;
     if (SaasService.configured && owner != null) {
       return _renewals.putIfAbsent(
@@ -97,10 +101,12 @@ class GoogleAuthService {
         await GoogleTokenStore.saveRefreshToken(session.user.id, refreshToken);
       }
       final candidates = <String>{
+        // The callback token contains the permissions just granted by Google.
+        // Do not spend the restoration deadline checking an expired cache first.
+        if (session.providerToken?.isNotEmpty == true) session.providerToken!,
         if (await GoogleTokenStore.read(session.user.id)
             case final String cached)
           cached,
-        if (session.providerToken?.isNotEmpty == true) session.providerToken!,
       };
       for (final token in candidates) {
         if (await _validGoogleToken(token, session.user.email)) {
@@ -152,7 +158,11 @@ class GoogleAuthService {
     }
   }
 
-  Future<bool> _validGoogleToken(String token, String? email) async {
+  Future<bool> _validGoogleToken(String token, String? email) =>
+      validateGoogleToken(token, email);
+
+  @visibleForTesting
+  Future<bool> validateGoogleToken(String token, String? email) async {
     final cached = email == null ? null : _validated[email];
     if (cached != null &&
         cached.$1 == token &&
@@ -160,26 +170,45 @@ class GoogleAuthService {
       return true;
     }
     try {
-      final response = await http
-          .get(Uri.https(
-              'oauth2.googleapis.com', '/tokeninfo', {'access_token': token}))
+      final uri = Uri.https(
+          'oauth2.googleapis.com', '/tokeninfo', {'access_token': token});
+      final response = await (_httpClient?.get(uri) ?? http.get(uri))
           .timeout(const Duration(seconds: 10));
-      if (response.statusCode != 200) return false;
+      if (response.statusCode != 200) {
+        connectionError =
+            'Google access has expired or was revoked. Reconnect Google. Reference: GOOGLE_TOKEN';
+        return false;
+      }
       final info = jsonDecode(response.body) as Map<String, dynamic>;
       final scopes = (info['scope'] as String? ?? '').split(' ');
       final valid = _scopes.skip(3).every(scopes.contains) &&
           email != null &&
-          info['email'] == email &&
+          (info['email'] as String?)?.trim().toLowerCase() ==
+              email.trim().toLowerCase() &&
           (int.tryParse('${info['expires_in']}') ?? 0) > 60;
       if (valid) {
+        connectionError = null;
         _validated[email] = (
           token,
           DateTime.now().add(Duration(
               seconds: (int.tryParse('${info['expires_in']}') ?? 0) - 60))
         );
+      } else if (!_scopes.skip(3).every(scopes.contains)) {
+        connectionError =
+            'Google did not grant both Sheets and Drive permissions. Reconnect Google and select both permissions on the consent screen. Reference: GOOGLE_SCOPES';
+      } else if (email == null ||
+          (info['email'] as String?)?.trim().toLowerCase() !=
+              email.trim().toLowerCase()) {
+        connectionError =
+            'Connect the same Google email used to sign in to this account. Reference: GOOGLE_ACCOUNT';
+      } else {
+        connectionError =
+            'Google access has expired. Reconnect Google. Reference: GOOGLE_TOKEN';
       }
       return valid;
     } catch (_) {
+      connectionError =
+          'Could not verify Google permissions. Check your connection and retry. Reference: GOOGLE_VERIFY';
       return false;
     }
   }

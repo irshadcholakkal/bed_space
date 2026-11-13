@@ -110,6 +110,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           return AuthAuthenticatedWithoutSheet(
               userEmail: email, accessToken: token);
         }
+        if (_authService.connectionError != null) {
+          return AuthError(_authService.connectionError!);
+        }
       }
       return const AuthError(
           'Your account is signed in, but no linked workspace was found. Connect Google Sheets & Drive to reopen your spreadsheet. Reference: WORKSPACE_NOT_LINKED');
