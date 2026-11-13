@@ -1,4 +1,6 @@
 import '../../../data/models/booking_model.dart';
+import 'dart:async';
+import 'package:uuid/uuid.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/models/building_model.dart';
@@ -210,6 +212,8 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
             BedModel(
               roomId: createdRoom.roomId!,
               bedType: BedType.lower,
+              bedId: const Uuid()
+                  .v5(Namespace.url.value, '${createdRoom.roomId}/lower/$i'),
               status: BedStatus.vacant,
             ),
           );
@@ -219,12 +223,16 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
             BedModel(
               roomId: createdRoom.roomId!,
               bedType: BedType.upper,
+              bedId: const Uuid()
+                  .v5(Namespace.url.value, '${createdRoom.roomId}/upper/$i'),
               status: BedStatus.vacant,
             ),
           );
         }
       }
-    } catch (e) {
+      event.completion?.complete(createdRoom);
+    } catch (e, stack) {
+      event.completion?.completeError(e, stack);
       emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
   }

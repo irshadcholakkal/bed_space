@@ -21,6 +21,9 @@ import 'saas_service.dart';
 import 'google_token_store.dart';
 
 class GoogleAuthService {
+  String? get accountUserId => SaasService.userId;
+  static final Map<String, Future<String?>> _renewals = {};
+  static final Map<String, (String, DateTime)> _validated = {};
   static const List<String> _scopes = [
     'openid',
     'email',
@@ -70,19 +73,32 @@ class GoogleAuthService {
 
   /// Attempt silent sign-in (no UI). Returns access token if successful.
   Future<String?> signInSilently() async {
+    final owner = accountUserId;
+    if (SaasService.configured && owner != null) {
+      return _renewals.putIfAbsent(
+          owner,
+          () => _restoreGoogleSession()
+              .whenComplete(() => _renewals.remove(owner)));
+    }
+    return _restoreGoogleSession();
+  }
+
+  Future<String?> _restoreGoogleSession() async {
     if (SaasService.configured) {
       // Supabase refreshes its own JWT, but not Google's provider token.
       final session = SaasService.client.auth.currentSession;
       if (session == null) return null;
       final refreshToken = session.providerRefreshToken;
-      if (refreshToken != null && refreshToken.isNotEmpty) {
+      if (refreshToken != null &&
+          refreshToken.isNotEmpty &&
+          await GoogleTokenStore.readRefreshToken(session.user.id) == null) {
         await GoogleTokenStore.saveRefreshToken(session.user.id, refreshToken);
       }
       final candidates = <String>{
-        if (session.providerToken?.isNotEmpty == true) session.providerToken!,
         if (await GoogleTokenStore.read(session.user.id)
             case final String cached)
           cached,
+        if (session.providerToken?.isNotEmpty == true) session.providerToken!,
       };
       for (final token in candidates) {
         if (await _validGoogleToken(token, session.user.email)) {
@@ -95,21 +111,25 @@ class GoogleAuthService {
           await GoogleTokenStore.readRefreshToken(session.user.id);
       if (savedRefresh == null || savedRefresh.isEmpty) return null;
       try {
+        if (session.isExpired) await SaasService.client.auth.refreshSession();
+        if (SaasService.userId != session.user.id) return null;
         final response = await SaasService.client.functions.invoke(
             'refresh-google-session',
             body: {'refresh_token': savedRefresh});
         final result = response.data as Map<String, dynamic>;
         final token = result['access_token'] as String?;
-        if (token == null ||
-            SaasService.userId != session.user.id ||
-            !await _validGoogleToken(token, session.user.email)) {
+        if (token == null || SaasService.userId != session.user.id) {
           return null;
         }
-        await GoogleTokenStore.save(session.user.id, token);
         final rotated = result['refresh_token'] as String?;
         if (rotated != null && rotated.isNotEmpty) {
           await GoogleTokenStore.saveRefreshToken(session.user.id, rotated);
         }
+        if (!await _validGoogleToken(token, session.user.email) ||
+            SaasService.userId != session.user.id) {
+          return null;
+        }
+        await GoogleTokenStore.save(session.user.id, token);
         return token;
       } catch (_) {
         // Keep the app's account session. Only Google may need reconnecting.
@@ -131,6 +151,12 @@ class GoogleAuthService {
   }
 
   Future<bool> _validGoogleToken(String token, String? email) async {
+    final cached = email == null ? null : _validated[email];
+    if (cached != null &&
+        cached.$1 == token &&
+        DateTime.now().isBefore(cached.$2)) {
+      return true;
+    }
     try {
       final response = await http
           .get(Uri.https(
@@ -139,10 +165,18 @@ class GoogleAuthService {
       if (response.statusCode != 200) return false;
       final info = jsonDecode(response.body) as Map<String, dynamic>;
       final scopes = (info['scope'] as String? ?? '').split(' ');
-      return _scopes.skip(3).every(scopes.contains) &&
+      final valid = _scopes.skip(3).every(scopes.contains) &&
           email != null &&
           info['email'] == email &&
           (int.tryParse('${info['expires_in']}') ?? 0) > 60;
+      if (valid) {
+        _validated[email] = (
+          token,
+          DateTime.now().add(Duration(
+              seconds: (int.tryParse('${info['expires_in']}') ?? 0) - 60))
+        );
+      }
+      return valid;
     } catch (_) {
       return false;
     }
@@ -153,6 +187,7 @@ class GoogleAuthService {
     if (SaasService.configured) {
       final userId = SaasService.userId;
       await SaasService.client.auth.signOut();
+      _validated.clear();
       if (userId != null) await GoogleTokenStore.clear(userId);
       return;
     }

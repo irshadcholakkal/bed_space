@@ -49,6 +49,10 @@ class _RoomsScreenState extends State<RoomsScreen> {
         child: Scaffold(
             backgroundColor: _paper,
             appBar: AppBar(title: const Text('Rooms'), actions: [
+              IconButton(
+                  tooltip: 'Available rooms',
+                  onPressed: () => context.push('/rooms/available'),
+                  icon: const Icon(CupertinoIcons.bed_double)),
               PopupMenuButton<String>(
                 tooltip: 'Add building, room or tenant',
                 icon: const Icon(CupertinoIcons.ellipsis_vertical),
@@ -85,6 +89,11 @@ class _RoomsScreenState extends State<RoomsScreen> {
                 for (final building in state.buildings)
                   building.buildingId: building.buildingName
               };
+              final reservedBedIds = state.reservedBedIds;
+              final occupiedBedIds = state.tenants
+                  .where((tenant) => tenant.active)
+                  .map((tenant) => tenant.bedId)
+                  .toSet();
               final bedsByRoom = <String, List<BedModel>>{};
               for (final bed in state.beds) {
                 bedsByRoom.putIfAbsent(bed.roomId, () => []).add(bed);
@@ -94,7 +103,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
               int vacant(RoomModel room) => beds(room)
                   .where((bed) =>
                       bed.status == BedStatus.vacant &&
-                      !state.reservedBedIds.contains(bed.bedId))
+                      !reservedBedIds.contains(bed.bedId) &&
+                      !occupiedBedIds.contains(bed.bedId))
                   .length;
               bool matches(RoomModel room, _RoomFilter filter) =>
                   switch (filter) {
@@ -326,7 +336,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                                   .where((b) =>
                                                       b.status ==
                                                           BedStatus.vacant &&
-                                                      !state.reservedBedIds
+                                                      !reservedBedIds
+                                                          .contains(b.bedId) &&
+                                                      !occupiedBedIds
                                                           .contains(b.bedId) &&
                                                       b.bedType ==
                                                           BedType.lower)

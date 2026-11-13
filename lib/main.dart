@@ -115,6 +115,9 @@ class AuthWrapper extends StatelessWidget {
         if (authState is AuthAuthenticated) {
           // User is authenticated with sheet
           return _buildAuthenticatedApp(context, authState);
+        } else if (authState is AuthInitial || authState is AuthLoading) {
+          return const Scaffold(
+              body: Center(child: CircularProgressIndicator()));
         } else {
           // Not authenticated or no sheet
           return const LoginScreen();

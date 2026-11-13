@@ -70,7 +70,7 @@ class _SaasGateState extends State<SaasGate> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content: Text(
-                    'Session could not be refreshed. Please sign in again.')),
+                    'Connection interrupted. Your session will retry when the connection returns.')),
           );
         }
       });

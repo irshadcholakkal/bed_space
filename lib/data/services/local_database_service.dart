@@ -41,13 +41,17 @@ class LocalDatabaseService {
     final path = kIsWeb ? name : join(await getDatabasesPath(), name);
     return await openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2 && oldVersion < 10) {
+      await db.execute(
+          "ALTER TABLE rooms ADD COLUMN media_json TEXT NOT NULL DEFAULT '[]'");
+    }
     if (oldVersion >= 2 && oldVersion < 9) await _createBookings(db);
     if (oldVersion >= 2 && oldVersion < 8) {
       await db.execute(
@@ -141,7 +145,8 @@ class LocalDatabaseService {
         utility_cost_monthly REAL,
         monthly_rent REAL,
         parent_room_id TEXT,
-        available TEXT NOT NULL DEFAULT 'TRUE'
+        available TEXT NOT NULL DEFAULT 'TRUE',
+        media_json TEXT NOT NULL DEFAULT '[]'
       )
     ''');
 
@@ -581,6 +586,11 @@ class LocalDatabaseService {
       'EXPENSE': ('expenses', 'id'),
     };
     await db.transaction((txn) async {
+      if (type == 'ADD_BED') {
+        final existing = await txn.query('beds', where: 'bed_id = ?',
+            whereArgs: [payload['bed_id']], limit: 1);
+        if (existing.isNotEmpty) return;
+      }
       final previous = type.endsWith('_TENANT')
           ? await txn.query('tenants',
               where: 'tenant_id = ?',

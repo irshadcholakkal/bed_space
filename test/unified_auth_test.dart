@@ -31,7 +31,55 @@ class _Workspace extends SheetRepository {
   }
 }
 
+class _InterruptedGoogleSession extends _GoogleSession {
+  bool renewed = false;
+  String? owner = 'customer';
+  @override
+  String? get accountUserId => owner;
+  @override
+  Future<String?> signInSilently() async => renewed ? 'renewed-token' : null;
+}
+
+class _SavedWorkspace extends _Workspace {
+  _SavedWorkspace({super.matches = true}) : super('saved-sheet');
+  @override
+  Future<String?> getCachedSheetId() async => 'saved-sheet';
+}
+
 void main() {
+  test(
+      'temporary Google renewal failure preserves the signed-in customer workspace',
+      () async {
+    final google = _InterruptedGoogleSession();
+    final bloc =
+        AuthBloc(authService: google, sheetRepository: _SavedWorkspace());
+    final restored =
+        bloc.stream.firstWhere((state) => state is AuthAuthenticated);
+    bloc.add(const AuthCheckRequested());
+    final saved = await restored as AuthAuthenticated;
+    expect(saved.sheetId, 'saved-sheet');
+    expect(saved.accessToken, isEmpty);
+    expect(google.interactiveCalls, 0);
+    google.renewed = true;
+    final renewed = bloc.stream.firstWhere((state) =>
+        state is AuthAuthenticated && state.accessToken == 'renewed-token');
+    bloc.add(const AuthCheckRequested());
+    expect((await renewed as AuthAuthenticated).sheetId, 'saved-sheet');
+    await bloc.close();
+  });
+
+  test(
+      'session fallback never restores a workspace linked to a different Google account',
+      () async {
+    final bloc = AuthBloc(
+        authService: _InterruptedGoogleSession(),
+        sheetRepository: _SavedWorkspace(matches: false));
+    final rejected =
+        bloc.stream.firstWhere((state) => state is AuthUnauthenticated);
+    bloc.add(const AuthCheckRequested());
+    expect(await rejected, isA<AuthUnauthenticated>());
+    await bloc.close();
+  });
   test(
       'Restored Google session starts new workspace setup without another login',
       () async {

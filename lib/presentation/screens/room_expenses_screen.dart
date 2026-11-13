@@ -874,6 +874,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                           onPressed: () {
                             final updated = RoomModel(
                               available: room.available,
+                              media: room.media,
                               roomId: room.roomId,
                               buildingId: room.buildingId,
                               parentRoomId: selectedParentId,

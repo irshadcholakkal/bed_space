@@ -23,6 +23,8 @@ import '../models/tenant_model.dart';
 import '../models/payment_model.dart';
 import '../models/expense_model.dart';
 import '../models/booking_model.dart';
+import 'google_auth_service.dart';
+import 'saas_service.dart';
 
 class GoogleSheetsService {
   /// Locate or create a private customer-owned document folder.
@@ -61,7 +63,10 @@ class GoogleSheetsService {
 
   final String accessToken;
   final String sheetId;
+  final Future<String?> Function()? tokenProvider;
+  final String? _accountOwner;
   Future<void>? _bookingsReady;
+  Future<void>? _roomMediaReady;
   static const _bookingColumns = [
     'booking_id',
     'tenant_name',
@@ -82,15 +87,35 @@ class GoogleSheetsService {
   GoogleSheetsService({
     required this.accessToken,
     required this.sheetId,
-  });
+    this.tokenProvider,
+  }) : _accountOwner = SaasService.userId;
 
   static const String _baseUrl =
       'https://sheets.googleapis.com/v4/spreadsheets';
 
-  Map<String, String> get _headers => {
-        'Authorization': 'Bearer $accessToken',
-        'Content-Type': 'application/json',
-      };
+  Future<Map<String, String>> get _headers async {
+    String? token = accessToken;
+    if (tokenProvider != null) {
+      token = await tokenProvider!();
+    } else if (SaasService.configured) {
+      if (_accountOwner == null || _accountOwner != SaasService.userId) {
+        throw StateError(
+            'The workspace account changed. Reopen the workspace.');
+      }
+      token = await GoogleAuthService().signInSilently();
+      if (_accountOwner != SaasService.userId) {
+        throw StateError('The workspace account changed.');
+      }
+    }
+    if (token == null || token.isEmpty) {
+      throw StateError(
+          'Google connection needs renewal. Your account and local changes are saved. Reconnect Google to sync.');
+    }
+    return {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json'
+    };
+  }
 
   /// Search for a sheet with a specific title in the user's Google Drive
   static String _escapeDriveQuery(String value) =>
@@ -150,7 +175,7 @@ class GoogleSheetsService {
           {
             'properties': {
               'title': 'Rooms',
-              'gridProperties': {'rowCount': 1000, 'columnCount': 10}
+              'gridProperties': {'rowCount': 1000, 'columnCount': 13}
             }
           },
           {
@@ -227,7 +252,8 @@ class GoogleSheetsService {
         'utility_cost_monthly',
         'monthly_rent',
         'parent_room_id',
-        'available'
+        'available',
+        'media_json'
       ],
       'Beds': ['bed_id', 'room_id', 'bed_type', 'status'],
       'Tenants': [
@@ -287,7 +313,7 @@ class GoogleSheetsService {
     final response = await http
         .put(
           Uri.parse(url),
-          headers: _headers,
+          headers: await _headers,
           body: jsonEncode({'values': values}),
         )
         .timeout(const Duration(seconds: 30));
@@ -302,7 +328,7 @@ class GoogleSheetsService {
     final url = '$_baseUrl/$sheetId/values/$sheetName!$range';
 
     final response = await http
-        .get(Uri.parse(url), headers: _headers)
+        .get(Uri.parse(url), headers: await _headers)
         .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
@@ -331,7 +357,7 @@ class GoogleSheetsService {
   Future<bool> _hasBookingsSheet() async {
     final response = await http
         .get(Uri.parse('$_baseUrl/$sheetId?fields=sheets.properties.title'),
-            headers: _headers)
+            headers: await _headers)
         .timeout(const Duration(seconds: 30));
     if (response.statusCode != 200) {
       throw StateError('Could not access booking records in Sheets.');
@@ -344,7 +370,7 @@ class GoogleSheetsService {
     if (!await _hasBookingsSheet()) {
       final response = await http
           .post(Uri.parse('$_baseUrl/$sheetId:batchUpdate'),
-              headers: _headers,
+              headers: await _headers,
               body: jsonEncode({
                 'requests': [
                   {
@@ -417,8 +443,60 @@ class GoogleSheetsService {
   }
 
   // Rooms CRUD
+  Future<void> _ensureRoomMediaColumn() {
+    return _roomMediaReady ??=
+        _prepareRoomMediaColumn().catchError((Object error) {
+      _roomMediaReady = null;
+      throw error;
+    });
+  }
+
+  Future<void> _prepareRoomMediaColumn() async {
+    final response = await http
+        .get(Uri.parse('$_baseUrl/$sheetId?fields=sheets.properties'),
+            headers: await _headers)
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) {
+      throw StateError('Could not access room media in Sheets.');
+    }
+    final sheets = jsonDecode(response.body)['sheets'] as List? ?? [];
+    final room = sheets
+        .where((sheet) => sheet['properties']['title'] == 'Rooms')
+        .firstOrNull;
+    if (room == null) {
+      throw StateError('The Rooms tab is missing from your spreadsheet.');
+    }
+    final properties = room['properties'];
+    if ((properties['gridProperties']?['columnCount'] as int? ?? 0) < 13) {
+      final expanded = await http
+          .post(Uri.parse('$_baseUrl/$sheetId:batchUpdate'),
+              headers: await _headers,
+              body: jsonEncode({
+                'requests': [
+                  {
+                    'updateSheetProperties': {
+                      'properties': {
+                        'sheetId': properties['sheetId'],
+                        'gridProperties': {'columnCount': 13}
+                      },
+                      'fields': 'gridProperties.columnCount'
+                    }
+                  }
+                ]
+              }))
+          .timeout(const Duration(seconds: 30));
+      if (expanded.statusCode != 200) {
+        throw StateError('Could not add room media storage to Sheets.');
+      }
+    }
+    await _writeRange('Rooms', 'M1', [
+      ['media_json']
+    ]);
+  }
+
   Future<List<RoomModel>> getRooms() async {
-    final rows = await _readRange('Rooms', 'A2:L');
+    await _ensureRoomMediaColumn();
+    final rows = await _readRange('Rooms', 'A2:M');
     return rows.where((row) => row.isNotEmpty && row[0].isNotEmpty).map((row) {
       return RoomModel.fromJson({
         'room_id': row[0],
@@ -433,15 +511,17 @@ class GoogleSheetsService {
         'monthly_rent': row.length > 9 ? row[9] : '0',
         'parent_room_id': row.length > 10 ? row[10] : null,
         'available': row.length > 11 ? row[11] : 'TRUE',
+        'media_json': row.length > 12 ? row[12] : '[]',
       });
     }).toList();
   }
 
   Future<void> addRoom(RoomModel room) async {
+    await _ensureRoomMediaColumn();
     await _writeRange('Rooms', 'K1', [
       ['parent_room_id', 'available']
     ]);
-    final rows = await _readRange('Rooms', 'A:L');
+    final rows = await _readRange('Rooms', 'A:M');
     final newRow = [
       (room.roomId != null && room.roomId!.isNotEmpty)
           ? room.roomId!
@@ -457,11 +537,12 @@ class GoogleSheetsService {
       room.monthlyRent.toString(),
       room.parentRoomId ?? '',
       room.available ? 'TRUE' : 'FALSE',
+      room.toJson()['media_json'],
     ];
     final existing =
         rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
     final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
-    await _writeRange('Rooms', 'A$rowNumber:L$rowNumber', [newRow]);
+    await _writeRange('Rooms', 'A$rowNumber:M$rowNumber', [newRow]);
   }
 
   // Beds CRUD
@@ -671,11 +752,12 @@ class GoogleSheetsService {
   }
 
   Future<void> deleteRoom(String roomId) async {
-    final rows = await _readRange('Rooms', 'A2:L');
+    await _ensureRoomMediaColumn();
+    final rows = await _readRange('Rooms', 'A2:M');
     for (int i = 0; i < rows.length; i++) {
-      if (rows[i][0] == roomId) {
-        await _writeRange('Rooms', 'A${i + 2}:L${i + 2}', [
-          ['', '', '', '', '', '', '', '', '', '', '', '']
+      if (rows[i].isNotEmpty && rows[i][0] == roomId) {
+        await _writeRange('Rooms', 'A${i + 2}:M${i + 2}', [
+          ['', '', '', '', '', '', '', '', '', '', '', '', '']
         ]);
         break;
       }

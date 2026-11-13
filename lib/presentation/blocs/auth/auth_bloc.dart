@@ -73,18 +73,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
   Future<void> _handleOfflineAuthFallback(
       Emitter<AuthState> emit, String? accessToken) async {
-    // SaaS workspaces require a current Google session; legacy cached tokens
-    // must never restore a different customer's workspace.
-    if (SaasService.configured) {
+    // A signed-in customer can keep using their saved workspace while Google
+    // access is renewed. The cached binding must match their Google account.
+    if (SaasService.configured || _authService.accountUserId != null) {
+      final owner = _authService.accountUserId;
       final email = await _authService.getCurrentUserEmail();
       final sheetId = await _sheetRepository.getCachedSheetId();
-      if (await isDeviceOffline() &&
-          SaasService.userId != null &&
+      if (owner != null &&
           email != null &&
           sheetId != null &&
-          await _sheetRepository.isSheetIdForUser(email)) {
+          await _sheetRepository.isSheetIdForUser(email) &&
+          owner == _authService.accountUserId) {
         emit(AuthAuthenticated(
-            userEmail: email, accessToken: '', sheetId: sheetId));
+            userEmail: email,
+            accessToken: accessToken ?? '',
+            sheetId: sheetId));
         return;
       }
       emit(AuthUnauthenticated());
@@ -131,7 +134,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           if (SaasService.configured &&
               savedSheetId != null &&
               !isForCurrentUser) {
-            await _authService.signOut();
             throw StateError(
                 'Connect the Google account already linked to this workspace.');
           }

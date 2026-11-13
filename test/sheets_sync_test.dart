@@ -8,6 +8,46 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 void main() {
+  test('a workspace uses renewed credentials for subsequent Sheets requests',
+      () async {
+    var token = 'first-token';
+    final used = <String?>[];
+    final client = MockClient((request) async {
+      used.add(request.headers['Authorization']);
+      return http.Response('{"values":[]}', 200);
+    });
+    await http.runWithClient(() async {
+      final sheets = GoogleSheetsService(
+          accessToken: 'old-token',
+          sheetId: 'sheet',
+          tokenProvider: () async => token);
+      await sheets.getBeds();
+      token = 'renewed-token';
+      await sheets.getBeds();
+    }, () => client);
+    expect(used, ['Bearer first-token', 'Bearer renewed-token']);
+  });
+
+  test(
+      'expired Google access stops remote requests while keeping workspace data local',
+      () async {
+    var requested = false;
+    final client = MockClient((request) async {
+      requested = true;
+      return http.Response('{}', 401);
+    });
+    await http.runWithClient(() async {
+      final sheets = GoogleSheetsService(
+          accessToken: 'old-token',
+          sheetId: 'sheet',
+          tokenProvider: () async => null);
+      await expectLater(
+          sheets.getBeds(),
+          throwsA(isA<StateError>().having((error) => error.message, 'message',
+              contains('local changes are saved'))));
+    }, () => client);
+    expect(requested, isFalse);
+  });
   test('existing spreadsheets gain a Bookings tab and retain booking payments',
       () async {
     var exists = false;

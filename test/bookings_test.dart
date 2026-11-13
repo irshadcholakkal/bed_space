@@ -119,6 +119,7 @@ void main() {
     final path = '${directory.path}/bed_space_legacy_$workspace.db';
     final legacy =
         await openDatabase(path, version: 8, onCreate: (db, version) async {
+      await db.execute('CREATE TABLE rooms(room_id TEXT PRIMARY KEY)');
       await db.execute(
           'CREATE TABLE tenants(tenant_id TEXT PRIMARY KEY, tenant_name TEXT)');
       await db.insert(
@@ -129,7 +130,7 @@ void main() {
     local = LocalDatabaseService();
     expect((await local.getTenants()).single.tenantName, 'Existing tenant');
     expect(await local.getBookings(), isEmpty);
-    expect(await (await local.database).getVersion(), 9);
+    expect(await (await local.database).getVersion(), 10);
   });
 
   test(

@@ -1,8 +1,28 @@
 import 'package:intl/intl.dart';
 import '../models/billing_snapshot.dart';
 import '../models/payment_model.dart';
+import '../models/room_model.dart';
+import '../models/room_media_model.dart';
 
 class StatusMessageService {
+  static String roomDetails(
+          {required RoomModel room,
+          required Iterable<RoomModel> rooms,
+          required String building,
+          required String address,
+          required int lowerAvailable,
+          required int upperAvailable}) =>
+      'Room details\n\n$building${address.trim().isEmpty ? '' : '\n$address'}\n'
+      '${room.displayName(rooms)}\n'
+      'Available beds: ${lowerAvailable + upperAvailable}\n'
+      'Lower beds: $lowerAvailable available · ${money(room.lowerBedRent)} / month\n'
+      'Upper beds: $upperAvailable available · ${money(room.upperBedRent)} / month\n\n'
+      'Contact management for booking and viewing.';
+
+  static String roomMediaLinks(Iterable<RoomMediaModel> media) => media.isEmpty
+      ? ''
+      : '\n\nRoom photos and videos\n${media.map((item) => '${item.isVideo ? 'Video' : 'Photo'} - ${item.name}\n${item.viewUrl}').join('\n\n')}';
+
   static String money(double amount) => 'AED ${amount.toStringAsFixed(2)}';
 
   static String paymentStatus(BillingSnapshot bill, {DateTime? now}) =>

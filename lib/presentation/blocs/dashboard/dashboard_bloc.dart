@@ -6,6 +6,7 @@ import '../../../data/models/room_model.dart';
 import '../../../data/models/bed_model.dart';
 import '../../../data/models/payment_model.dart';
 import '../../../data/models/expense_model.dart';
+import '../../../data/models/tenant_model.dart';
 import '../../../data/repositories/management_repository.dart';
 import 'package:intl/intl.dart';
 
@@ -44,12 +45,17 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         final totalBeds = beds.length;
         final occupiedBeds =
             beds.where((b) => b.status == BedStatus.occupied).length;
-        final vacantBeds = beds
+        final occupiedIds = (data['tenants'] as List<TenantModel>? ?? const [])
+            .where((tenant) => tenant.active)
+            .map((tenant) => tenant.bedId)
+            .toSet();
+        final availableBeds = beds
             .where((b) =>
                 b.status == BedStatus.vacant &&
                 !reserved.contains(b.bedId) &&
+                !occupiedIds.contains(b.bedId) &&
                 rooms.any((r) => r.roomId == b.roomId && r.isAvailable(rooms)))
-            .length;
+            .toList();
 
         // Current month calculations
         final now = DateTime.now();
@@ -73,7 +79,8 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           totalRooms: rooms.length,
           totalBeds: totalBeds,
           occupiedBeds: occupiedBeds,
-          vacantBeds: vacantBeds,
+          vacantBeds: availableBeds.length,
+          availableRooms: availableBeds.map((bed) => bed.roomId).toSet().length,
           reservedBeds: reserved.length,
           rentCollected: rentCollected,
           totalExpenses: totalExpenses,

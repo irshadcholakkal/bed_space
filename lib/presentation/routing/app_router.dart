@@ -145,6 +145,9 @@ GoRouter createAppRouter(Listenable refresh) {
                 path: '/tenants',
                 builder: (_, __) => const TenantsManagementScreen()),
             GoRoute(
+                path: '/rooms/available',
+                builder: (_, __) => const VacantBedsScreen()),
+            GoRoute(
                 path: '/vacant-beds',
                 builder: (_, __) => const VacantBedsScreen()),
             GoRoute(

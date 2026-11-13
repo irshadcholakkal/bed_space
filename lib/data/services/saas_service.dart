@@ -30,19 +30,25 @@ class SaasService {
       await _googleSessionSubscription?.cancel();
       _googleSessionSubscription =
           client.auth.onAuthStateChange.listen((state) {
-        unawaited(_rememberGoogleTokens(state.session));
+        unawaited(_rememberGoogleTokens(state.session,
+            newSignIn: state.event == AuthChangeEvent.signedIn));
         unawaited(AppSessionRoute.restore(state.session?.user.id));
       }, onError: (Object _) {});
     }
   }
 
-  static Future<void> _rememberGoogleTokens(Session? session) async {
+  static Future<void> _rememberGoogleTokens(Session? session,
+      {bool newSignIn = false}) async {
     if (session == null) return;
     try {
-      if (session.providerToken?.isNotEmpty == true) {
+      if (session.providerToken?.isNotEmpty == true &&
+          (newSignIn || await GoogleTokenStore.read(session.user.id) == null)) {
         await GoogleTokenStore.save(session.user.id, session.providerToken!);
       }
-      if (session.providerRefreshToken?.isNotEmpty == true) {
+      if (session.providerRefreshToken?.isNotEmpty == true &&
+          (newSignIn ||
+              await GoogleTokenStore.readRefreshToken(session.user.id) ==
+                  null)) {
         await GoogleTokenStore.saveRefreshToken(
             session.user.id, session.providerRefreshToken!);
       }

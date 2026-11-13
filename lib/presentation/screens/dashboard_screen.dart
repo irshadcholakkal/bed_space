@@ -159,13 +159,13 @@ class DashboardScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     StatCard(
-                      title: 'Available Beds',
-                      value: state.vacantBeds.toString(),
+                      title: 'Available Rooms',
+                      value: state.availableRooms.toString(),
                       icon: CupertinoIcons.calendar_badge_plus,
                       color: AppTheme.primaryColor, // Highlight availability
                       fullWidth: true,
                       onTap: () {
-                        context.push('/vacant-beds');
+                        context.push('/rooms/available');
                       },
                     ),
                     const SizedBox(height: 16),
@@ -240,8 +240,8 @@ class DashboardScreen extends StatelessWidget {
                           _quickLink(context, 'Tenants',
                               CupertinoIcons.person_2, '/tenants'),
                           const Divider(height: 1),
-                          _quickLink(context, 'Available beds',
-                              CupertinoIcons.bed_double, '/vacant-beds'),
+                          _quickLink(context, 'Available rooms',
+                              CupertinoIcons.bed_double, '/rooms/available'),
                           const Divider(height: 1),
                           _quickLink(context, 'Financials',
                               CupertinoIcons.creditcard, '/financials'),

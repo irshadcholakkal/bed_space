@@ -8,6 +8,7 @@ class AppRoutes {
     '/financials',
     '/financials/tenants',
     '/rooms/occupancy',
+    '/rooms/available',
     '/settings',
     '/buildings',
     '/rooms/manage',

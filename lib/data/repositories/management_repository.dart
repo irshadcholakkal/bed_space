@@ -211,6 +211,7 @@ class ManagementRepository {
     final roomWithId = room.roomId == null || room.roomId!.isEmpty
         ? RoomModel(
             available: room.available,
+            media: room.media,
             roomId: const Uuid().v4(),
             buildingId: room.buildingId,
             roomNumber: room.roomNumber,

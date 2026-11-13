@@ -1,3 +1,6 @@
+import '../widgets/room_media_picker.dart';
+import 'dart:async';
+import 'package:uuid/uuid.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
@@ -410,6 +413,9 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
     String? selectedBuildingId = parentRoom?.buildingId;
     String? selectedParentId = parentRoom?.roomId;
     String? validationError;
+    var saving = false;
+    final mediaPicker = GlobalKey<RoomMediaPickerState>();
+    final roomId = const Uuid().v4();
 
     showModalBottomSheet(
       context: context,
@@ -427,255 +433,306 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
             }
 
             return StatefulBuilder(
-              builder: (context, setState) => Container(
-                padding: EdgeInsets.only(
-                  bottom: MediaQuery.of(context).viewInsets.bottom,
-                ),
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          decoration: BoxDecoration(
-                            color: Colors.grey.shade300,
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      Text(
-                        selectedParentId == null ? 'Add Room' : 'Add Subroom',
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppTheme.textColor,
-                        ),
-                      ),
-                      const SizedBox(height: 24),
-                      DropdownButtonFormField<String>(
-                        icon: const Icon(CupertinoIcons.chevron_down),
-                        initialValue: selectedBuildingId,
-                        decoration: const InputDecoration(
-                          labelText: 'Building',
-                          prefixIcon: Icon(CupertinoIcons.building_2_fill),
-                        ),
-                        items: buildings
-                            .map(
-                              (b) => DropdownMenuItem(
-                                value: b.buildingId,
-                                child: Text(b.buildingName),
-                              ),
-                            )
-                            .toList(),
-                        onChanged: (value) => setState(() {
-                          selectedBuildingId = value;
-                          selectedParentId = null;
-                        }),
-                      ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<String>(
-                        icon: const Icon(CupertinoIcons.chevron_down),
-                        key: ValueKey('$selectedBuildingId/$selectedParentId'),
-                        initialValue: selectedParentId ?? '',
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          labelText: 'Inside room (optional)',
-                          helperText:
-                              'Leave as main room, or choose a room for this subroom.',
-                          helperMaxLines: 2,
-                          prefixIcon: Icon(CupertinoIcons.arrow_branch),
-                        ),
-                        items: [
-                          const DropdownMenuItem(
-                              value: '', child: Text('Main room')),
-                          ...rooms
-                              .where((room) =>
-                                  !room.isSubroom &&
-                                  room.buildingId == selectedBuildingId &&
-                                  room.roomId != null)
-                              .map((room) => DropdownMenuItem(
-                                  value: room.roomId,
-                                  child: Text('Room ${room.roomNumber}'))),
-                        ],
-                        onChanged: selectedBuildingId == null
-                            ? null
-                            : (value) => setState(() {
-                                  selectedParentId = value == '' ? null : value;
-                                }),
-                      ),
-                      const SizedBox(height: 16),
-                      TextField(
-                        controller: roomNumberController,
-                        decoration: InputDecoration(
-                          labelText: selectedParentId == null
-                              ? 'Room Number / Name'
-                              : 'Subroom Number / Name',
-                          prefixIcon:
-                              const Icon(CupertinoIcons.rectangle_split_3x1),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
+              builder: (context, setState) => PopScope(
+                  canPop: !saving,
+                  child: Container(
+                    padding: EdgeInsets.only(
+                      bottom: MediaQuery.of(context).viewInsets.bottom,
+                    ),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                          BorderRadius.vertical(top: Radius.circular(20)),
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: TextField(
-                              controller: capacityController,
-                              decoration: const InputDecoration(
-                                labelText: 'Capacity',
-                                prefixIcon: Icon(CupertinoIcons.person_2),
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade300,
+                                borderRadius: BorderRadius.circular(2),
                               ),
-                              keyboardType: TextInputType.number,
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: lowerBedsController,
-                              decoration: const InputDecoration(
-                                labelText: 'Lower Beds',
-                                prefixIcon: Icon(CupertinoIcons.bed_double),
-                              ),
-                              keyboardType: TextInputType.number,
+                          const SizedBox(height: 24),
+                          Text(
+                            selectedParentId == null
+                                ? 'Add Room'
+                                : 'Add Subroom',
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textColor,
                             ),
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextField(
-                              controller: upperBedsController,
-                              decoration: const InputDecoration(
-                                labelText: 'Upper Beds',
-                                prefixIcon: Icon(CupertinoIcons.bed_double),
-                              ),
-                              keyboardType: TextInputType.number,
+                          const SizedBox(height: 24),
+                          DropdownButtonFormField<String>(
+                            icon: const Icon(CupertinoIcons.chevron_down),
+                            initialValue: selectedBuildingId,
+                            decoration: const InputDecoration(
+                              labelText: 'Building',
+                              prefixIcon: Icon(CupertinoIcons.building_2_fill),
+                            ),
+                            items: buildings
+                                .map(
+                                  (b) => DropdownMenuItem(
+                                    value: b.buildingId,
+                                    child: Text(b.buildingName),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: saving
+                                ? null
+                                : (value) => setState(() {
+                                      selectedBuildingId = value;
+                                      selectedParentId = null;
+                                    }),
+                          ),
+                          const SizedBox(height: 16),
+                          DropdownButtonFormField<String>(
+                            icon: const Icon(CupertinoIcons.chevron_down),
+                            key: ValueKey(
+                                '$selectedBuildingId/$selectedParentId'),
+                            initialValue: selectedParentId ?? '',
+                            isExpanded: true,
+                            decoration: const InputDecoration(
+                              labelText: 'Inside room (optional)',
+                              helperText:
+                                  'Leave as main room, or choose a room for this subroom.',
+                              helperMaxLines: 2,
+                              prefixIcon: Icon(CupertinoIcons.arrow_branch),
+                            ),
+                            items: [
+                              const DropdownMenuItem(
+                                  value: '', child: Text('Main room')),
+                              ...rooms
+                                  .where((room) =>
+                                      !room.isSubroom &&
+                                      room.buildingId == selectedBuildingId &&
+                                      room.roomId != null)
+                                  .map((room) => DropdownMenuItem(
+                                      value: room.roomId,
+                                      child: Text('Room ${room.roomNumber}'))),
+                            ],
+                            onChanged: selectedBuildingId == null || saving
+                                ? null
+                                : (value) => setState(() {
+                                      selectedParentId =
+                                          value == '' ? null : value;
+                                    }),
+                          ),
+                          const SizedBox(height: 16),
+                          TextField(
+                            enabled: !saving,
+                            controller: roomNumberController,
+                            decoration: InputDecoration(
+                              labelText: selectedParentId == null
+                                  ? 'Room Number / Name'
+                                  : 'Subroom Number / Name',
+                              prefixIcon: const Icon(
+                                  CupertinoIcons.rectangle_split_3x1),
                             ),
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: TextField(
-                              controller: lowerRentController,
-                              decoration: const InputDecoration(
-                                labelText: 'Lower Rent',
-                                prefixIcon:
-                                    Icon(CupertinoIcons.money_dollar_circle),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  enabled: !saving,
+                                  controller: capacityController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Capacity',
+                                    prefixIcon: Icon(CupertinoIcons.person_2),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
                               ),
-                              keyboardType: TextInputType.number,
-                            ),
+                            ],
                           ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: TextField(
-                              controller: upperRentController,
-                              decoration: const InputDecoration(
-                                labelText: 'Upper Rent',
-                                prefixIcon:
-                                    Icon(CupertinoIcons.money_dollar_circle),
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  enabled: !saving,
+                                  controller: lowerBedsController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Lower Beds',
+                                    prefixIcon: Icon(CupertinoIcons.bed_double),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
                               ),
-                              keyboardType: TextInputType.number,
-                            ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: TextField(
+                                  enabled: !saving,
+                                  controller: upperBedsController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Upper Beds',
+                                    prefixIcon: Icon(CupertinoIcons.bed_double),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 32),
-                      if (validationError != null)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Text(validationError!,
-                              style:
-                                  const TextStyle(color: AppTheme.errorColor)),
-                        ),
-                      ElevatedButton(
-                        onPressed: selectedBuildingId == null
-                            ? null
-                            : () {
-                                final lower =
-                                    int.tryParse(lowerBedsController.text);
-                                final upper =
-                                    int.tryParse(upperBedsController.text);
-                                final capacity =
-                                    int.tryParse(capacityController.text);
-                                final lowerRent =
-                                    double.tryParse(lowerRentController.text);
-                                final upperRent =
-                                    double.tryParse(upperRentController.text);
-                                if (roomNumberController.text.trim().isEmpty ||
-                                    lower == null ||
-                                    upper == null ||
-                                    lower < 0 ||
-                                    upper < 0 ||
-                                    capacity != lower + upper ||
-                                    lowerRent == null ||
-                                    upperRent == null ||
-                                    !lowerRent.isFinite ||
-                                    !upperRent.isFinite ||
-                                    lowerRent < 0 ||
-                                    upperRent < 0) {
-                                  setState(() => validationError =
-                                      'Enter a name, non-negative beds and rents. Capacity must equal lower + upper beds. Use 0 beds for a room that only contains subrooms.');
-                                  return;
-                                }
-                                final room = RoomModel(
-                                  buildingId: selectedBuildingId!,
-                                  parentRoomId: selectedParentId,
-                                  roomNumber: roomNumberController.text.trim(),
-                                  totalCapacity:
-                                      int.tryParse(capacityController.text) ??
+                          const SizedBox(height: 16),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  enabled: !saving,
+                                  controller: lowerRentController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Lower Rent',
+                                    prefixIcon: Icon(
+                                        CupertinoIcons.money_dollar_circle),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: TextField(
+                                  enabled: !saving,
+                                  controller: upperRentController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Upper Rent',
+                                    prefixIcon: Icon(
+                                        CupertinoIcons.money_dollar_circle),
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 24),
+                          RoomMediaPicker(key: mediaPicker, enabled: !saving),
+                          const SizedBox(height: 32),
+                          if (validationError != null)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 12),
+                              child: Text(validationError!,
+                                  style: const TextStyle(
+                                      color: AppTheme.errorColor)),
+                            ),
+                          ElevatedButton(
+                            onPressed: selectedBuildingId == null || saving
+                                ? null
+                                : () async {
+                                    final lower =
+                                        int.tryParse(lowerBedsController.text);
+                                    final upper =
+                                        int.tryParse(upperBedsController.text);
+                                    final capacity =
+                                        int.tryParse(capacityController.text);
+                                    final lowerRent = double.tryParse(
+                                        lowerRentController.text);
+                                    final upperRent = double.tryParse(
+                                        upperRentController.text);
+                                    if (roomNumberController.text
+                                            .trim()
+                                            .isEmpty ||
+                                        lower == null ||
+                                        upper == null ||
+                                        lower < 0 ||
+                                        upper < 0 ||
+                                        capacity != lower + upper ||
+                                        lowerRent == null ||
+                                        upperRent == null ||
+                                        !lowerRent.isFinite ||
+                                        !upperRent.isFinite ||
+                                        lowerRent < 0 ||
+                                        upperRent < 0) {
+                                      setState(() => validationError =
+                                          'Enter a name, non-negative beds and rents. Capacity must equal lower + upper beds. Use 0 beds for a room that only contains subrooms.');
+                                      return;
+                                    }
+                                    final room = RoomModel(
+                                      roomId: roomId,
+                                      buildingId: selectedBuildingId!,
+                                      parentRoomId: selectedParentId,
+                                      roomNumber:
+                                          roomNumberController.text.trim(),
+                                      totalCapacity: int.tryParse(
+                                              capacityController.text) ??
                                           2,
-                                  lowerBedsCount:
-                                      int.tryParse(lowerBedsController.text) ??
+                                      lowerBedsCount: int.tryParse(
+                                              lowerBedsController.text) ??
                                           1,
-                                  upperBedsCount:
-                                      int.tryParse(upperBedsController.text) ??
+                                      upperBedsCount: int.tryParse(
+                                              upperBedsController.text) ??
                                           1,
-                                  lowerBedRent: double.tryParse(
-                                          lowerRentController.text) ??
-                                      0,
-                                  upperBedRent: double.tryParse(
-                                          upperRentController.text) ??
-                                      0,
-                                  utilityCostMonthly: 0,
-                                );
-                                try {
-                                  room.validateHierarchy(rooms);
-                                } on ArgumentError catch (error) {
-                                  setState(() => validationError =
-                                      error.message.toString());
-                                  return;
-                                }
-                                managementBloc.add(AddRoom(room));
-                                Navigator.pop(context);
-                              },
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                                      lowerBedRent: double.tryParse(
+                                              lowerRentController.text) ??
+                                          0,
+                                      upperBedRent: double.tryParse(
+                                              upperRentController.text) ??
+                                          0,
+                                      utilityCostMonthly: 0,
+                                    );
+                                    try {
+                                      room.validateHierarchy(rooms);
+                                    } on ArgumentError catch (error) {
+                                      setState(() => validationError =
+                                          error.message.toString());
+                                      return;
+                                    }
+                                    setState(() {
+                                      saving = true;
+                                      validationError = null;
+                                    });
+                                    try {
+                                      final media = await mediaPicker
+                                          .currentState!
+                                          .uploadSelected();
+                                      if (!context.mounted) return;
+                                      final completion = Completer<RoomModel>();
+                                      managementBloc.add(AddRoom(
+                                          RoomModel.fromJson({
+                                            ...room.toJson(),
+                                            'media_json': media
+                                                .map((value) => value.toJson())
+                                                .toList(),
+                                          }),
+                                          completion: completion));
+                                      await completion.future;
+                                      if (context.mounted) {
+                                        Navigator.pop(context);
+                                      }
+                                    } catch (error) {
+                                      if (context.mounted) {
+                                        setState(() {
+                                          saving = false;
+                                          validationError = error.toString();
+                                        });
+                                      }
+                                    }
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(saving
+                                ? 'Saving room...'
+                                : selectedParentId == null
+                                    ? 'Add Room'
+                                    : 'Add Subroom'),
                           ),
-                        ),
-                        child: Text(selectedParentId == null
-                            ? 'Add Room'
-                            : 'Add Subroom'),
+                          const SizedBox(height: 16),
+                        ],
                       ),
-                      const SizedBox(height: 16),
-                    ],
-                  ),
-                ),
-              ),
+                    ),
+                  )),
             );
           },
         ),

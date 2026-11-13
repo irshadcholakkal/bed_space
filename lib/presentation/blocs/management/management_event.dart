@@ -51,8 +51,9 @@ class LoadRooms extends ManagementEvent {
 
 class AddRoom extends ManagementEvent {
   final RoomModel room;
+  final Completer<RoomModel>? completion;
 
-  const AddRoom(this.room);
+  const AddRoom(this.room, {this.completion});
 
   @override
   List<Object> get props => [room];

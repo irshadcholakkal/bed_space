@@ -10,6 +10,8 @@ import '../../data/models/room_model.dart';
 import '../blocs/management/management_bloc.dart';
 import '../theme/app_theme.dart';
 import '../widgets/room_delete_dialog.dart';
+import '../widgets/room_media_picker.dart';
+import '../widgets/room_sharing_actions.dart';
 
 const _paper = AppTheme.backgroundColor;
 const _ink = AppTheme.textColor;
@@ -243,6 +245,17 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                                                   fontSize: 12,
                                                   height: 1.5))),
                                       const SizedBox(height: 12),
+                                    ],
+                                    if (room != null && !widget.financial) ...[
+                                      RoomMediaGallery(room: room),
+                                      const SizedBox(height: 12),
+                                      OutlinedButton.icon(
+                                          onPressed: () =>
+                                              openRoomShare(context, room),
+                                          icon: const Icon(
+                                              CupertinoIcons.chat_bubble),
+                                          label: const Text('Share room')),
+                                      const SizedBox(height: 16),
                                     ],
                                     Row(children: [
                                       Expanded(child: _periodControl(state)),

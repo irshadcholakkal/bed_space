@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'room_media_model.dart';
+
 /// Room data model
 class RoomModel {
   final bool available;
+  final List<RoomMediaModel> media;
   final String? roomId;
   final String buildingId;
   final String roomNumber;
@@ -16,6 +20,7 @@ class RoomModel {
 
   RoomModel({
     this.available = true,
+    this.media = const [],
     this.roomId,
     required this.buildingId,
     required this.roomNumber,
@@ -32,6 +37,7 @@ class RoomModel {
   Map<String, dynamic> toJson() {
     return {
       'available': available ? 'TRUE' : 'FALSE',
+      'media_json': jsonEncode(media.map((media) => media.toJson()).toList()),
       'room_id': roomId ?? '',
       'building_id': buildingId,
       'room_number': roomNumber,
@@ -48,6 +54,7 @@ class RoomModel {
 
   factory RoomModel.fromJson(Map<String, dynamic> json) {
     return RoomModel(
+      media: RoomMediaModel.decode(json['media_json']),
       available:
           !['FALSE', '0'].contains(json['available']?.toString().toUpperCase()),
       roomId: json['room_id']?.toString(),
