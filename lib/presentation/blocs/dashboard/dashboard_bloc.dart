@@ -1,3 +1,4 @@
+import '../../../data/models/booking_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/models/building_model.dart';
@@ -34,6 +35,10 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         final rooms = data['rooms'] as List<RoomModel>;
         final beds = data['beds'] as List<BedModel>;
         final payments = data['payments'] as List<PaymentModel>;
+        final reserved = (data['bookings'] as List<BookingModel>? ?? const [])
+            .where((booking) => booking.status == BookingStatus.reserved)
+            .map((booking) => booking.bedId)
+            .toSet();
 
         // Calculate statistics
         final totalBeds = beds.length;
@@ -42,6 +47,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
         final vacantBeds = beds
             .where((b) =>
                 b.status == BedStatus.vacant &&
+                !reserved.contains(b.bedId) &&
                 rooms.any((r) => r.roomId == b.roomId && r.isAvailable(rooms)))
             .length;
 
@@ -68,6 +74,7 @@ class DashboardBloc extends Bloc<DashboardEvent, DashboardState> {
           totalBeds: totalBeds,
           occupiedBeds: occupiedBeds,
           vacantBeds: vacantBeds,
+          reservedBeds: reserved.length,
           rentCollected: rentCollected,
           totalExpenses: totalExpenses,
           profit: profit,

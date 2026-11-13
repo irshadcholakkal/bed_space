@@ -17,6 +17,7 @@ class DashboardLoaded extends DashboardState {
   final int totalBeds;
   final int occupiedBeds;
   final int vacantBeds;
+  final int reservedBeds;
   final double rentCollected;
   final double totalExpenses;
   final double profit;
@@ -27,6 +28,7 @@ class DashboardLoaded extends DashboardState {
     required this.totalBeds,
     required this.occupiedBeds,
     required this.vacantBeds,
+    this.reservedBeds = 0,
     required this.rentCollected,
     required this.totalExpenses,
     required this.profit,
@@ -39,6 +41,7 @@ class DashboardLoaded extends DashboardState {
         totalBeds,
         occupiedBeds,
         vacantBeds,
+        reservedBeds,
         rentCollected,
         totalExpenses,
         profit,

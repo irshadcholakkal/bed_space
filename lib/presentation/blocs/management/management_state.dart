@@ -18,6 +18,7 @@ class ManagementLoaded extends ManagementState {
   final List<PaymentModel> payments;
   final List<BedModel> beds;
   final List<ExpenseModel> expenses;
+  final List<BookingModel> bookings;
   final Map<String, dynamic> tenantBalance;
 
   const ManagementLoaded({
@@ -29,8 +30,14 @@ class ManagementLoaded extends ManagementState {
     this.payments = const [],
     this.beds = const [],
     this.expenses = const [],
+    this.bookings = const [],
     this.tenantBalance = const {},
   });
+
+  Set<String> get reservedBedIds => bookings
+      .where((booking) => booking.status == BookingStatus.reserved)
+      .map((booking) => booking.bedId)
+      .toSet();
 
   ManagementLoaded copyWith({
     bool? isLoading,
@@ -41,6 +48,7 @@ class ManagementLoaded extends ManagementState {
     List<PaymentModel>? payments,
     List<BedModel>? beds,
     List<ExpenseModel>? expenses,
+    List<BookingModel>? bookings,
     Map<String, dynamic>? tenantBalance,
   }) {
     return ManagementLoaded(
@@ -53,6 +61,7 @@ class ManagementLoaded extends ManagementState {
       payments: payments ?? this.payments,
       beds: beds ?? this.beds,
       expenses: expenses ?? this.expenses,
+      bookings: bookings ?? this.bookings,
       tenantBalance: tenantBalance ?? this.tenantBalance,
     );
   }
@@ -67,6 +76,7 @@ class ManagementLoaded extends ManagementState {
         payments,
         beds,
         expenses,
+        bookings,
         tenantBalance,
       ];
 }

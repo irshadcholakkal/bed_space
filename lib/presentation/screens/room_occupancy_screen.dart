@@ -1,3 +1,4 @@
+import 'package:intl/intl.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter/material.dart';
@@ -595,9 +596,15 @@ extension on RoomOccupancyScreen {
                                       fontSize: 14,
                                     ),
                                   ),
+                                  if (bedDetail.booking != null)
+                                    Text(
+                                        'Booked by ${bedDetail.booking!.tenantName} from ${DateFormat('dd MMM yyyy').format(bedDetail.booking!.moveInDate)}',
+                                        style: const TextStyle(fontSize: 12)),
                                   Text(
                                     bedDetail.bed.status == BedStatus.vacant
-                                        ? 'Available'
+                                        ? bedDetail.booking == null
+                                            ? 'Available'
+                                            : 'Reserved'
                                         : 'Occupied by ${bedDetail.tenantName ?? "Unknown"}',
                                     style: TextStyle(
                                       color: bedDetail.bed.status ==

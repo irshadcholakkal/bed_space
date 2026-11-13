@@ -1,3 +1,4 @@
+import '../../../data/models/booking_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/models/building_model.dart';
@@ -16,6 +17,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   // Cache for instant details calculation
   List<BedModel> _cachedBeds = [];
   List<TenantModel> _cachedTenants = [];
+  List<BookingModel> _cachedBookings = [];
 
   RoomBloc({required ManagementRepository repository})
       : _repository = repository,
@@ -43,6 +45,11 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         // Update cache
         _cachedBeds = beds;
         _cachedTenants = tenants;
+        _cachedBookings = (data['bookings'] as List<BookingModel>? ?? const [])
+            .where((booking) => booking.status == BookingStatus.reserved)
+            .toList();
+        final reserved =
+            _cachedBookings.map((booking) => booking.bedId).toSet();
 
         final Map<String, List<RoomWithStats>> roomsByBuilding = {};
 
@@ -58,14 +65,16 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
                 .where(
                   (b) =>
                       b.bedType == BedType.lower &&
-                      b.status == BedStatus.vacant,
+                      b.status == BedStatus.vacant &&
+                      !reserved.contains(b.bedId),
                 )
                 .length;
             final vacantUpper = roomBeds
                 .where(
                   (b) =>
                       b.bedType == BedType.upper &&
-                      b.status == BedStatus.vacant,
+                      b.status == BedStatus.vacant &&
+                      !reserved.contains(b.bedId),
                 )
                 .length;
 
@@ -128,7 +137,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   }
 
   List<BedDetail>? _calculateBedDetails(String roomId) {
-    if (_cachedBeds.isEmpty) return null;
+    if (_cachedBeds.isEmpty) return [];
 
     final roomBeds = _cachedBeds.where((b) => b.roomId == roomId).toList();
     if (roomBeds.isEmpty) return [];
@@ -155,6 +164,9 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
 
       return BedDetail(
         bed: bed,
+        booking: _cachedBookings
+            .where((booking) => booking.bedId == bed.bedId)
+            .firstOrNull,
         tenantName: tenant.active ? tenant.tenantName : null,
       );
     }).toList();
@@ -176,6 +188,7 @@ class RoomWithStats {
 class BedDetail {
   final BedModel bed;
   final String? tenantName;
+  final BookingModel? booking;
 
-  BedDetail({required this.bed, this.tenantName});
+  BedDetail({required this.bed, this.tenantName, this.booking});
 }

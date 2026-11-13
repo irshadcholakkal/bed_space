@@ -13,7 +13,7 @@ class HomeScreen extends StatelessWidget {
         path.endsWith('/rent-balance')) {
       return 2;
     }
-    if (path == '/tenants') return 3;
+    if (path == '/tenants' || path == '/bookings') return 3;
     if (path == '/settings') return 4;
     if (path == '/rooms' || path.startsWith('/rooms/')) return 1;
     return 0;

@@ -1,3 +1,5 @@
+import '../models/booking_model.dart';
+import 'dart:developer' as developer;
 import 'dart:async';
 import '../services/google_sheets_service.dart';
 import '../services/local_database_service.dart';
@@ -18,6 +20,8 @@ class ManagementRepository {
 
   final _dataChangeController = StreamController<void>.broadcast();
   StreamSubscription? _connectivitySubscription;
+  Timer? _syncTimer;
+  Future<void>? _refresh;
 
   ManagementRepository({
     required GoogleSheetsService sheetsService,
@@ -25,7 +29,10 @@ class ManagementRepository {
   })  : _sheetsService = sheetsService,
         _localService = localService ?? LocalDatabaseService() {
     _initConnectivityListener();
-    _processQueue(); // Process any pending mutations on startup
+    unawaited(syncWithSheets());
+    _syncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      unawaited(syncWithSheets());
+    });
   }
 
   void _initConnectivityListener() {
@@ -36,34 +43,43 @@ class ManagementRepository {
         (result) => result != ConnectivityResult.none,
       );
       if (hasConnection) {
-        _processQueue();
+        unawaited(syncWithSheets());
       }
     });
   }
 
   void dispose() {
+    _syncTimer?.cancel();
     _connectivitySubscription?.cancel();
     _dataChangeController.close();
   }
 
   // --- Real-time Data Stream ---
 
-  Stream<Map<String, dynamic>> getAllDataStream() async* {
-    // 1. Initial emission of current local data immediately
-    Map<String, dynamic> initialData = await _getLocalData();
-    initialData['source'] = 'local_initial';
-    yield initialData;
+  Stream<Map<String, dynamic>> getAllDataStream() {
+    late StreamController<Map<String, dynamic>> controller;
+    StreamSubscription<void>? subscription;
+    Future<void> reads = Future.value();
+    void publish(String source) {
+      reads = reads.then((_) async {
+        final data = await _getLocalData();
+        data['source'] = source;
+        if (!controller.isClosed) controller.add(data);
+      }).catchError((Object error, StackTrace stack) {
+        if (!controller.isClosed) controller.addError(error, stack);
+      });
+    }
 
-    // 2. Start background sync from sheets WITHOUT blocking the stream
-    // This will eventually trigger _dataChangeController
-    unawaited(_syncSheetsToLocal());
-
-    // 3. Yield updated data whenever local database changes
-    yield* _dataChangeController.stream.asyncMap((_) async {
-      final data = await _getLocalData();
-      data['source'] = 'local_update';
-      return data;
-    });
+    controller = StreamController<Map<String, dynamic>>(
+      onListen: () {
+        subscription = _dataChangeController.stream
+            .listen((_) => publish('local_update'), onDone: controller.close);
+        publish('local_initial');
+        unawaited(syncWithSheets());
+      },
+      onCancel: () => subscription?.cancel(),
+    );
+    return controller.stream;
   }
 
   Future<Map<String, dynamic>> _getLocalData() async {
@@ -74,6 +90,7 @@ class ManagementRepository {
       _localService.getPayments(),
       _localService.getBeds(),
       _localService.getExpenses(),
+      _localService.getBookings(),
     ]);
 
     return {
@@ -86,48 +103,60 @@ class ManagementRepository {
               .any((room) => room.roomId == bed.roomId))
           .toList(),
       'expenses': results[5] as List<ExpenseModel>,
+      'bookings': results[6] as List<BookingModel>,
     };
   }
 
-  Future<void> _syncSheetsToLocal() async {
-    try {
-      final results = await Future.wait([
-        _sheetsService.getBuildings(),
-        _sheetsService.getRooms(),
-        _sheetsService.getTenants(),
-        _sheetsService.getPayments(),
-        _sheetsService.getBeds(),
-        _sheetsService.getExpenses(),
-      ]);
+  Future<void> _syncSheetsToLocal() {
+    return _refresh ??=
+        _refreshFromSheets().whenComplete(() => _refresh = null);
+  }
 
-      await _localService.saveBuildings(results[0] as List<BuildingModel>);
-      await _localService.saveRooms(results[1] as List<RoomModel>);
-      await _localService.saveTenants(results[2] as List<TenantModel>);
-      await _localService.savePayments(results[3] as List<PaymentModel>);
-      final roomIds =
-          (results[1] as List<RoomModel>).map((r) => r.roomId).toSet();
-      await _localService.saveBeds((results[4] as List<BedModel>)
-          .where((bed) => roomIds.contains(bed.roomId))
-          .toList());
-      await _localService.saveExpenses(results[5] as List<ExpenseModel>);
+  Future<void> _refreshFromSheets() async {
+    final revision = _localService.revision;
+    if ((await _localService.getMutationQueue()).isNotEmpty) return;
+    final results = await Future.wait([
+      _sheetsService.getBuildings(),
+      _sheetsService.getRooms(),
+      _sheetsService.getTenants(),
+      _sheetsService.getPayments(),
+      _sheetsService.getBeds(),
+      _sheetsService.getExpenses(),
+      _sheetsService.getBookings(),
+    ]);
 
-      _dataChangeController.add(null);
-    } catch (e) {
-      // Background Sync Error ignored for now
+    final roomIds =
+        (results[1] as List<RoomModel>).map((room) => room.roomId).toSet();
+    results[4] = (results[4] as List<BedModel>)
+        .where((bed) => roomIds.contains(bed.roomId))
+        .toList();
+    await _localService.saveSnapshot(results, expectedRevision: revision);
+
+    notifyDataChanged();
+    if (!await _processQueue()) {
+      throw StateError(
+          'Google sync is pending. Changes are saved locally and will retry.');
     }
   }
 
   void notifyDataChanged() {
-    _dataChangeController.add(null);
+    if (!_dataChangeController.isClosed) _dataChangeController.add(null);
   }
 
   Future<void> triggerSync() async {
-    await _processQueue();
-    await syncWithSheets();
+    if (!await _processQueue()) {
+      throw StateError(
+          'Google sync is pending. Changes are saved locally and will retry.');
+    }
+    await _syncSheetsToLocal();
   }
 
   Future<void> syncWithSheets() async {
-    await _syncSheetsToLocal();
+    try {
+      await triggerSync();
+    } catch (error, stack) {
+      developer.log('Google sync deferred', error: error, stackTrace: stack);
+    }
   }
 
   // --- Mutation Queue Worker ---
@@ -140,15 +169,17 @@ class ManagementRepository {
       'timestamp': DateTime.now().toIso8601String(),
       'retry_count': 0,
     };
-    await _localService.addToQueue(mutation);
+    await _localService.commitMutation(mutation);
     _processQueue(); // Try processing immediately if online
   }
 
-  Future<void> _processQueue() async {
-    final success = await SyncWorker().processQueue();
+  Future<bool> _processQueue() async {
+    final success = await SyncWorker().processQueue(
+        sheetsService: _sheetsService, localService: _localService);
     if (success) {
       notifyDataChanged();
     }
+    return success;
   }
 
   // _processMutation is now in SyncWorker
@@ -161,50 +192,18 @@ class ManagementRepository {
             ? building.copyWith(buildingId: const Uuid().v4())
             : building;
 
-    await _localService.upsertBuilding(buildingWithId);
-    _dataChangeController.add(null);
-
-    // Fire-and-forget sync
-    unawaited(_syncAddBuilding(buildingWithId));
-  }
-
-  Future<void> _syncAddBuilding(BuildingModel building) async {
-    try {
-      await _sheetsService.addBuilding(building);
-      await _syncSheetsToLocal();
-    } catch (e) {
-      await _enqueue('ADD_BUILDING', building);
-    }
+    await _enqueue('ADD_BUILDING', buildingWithId);
+    notifyDataChanged();
   }
 
   Future<void> updateBuilding(BuildingModel building) async {
-    await _localService.upsertBuilding(building);
-    _dataChangeController.add(null);
-
-    unawaited(_syncUpdateBuilding(building));
-  }
-
-  Future<void> _syncUpdateBuilding(BuildingModel building) async {
-    try {
-      await _sheetsService.updateBuilding(building);
-    } catch (e) {
-      await _enqueue('UPDATE_BUILDING', building);
-    }
+    await _enqueue('UPDATE_BUILDING', building);
+    notifyDataChanged();
   }
 
   Future<void> deleteBuilding(String id) async {
-    await _localService.deleteBuildingLocal(id);
-    _dataChangeController.add(null);
-
-    unawaited(_syncDeleteBuilding(id));
-  }
-
-  Future<void> _syncDeleteBuilding(String id) async {
-    try {
-      await _sheetsService.deleteBuilding(id);
-    } catch (e) {
-      await _enqueue('DELETE_BUILDING', {'id': id});
-    }
+    await _enqueue('DELETE_BUILDING', {'id': id});
+    notifyDataChanged();
   }
 
   Future<RoomModel> addRoom(RoomModel room) async {
@@ -226,36 +225,16 @@ class ManagementRepository {
           )
         : room;
 
-    await _localService.upsertRoom(roomWithId);
-    _dataChangeController.add(null);
+    await _enqueue('ADD_ROOM', roomWithId);
+    notifyDataChanged();
 
-    unawaited(_syncAddRoom(roomWithId));
     return roomWithId;
-  }
-
-  Future<void> _syncAddRoom(RoomModel room) async {
-    try {
-      await _sheetsService.addRoom(room);
-      await _syncSheetsToLocal();
-    } catch (e) {
-      await _enqueue('ADD_ROOM', room);
-    }
   }
 
   Future<void> updateRoom(RoomModel room) async {
     room.validateHierarchy(await _localService.getRooms());
-    await _localService.upsertRoom(room);
-    _dataChangeController.add(null);
-
-    unawaited(_syncUpdateRoom(room));
-  }
-
-  Future<void> _syncUpdateRoom(RoomModel room) async {
-    try {
-      await _sheetsService.updateRoom(room);
-    } catch (e) {
-      await _enqueue('UPDATE_ROOM', room);
-    }
+    await _enqueue('UPDATE_ROOM', room);
+    notifyDataChanged();
   }
 
   Future<void> deleteRoom(String id) async {
@@ -263,18 +242,28 @@ class ManagementRepository {
     if (rooms.any((room) => room.parentRoomId == id)) {
       throw StateError('Remove the subrooms before deleting this room.');
     }
-    await _localService.deleteRoomLocal(id);
-    _dataChangeController.add(null);
-
-    unawaited(_syncDeleteRoom(id));
+    await _enqueue('DELETE_ROOM', {'id': id});
+    notifyDataChanged();
   }
 
-  Future<void> _syncDeleteRoom(String id) async {
-    try {
-      await _sheetsService.deleteRoom(id);
-    } catch (e) {
-      await _enqueue('DELETE_ROOM', {'id': id});
-    }
+  Future<void> addBooking(BookingModel booking) async {
+    await _localService.createBooking(booking);
+    notifyDataChanged();
+    unawaited(_processQueue());
+  }
+
+  Future<List<BookingModel>> getBookings() => _localService.getBookings();
+
+  Future<void> checkInBooking(String id) async {
+    await _localService.checkInBooking(id);
+    notifyDataChanged();
+    unawaited(_processQueue());
+  }
+
+  Future<void> cancelBooking(String id, {double refund = 0}) async {
+    await _localService.cancelBooking(id, refund);
+    notifyDataChanged();
+    unawaited(_processQueue());
   }
 
   Future<void> addTenant(TenantModel tenant) async {
@@ -282,49 +271,18 @@ class ManagementRepository {
         ? tenant.copyWith(tenantId: const Uuid().v4())
         : tenant;
 
-    await _localService.upsertTenant(tenantWithId);
-    _dataChangeController.add(null);
-
-    unawaited(_syncAddTenant(tenantWithId));
-  }
-
-  Future<void> _syncAddTenant(TenantModel tenant) async {
-    try {
-      await _sheetsService.addTenant(tenant);
-      await _syncSheetsToLocal();
-    } catch (e) {
-      await _enqueue('ADD_TENANT', tenant);
-    }
+    await _enqueue('ADD_TENANT', tenantWithId);
+    notifyDataChanged();
   }
 
   Future<void> updateTenant(TenantModel tenant) async {
-    await _localService.upsertTenant(tenant);
-    _dataChangeController.add(null);
-
-    unawaited(_syncUpdateTenant(tenant));
-  }
-
-  Future<void> _syncUpdateTenant(TenantModel tenant) async {
-    try {
-      await _sheetsService.updateTenant(tenant);
-    } catch (e) {
-      await _enqueue('UPDATE_TENANT', tenant);
-    }
+    await _enqueue('UPDATE_TENANT', tenant);
+    notifyDataChanged();
   }
 
   Future<void> deleteTenant(String id) async {
-    await _localService.deleteTenantLocal(id);
-    _dataChangeController.add(null);
-
-    unawaited(_syncDeleteTenant(id));
-  }
-
-  Future<void> _syncDeleteTenant(String id) async {
-    try {
-      await _sheetsService.deleteTenant(id);
-    } catch (e) {
-      await _enqueue('DELETE_TENANT', {'id': id});
-    }
+    await _enqueue('DELETE_TENANT', {'id': id});
+    notifyDataChanged();
   }
 
   Future<void> addPayment(PaymentModel payment) async {
@@ -339,62 +297,22 @@ class ManagementRepository {
               )
             : payment;
 
-    await _localService.upsertPayment(paymentWithId);
-    _dataChangeController.add(null);
-
-    // Background sync: Do not await this.
-    // If it fails, we handle it in the background or queue it.
-    unawaited(_syncPaymentToSheets(paymentWithId));
-  }
-
-  Future<void> _syncPaymentToSheets(PaymentModel payment) async {
-    try {
-      await _sheetsService.addPayment(payment);
-    } catch (e) {
-      await _enqueue('ADD_PAYMENT', payment);
-    }
+    await _enqueue('ADD_PAYMENT', paymentWithId);
+    notifyDataChanged();
   }
 
   Future<void> deletePayment(String paymentId) async {
-    await _localService.deletePaymentLocal(paymentId);
-    _dataChangeController.add(null);
-
-    unawaited(_syncDeletePayment(paymentId));
-  }
-
-  Future<void> _syncDeletePayment(String paymentId) async {
-    try {
-      await _sheetsService.deletePayment(paymentId);
-    } catch (e) {
-      await _enqueue('DELETE_PAYMENT', {'id': paymentId});
-    }
+    await _enqueue('DELETE_PAYMENT', {'id': paymentId});
+    notifyDataChanged();
   }
 
   Future<void> updateBedStatus(String bedId, BedStatus status) async {
     final beds = await _localService.getBeds();
     final index = beds.indexWhere((b) => b.bedId == bedId);
     if (index != -1) {
-      final updatedBed = BedModel(
-        bedId: beds[index].bedId,
-        roomId: beds[index].roomId,
-        bedType: beds[index].bedType,
-        status: status,
-      );
-      await _localService.upsertBed(updatedBed);
-      _dataChangeController.add(null);
-    }
-
-    unawaited(_syncUpdateBedStatus(bedId, status));
-  }
-
-  Future<void> _syncUpdateBedStatus(String bedId, BedStatus status) async {
-    try {
-      await _sheetsService.updateBedStatus(bedId, status);
-    } catch (e) {
-      await _enqueue('UPDATE_BED_STATUS', {
-        'bedId': bedId,
-        'status': status.toString(),
-      });
+      await _enqueue(
+          'UPDATE_BED_STATUS', {'bedId': bedId, 'status': status.toString()});
+      notifyDataChanged();
     }
   }
 
@@ -405,85 +323,50 @@ class ManagementRepository {
         ? expense.copyWith(id: const Uuid().v4())
         : expense;
 
-    await _localService.upsertExpense(expenseWithId);
-    _dataChangeController.add(null);
-
-    unawaited(_syncAddExpense(expenseWithId));
-  }
-
-  Future<void> _syncAddExpense(ExpenseModel expense) async {
-    try {
-      await _sheetsService.addExpense(expense);
-    } catch (e) {
-      await _enqueue('ADD_EXPENSE', expense);
-    }
+    await _enqueue('ADD_EXPENSE', expenseWithId);
+    notifyDataChanged();
   }
 
   Future<void> deleteExpense(String expenseId) async {
-    await _localService.deleteExpenseLocal(expenseId);
-    _dataChangeController.add(null);
-
-    unawaited(_syncDeleteExpense(expenseId));
-  }
-
-  Future<void> _syncDeleteExpense(String expenseId) async {
-    try {
-      await _sheetsService.deleteExpense(expenseId);
-    } catch (e) {
-      await _enqueue('DELETE_EXPENSE', {'id': expenseId});
-    }
+    await _enqueue('DELETE_EXPENSE', {'id': expenseId});
+    notifyDataChanged();
   }
 
   Future<List<ExpenseModel>> getExpenses({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      final local = await _localService.getExpenses();
-      if (local.isNotEmpty) return local;
-    }
-    final fresh = await _sheetsService.getExpenses();
-    await _localService.saveExpenses(fresh);
-    return fresh;
+    final local = await _localService.getExpenses();
+    if (!forceRefresh && local.isNotEmpty) return local;
+    await triggerSync();
+    return _localService.getExpenses();
   }
 
   // --- Getters (Local-First) ---
 
   Future<List<BuildingModel>> getBuildings({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      final local = await _localService.getBuildings();
-      if (local.isNotEmpty) return local;
-    }
-    final fresh = await _sheetsService.getBuildings();
-    await _localService.saveBuildings(fresh);
-    return fresh;
+    final local = await _localService.getBuildings();
+    if (!forceRefresh && local.isNotEmpty) return local;
+    await triggerSync();
+    return _localService.getBuildings();
   }
 
   Future<List<RoomModel>> getRooms({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      final local = await _localService.getRooms();
-      if (local.isNotEmpty) return local;
-    }
-    final fresh = await _sheetsService.getRooms();
-    await _localService.saveRooms(fresh);
-    return fresh;
+    final local = await _localService.getRooms();
+    if (!forceRefresh && local.isNotEmpty) return local;
+    await triggerSync();
+    return _localService.getRooms();
   }
 
   Future<List<TenantModel>> getTenants({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      final local = await _localService.getTenants();
-      if (local.isNotEmpty) return local;
-    }
-    final fresh = await _sheetsService.getTenants();
-    await _localService.saveTenants(fresh);
-    return fresh;
+    final local = await _localService.getTenants();
+    if (!forceRefresh && local.isNotEmpty) return local;
+    await triggerSync();
+    return _localService.getTenants();
   }
 
   Future<List<PaymentModel>> getPayments({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      final local = await _localService.getPayments();
-      if (local.isNotEmpty) return local;
-    }
-    final fresh = await _sheetsService.getPayments();
-    await _localService.savePayments(fresh);
-    return fresh;
+    final local = await _localService.getPayments();
+    if (!forceRefresh && local.isNotEmpty) return local;
+    await triggerSync();
+    return _localService.getPayments();
   }
 
   Future<void> addBed(BedModel bed) async {
@@ -496,33 +379,13 @@ class ManagementRepository {
           )
         : bed;
 
-    await _localService.upsertBed(bedWithId);
-    _dataChangeController.add(null);
-
-    unawaited(_syncAddBed(bedWithId));
-  }
-
-  Future<void> _syncAddBed(BedModel bed) async {
-    try {
-      await _sheetsService.addBed(bed);
-    } catch (e) {
-      await _enqueue('ADD_BED', bed);
-    }
+    await _enqueue('ADD_BED', bedWithId);
+    notifyDataChanged();
   }
 
   Future<void> deleteBed(String bedId) async {
-    await _localService.deleteBedLocal(bedId);
-    _dataChangeController.add(null);
-
-    unawaited(_syncDeleteBed(bedId));
-  }
-
-  Future<void> _syncDeleteBed(String bedId) async {
-    try {
-      await _sheetsService.deleteBed(bedId);
-    } catch (e) {
-      await _enqueue('DELETE_BED', {'id': bedId});
-    }
+    await _enqueue('DELETE_BED', {'id': bedId});
+    notifyDataChanged();
   }
 
   Future<TenantModel?> getTenantById(String tenantId) async {
@@ -622,9 +485,6 @@ class ManagementRepository {
     );
     await updateTenant(updatedTenant);
 
-    // 2. Update bed status
-    await updateBedStatus(tenant.bedId, BedStatus.vacant);
-
     // 3. Create refund expense if applicable
     if (refundAmount != null && refundAmount > 0) {
       final refundExpense = ExpenseModel(
@@ -640,13 +500,9 @@ class ManagementRepository {
   }
 
   Future<List<BedModel>> getBeds({bool forceRefresh = false}) async {
-    if (!forceRefresh) {
-      final localBeds = await _localService.getBeds();
-      if (localBeds.isNotEmpty) return localBeds;
-    }
-
-    final beds = await _sheetsService.getBeds();
-    await _localService.saveBeds(beds);
-    return beds;
+    final local = await _localService.getBeds();
+    if (!forceRefresh && local.isNotEmpty) return local;
+    await triggerSync();
+    return _localService.getBeds();
   }
 }

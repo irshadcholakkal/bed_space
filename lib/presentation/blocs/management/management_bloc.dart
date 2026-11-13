@@ -1,3 +1,4 @@
+import '../../../data/models/booking_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/models/building_model.dart';
@@ -74,9 +75,9 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
         );
       }
 
-      // Force a manual refresh to update UI immediately
-      final tenants = await _repository.getTenants(forceRefresh: true);
-      final beds = await _repository.getBeds(forceRefresh: true);
+      // Read the committed local checkout immediately.
+      final tenants = await _repository.getTenants();
+      final beds = await _repository.getBeds();
       emit(_currentState.copyWith(
         tenants: tenants,
         beds: beds,
@@ -113,6 +114,7 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
           payments: data['payments'] as List<PaymentModel>,
           beds: data['beds'] as List<BedModel>,
           expenses: data['expenses'] as List<ExpenseModel>,
+          bookings: data['bookings'] as List<BookingModel>? ?? const [],
           isLoading:
               false, // Serve instantly, don't keep loading state if we have local data
         );
@@ -249,6 +251,12 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
       if (rooms.any((room) => room.parentRoomId == event.roomId)) {
         throw StateError('Remove the subrooms before deleting this room.');
       }
+      final bookings = await _repository.getBookings();
+      if (bookings.any((booking) =>
+          booking.roomId == event.roomId &&
+          booking.status == BookingStatus.reserved)) {
+        throw StateError('Cancel the bookings before deleting this room.');
+      }
       // Cascade delete: Delete associated beds first
       final allBeds = await _repository.getBeds();
       final roomBeds = allBeds.where((b) => b.roomId == event.roomId).toList();
@@ -300,7 +308,6 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
         throw StateError('Choose an available room for this tenant.');
       }
       await _repository.addTenant(event.tenant);
-      await _repository.updateBedStatus(event.tenant.bedId, BedStatus.occupied);
     } catch (e) {
       emit(_currentState.copyWith(error: e.toString(), isLoading: false));
     }
@@ -333,11 +340,6 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
                 t.bedId == destination.bedId)) {
           throw StateError('Choose a vacant bed in an available room.');
         }
-        await _repository.updateBedStatus(oldTenant.bedId, BedStatus.vacant);
-        await _repository.updateBedStatus(
-          event.tenant.bedId,
-          BedStatus.occupied,
-        );
       }
       await _repository.updateTenant(event.tenant);
     } catch (e) {
@@ -351,10 +353,6 @@ class ManagementBloc extends Bloc<ManagementEvent, ManagementState> {
   ) async {
     emit(_currentState.copyWith(isLoading: true));
     try {
-      final tenant = await _repository.getTenantById(event.tenantId);
-      if (tenant != null) {
-        await _repository.updateBedStatus(tenant.bedId, BedStatus.vacant);
-      }
       await _repository.deleteTenant(event.tenantId);
     } catch (e) {
       emit(_currentState.copyWith(error: e.toString(), isLoading: false));

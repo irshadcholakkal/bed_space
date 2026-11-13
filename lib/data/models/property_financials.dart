@@ -1,3 +1,4 @@
+import 'booking_model.dart';
 import 'expense_model.dart';
 import 'payment_model.dart';
 import 'room_model.dart';
@@ -29,12 +30,14 @@ class PropertyTransaction {
 class PropertyFinancials {
   final List<RoomModel> rooms;
   final List<TenantModel> tenants;
+  final List<BookingModel> bookings;
   final List<PaymentModel> payments;
   final List<ExpenseModel> expenses;
   final String? month;
   const PropertyFinancials(
       {required this.rooms,
       required this.tenants,
+      this.bookings = const [],
       required this.payments,
       required this.expenses,
       this.month});
@@ -64,6 +67,7 @@ class PropertyFinancials {
 
   List<PropertyTransaction> transactions(Set<String> ids) {
     final tenantMap = {
+      for (final booking in bookings) booking.bookingId: booking.toTenant(),
       for (final tenant in tenants)
         if (tenant.tenantId != null) tenant.tenantId!: tenant
     };

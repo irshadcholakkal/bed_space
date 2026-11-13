@@ -18,6 +18,12 @@ class DashboardScreen extends StatelessWidget {
       backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text('Dashboard'),
+        actions: [
+          IconButton(
+              tooltip: 'Bed bookings',
+              icon: const Icon(Icons.event_available),
+              onPressed: () => context.push('/bookings'))
+        ],
       ),
       body: BlocBuilder<DashboardBloc, DashboardState>(
         builder: (context, state) {
@@ -162,6 +168,13 @@ class DashboardScreen extends StatelessWidget {
                         context.push('/vacant-beds');
                       },
                     ),
+                    const SizedBox(height: 16),
+                    StatCard(
+                        title: 'Bed Bookings',
+                        value: state.reservedBeds.toString(),
+                        icon: CupertinoIcons.calendar,
+                        color: AppTheme.primaryColor,
+                        onTap: () => context.push('/bookings')),
                     const SizedBox(height: 48),
 
                     // Current Month Financials

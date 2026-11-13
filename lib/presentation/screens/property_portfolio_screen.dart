@@ -155,6 +155,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
               final report = PropertyFinancials(
                   rooms: state.rooms,
                   tenants: state.tenants,
+                  bookings: state.bookings,
                   payments: state.payments,
                   expenses: state.expenses,
                   month: _month);
@@ -181,6 +182,7 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
               final vacant = beds
                   .where((b) =>
                       b.status == BedStatus.vacant &&
+                      !state.reservedBedIds.contains(b.bedId) &&
                       state.rooms.any((r) =>
                           r.roomId == b.roomId && r.isAvailable(state.rooms)))
                   .length;

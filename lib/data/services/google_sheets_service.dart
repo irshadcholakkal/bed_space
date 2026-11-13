@@ -22,6 +22,7 @@ import '../models/bed_model.dart';
 import '../models/tenant_model.dart';
 import '../models/payment_model.dart';
 import '../models/expense_model.dart';
+import '../models/booking_model.dart';
 
 class GoogleSheetsService {
   /// Locate or create a private customer-owned document folder.
@@ -60,6 +61,23 @@ class GoogleSheetsService {
 
   final String accessToken;
   final String sheetId;
+  Future<void>? _bookingsReady;
+  static const _bookingColumns = [
+    'booking_id',
+    'tenant_name',
+    'phone',
+    'building_id',
+    'room_id',
+    'bed_id',
+    'move_in_date',
+    'rent_amount',
+    'advance_amount',
+    'rent_paid',
+    'payment_date',
+    'rent_due_day',
+    'status',
+    'refund_amount',
+  ];
 
   GoogleSheetsService({
     required this.accessToken,
@@ -117,6 +135,12 @@ class GoogleSheetsService {
       final spreadsheet = {
         'properties': {'title': sheetName},
         'sheets': [
+          {
+            'properties': {
+              'title': 'Bookings',
+              'gridProperties': {'rowCount': 1000, 'columnCount': 20}
+            }
+          },
           {
             'properties': {
               'title': 'Buildings',
@@ -189,6 +213,7 @@ class GoogleSheetsService {
   /// Initialize headers for all sheets
   Future<void> _initializeSheetHeaders() async {
     final headers = {
+      'Bookings': _bookingColumns,
       'Buildings': ['building_id', 'building_name', 'address', 'total_rooms'],
       'Rooms': [
         'room_id',
@@ -259,11 +284,13 @@ class GoogleSheetsService {
     final url =
         '$_baseUrl/$sheetId/values/$sheetName!$range?valueInputOption=RAW';
 
-    final response = await http.put(
-      Uri.parse(url),
-      headers: _headers,
-      body: jsonEncode({'values': values}),
-    );
+    final response = await http
+        .put(
+          Uri.parse(url),
+          headers: _headers,
+          body: jsonEncode({'values': values}),
+        )
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode != 200) {
       throw Exception('Failed to write to sheet: ${response.body}');
@@ -274,7 +301,9 @@ class GoogleSheetsService {
   Future<List<List<String>>> _readRange(String sheetName, String range) async {
     final url = '$_baseUrl/$sheetId/values/$sheetName!$range';
 
-    final response = await http.get(Uri.parse(url), headers: _headers);
+    final response = await http
+        .get(Uri.parse(url), headers: _headers)
+        .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -291,6 +320,74 @@ class GoogleSheetsService {
   }
 
   // Buildings CRUD
+  Future<void> _ensureBookingsSheet() {
+    return _bookingsReady ??=
+        _prepareBookingsSheet().catchError((Object error) {
+      _bookingsReady = null;
+      throw error;
+    });
+  }
+
+  Future<bool> _hasBookingsSheet() async {
+    final response = await http
+        .get(Uri.parse('$_baseUrl/$sheetId?fields=sheets.properties.title'),
+            headers: _headers)
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) {
+      throw StateError('Could not access booking records in Sheets.');
+    }
+    final sheets = jsonDecode(response.body)['sheets'] as List? ?? [];
+    return sheets.any((sheet) => sheet['properties']['title'] == 'Bookings');
+  }
+
+  Future<void> _prepareBookingsSheet() async {
+    if (!await _hasBookingsSheet()) {
+      final response = await http
+          .post(Uri.parse('$_baseUrl/$sheetId:batchUpdate'),
+              headers: _headers,
+              body: jsonEncode({
+                'requests': [
+                  {
+                    'addSheet': {
+                      'properties': {'title': 'Bookings'}
+                    }
+                  }
+                ]
+              }))
+          .timeout(const Duration(seconds: 30));
+      // Another device may have created the tab while this request was in flight.
+      if (response.statusCode != 200 && !await _hasBookingsSheet()) {
+        throw StateError('Could not create the Bookings tab in Sheets.');
+      }
+    }
+    await _writeRange('Bookings', 'A1:N1', [_bookingColumns]);
+  }
+
+  Future<List<BookingModel>> getBookings() async {
+    await _ensureBookingsSheet();
+    final rows = await _readRange('Bookings', 'A2:N');
+    return rows
+        .where((row) => row.isNotEmpty && row.first.isNotEmpty)
+        .map((row) {
+      return BookingModel.fromJson({
+        for (var i = 0; i < _bookingColumns.length; i++)
+          _bookingColumns[i]: i < row.length ? row[i] : '',
+      });
+    }).toList();
+  }
+
+  Future<void> saveBooking(BookingModel booking) async {
+    await _ensureBookingsSheet();
+    final rows = await _readRange('Bookings', 'A:N');
+    final index = rows
+        .indexWhere((row) => row.isNotEmpty && row.first == booking.bookingId);
+    final row = index < 0 ? rows.length + 1 : index + 1;
+    final json = booking.toJson();
+    await _writeRange('Bookings', 'A$row:N$row', [
+      _bookingColumns.map((column) => json[column]).toList(),
+    ]);
+  }
+
   Future<List<BuildingModel>> getBuildings() async {
     final rows = await _readRange('Buildings', 'A2:D');
     return rows.where((row) => row.isNotEmpty && row[0].isNotEmpty).map((row) {
@@ -313,8 +410,10 @@ class GoogleSheetsService {
       building.address,
       building.totalRooms.toString(),
     ];
-    await _writeRange(
-        'Buildings', 'A${rows.length + 1}:D${rows.length + 1}', [newRow]);
+    final existing =
+        rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
+    final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
+    await _writeRange('Buildings', 'A$rowNumber:D$rowNumber', [newRow]);
   }
 
   // Rooms CRUD
@@ -359,8 +458,10 @@ class GoogleSheetsService {
       room.parentRoomId ?? '',
       room.available ? 'TRUE' : 'FALSE',
     ];
-    await _writeRange(
-        'Rooms', 'A${rows.length + 1}:L${rows.length + 1}', [newRow]);
+    final existing =
+        rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
+    final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
+    await _writeRange('Rooms', 'A$rowNumber:L$rowNumber', [newRow]);
   }
 
   // Beds CRUD
@@ -386,19 +487,19 @@ class GoogleSheetsService {
       bed.bedType == BedType.lower ? 'LOWER' : 'UPPER',
       bed.status == BedStatus.vacant ? 'VACANT' : 'OCCUPIED',
     ];
-    await _writeRange(
-        'Beds', 'A${rows.length + 1}:D${rows.length + 1}', [newRow]);
+    final existing =
+        rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
+    final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
+    await _writeRange('Beds', 'A$rowNumber:D$rowNumber', [newRow]);
   }
 
   Future<void> updateBedStatus(String bedId, BedStatus status) async {
     final rows = await _readRange('Beds', 'A2:D');
-    for (int i = 0; i < rows.length; i++) {
-      if (rows[i][0] == bedId) {
-        rows[i][3] = status == BedStatus.vacant ? 'VACANT' : 'OCCUPIED';
-        await _writeRange('Beds', 'A${i + 2}:D${i + 2}', [rows[i]]);
-        break;
-      }
-    }
+    final index = rows.indexWhere((row) => row.isNotEmpty && row[0] == bedId);
+    if (index < 0) throw StateError('Bed $bedId is missing from Sheets.');
+    await _writeRange('Beds', 'D${index + 2}', [
+      [status == BedStatus.vacant ? 'VACANT' : 'OCCUPIED']
+    ]);
   }
 
   Future<void> deleteBed(String bedId) async {
@@ -454,8 +555,10 @@ class GoogleSheetsService {
       tenant.active ? 'TRUE' : 'FALSE',
       tenant.checkoutDate?.toIso8601String().split('T')[0] ?? '',
     ];
-    await _writeRange(
-        'Tenants', 'A${rows.length + 1}:L${rows.length + 1}', [newRow]);
+    final existing =
+        rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
+    final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
+    await _writeRange('Tenants', 'A$rowNumber:L$rowNumber', [newRow]);
   }
 
   // Payments CRUD
@@ -485,13 +588,15 @@ class GoogleSheetsService {
       payment.paymentMonth,
       payment.paidDate.toIso8601String().split('T')[0],
     ];
-    await _writeRange(
-        'Payments', 'A${rows.length + 1}:E${rows.length + 1}', [newRow]);
+    final existing =
+        rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
+    final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
+    await _writeRange('Payments', 'A$rowNumber:E$rowNumber', [newRow]);
   }
 
   // --- Expenses CRUD ---
   Future<List<ExpenseModel>> getExpenses() async {
-    final rows = await _readRange('Expenses', 'A2:F');
+    final rows = await _readRange('Expenses', 'A2:G');
     return rows.where((row) => row.isNotEmpty && row[0].isNotEmpty).map((row) {
       return ExpenseModel.fromJson({
         'id': row[0],
@@ -518,8 +623,10 @@ class GoogleSheetsService {
       expense.description ?? '',
       expense.tenantId ?? '',
     ];
-    await _writeRange(
-        'Expenses', 'A${rows.length + 1}:G${rows.length + 1}', [newRow]);
+    final existing =
+        rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
+    final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
+    await _writeRange('Expenses', 'A$rowNumber:G$rowNumber', [newRow]);
   }
 
   Future<void> deleteExpense(String expenseId) async {
@@ -537,72 +644,17 @@ class GoogleSheetsService {
   // Update methods
   Future<void> updateBuilding(BuildingModel building) async {
     if (building.buildingId == null) return;
-    final rows = await _readRange('Buildings', 'A2:D');
-    for (int i = 0; i < rows.length; i++) {
-      if (rows[i][0] == building.buildingId) {
-        rows[i] = [
-          building.buildingId!,
-          building.buildingName,
-          building.address,
-          building.totalRooms.toString(),
-        ];
-        await _writeRange('Buildings', 'A${i + 2}:D${i + 2}', [rows[i]]);
-        break;
-      }
-    }
+    await addBuilding(building);
   }
 
   Future<void> updateRoom(RoomModel room) async {
     if (room.roomId == null) return;
-    await _writeRange('Rooms', 'K1', [
-      ['parent_room_id', 'available']
-    ]);
-    final rows = await _readRange('Rooms', 'A2:L');
-    for (int i = 0; i < rows.length; i++) {
-      if (rows[i][0] == room.roomId) {
-        rows[i] = [
-          room.roomId!,
-          room.buildingId,
-          room.roomNumber,
-          room.totalCapacity.toString(),
-          room.lowerBedsCount.toString(),
-          room.upperBedsCount.toString(),
-          room.lowerBedRent.toString(),
-          room.upperBedRent.toString(),
-          room.utilityCostMonthly.toString(),
-          room.monthlyRent.toString(),
-          room.parentRoomId ?? '',
-          room.available ? 'TRUE' : 'FALSE',
-        ];
-        await _writeRange('Rooms', 'A${i + 2}:L${i + 2}', [rows[i]]);
-        break;
-      }
-    }
+    await addRoom(room);
   }
 
   Future<void> updateTenant(TenantModel tenant) async {
     if (tenant.tenantId == null) return;
-    final rows = await _readRange('Tenants', 'A2:L');
-    for (int i = 0; i < rows.length; i++) {
-      if (rows[i][0] == tenant.tenantId) {
-        rows[i] = [
-          tenant.tenantId!,
-          tenant.tenantName,
-          tenant.phone,
-          tenant.buildingId,
-          tenant.roomId,
-          tenant.bedId,
-          tenant.rentAmount.toString(),
-          tenant.advanceAmount.toString(),
-          tenant.joiningDate.toIso8601String().split('T')[0],
-          tenant.rentDueDay.toString(),
-          tenant.active ? 'TRUE' : 'FALSE',
-          tenant.checkoutDate?.toIso8601String().split('T')[0] ?? '',
-        ];
-        await _writeRange('Tenants', 'A${i + 2}:L${i + 2}', [rows[i]]);
-        break;
-      }
-    }
+    await addTenant(tenant);
   }
 
   // Delete methods (mark as empty row)

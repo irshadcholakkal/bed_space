@@ -23,6 +23,7 @@ Future<void> showTenantTransfer(
                 final beds = state.beds
                     .where((b) =>
                         b.status == BedStatus.vacant &&
+                        !state.reservedBedIds.contains(b.bedId) &&
                         b.bedId != tenant.bedId &&
                         b.bedId != null &&
                         state.rooms.any((r) =>

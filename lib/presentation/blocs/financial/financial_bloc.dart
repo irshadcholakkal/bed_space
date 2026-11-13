@@ -1,3 +1,4 @@
+import '../../../data/models/booking_model.dart';
 import '../../../data/models/billing_snapshot.dart';
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -82,6 +83,11 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
     _dataSubscription = _repository.getAllDataStream().listen(
       (data) {
         final tenants = data['tenants'] as List<TenantModel>;
+        final bookings = data['bookings'] as List<BookingModel>? ?? const [];
+        final paymentOwners = {
+          for (final booking in bookings) booking.bookingId: booking.toTenant(),
+          for (final tenant in tenants) tenant.tenantId: tenant,
+        };
         final payments = data['payments'] as List<PaymentModel>;
         final rooms = data['rooms'] as List<RoomModel>;
         final buildings = data['buildings'] as List<BuildingModel>;
@@ -173,21 +179,19 @@ class FinancialBloc extends Bloc<FinancialEvent, FinancialState> {
 
         final Map<String, double> roomTotals = {};
         for (final payment in monthPayments) {
-          final tenant = tenants.firstWhere(
-            (t) => t.tenantId == payment.tenantId,
-            orElse: () => TenantModel(
-              tenantName: 'Unknown',
-              phone: '',
-              joiningDate: DateTime.now(),
-              rentAmount: 0,
-              advanceAmount: 0,
-              roomId: 'Unknown',
-              buildingId: '',
-              bedId: '',
-              rentDueDay: 1,
-              active: false,
-            ),
-          );
+          final tenant = paymentOwners[payment.tenantId] ??
+              TenantModel(
+                tenantName: 'Unknown',
+                phone: '',
+                joiningDate: DateTime.now(),
+                rentAmount: 0,
+                advanceAmount: 0,
+                roomId: 'Unknown',
+                buildingId: '',
+                bedId: '',
+                rentDueDay: 1,
+                active: false,
+              );
           roomTotals[tenant.roomId] =
               (roomTotals[tenant.roomId] ?? 0) + payment.amount;
         }

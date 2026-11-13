@@ -40,6 +40,8 @@ class _Repo extends Fake implements ManagementRepository {
   @override
   Future<void> updateTenant(TenantModel tenant) async {
     saved = tenant;
+    changes['old'] = BedStatus.vacant;
+    changes[tenant.bedId] = BedStatus.occupied;
   }
 }
 

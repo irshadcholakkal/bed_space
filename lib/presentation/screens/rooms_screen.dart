@@ -54,6 +54,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
                 icon: const Icon(CupertinoIcons.ellipsis_vertical),
                 onSelected: (action) {
                   switch (action) {
+                    case 'bookings':
+                      context.push('/bookings');
                     case 'building':
                       BuildingsManagementScreen.showAddBuildingDialog(context);
                     case 'room':
@@ -64,6 +66,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                   }
                 },
                 itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'bookings', child: Text('Bed bookings')),
                   PopupMenuItem(value: 'building', child: Text('Add Building')),
                   PopupMenuItem(value: 'room', child: Text('Add Rooms')),
                   PopupMenuItem(value: 'tenant', child: Text('Add Tenant')),
@@ -89,7 +92,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
               List<BedModel> beds(RoomModel room) =>
                   bedsByRoom[room.roomId] ?? [];
               int vacant(RoomModel room) => beds(room)
-                  .where((bed) => bed.status == BedStatus.vacant)
+                  .where((bed) =>
+                      bed.status == BedStatus.vacant &&
+                      !state.reservedBedIds.contains(bed.bedId))
                   .length;
               bool matches(RoomModel room, _RoomFilter filter) =>
                   switch (filter) {
@@ -321,17 +326,28 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                                   .where((b) =>
                                                       b.status ==
                                                           BedStatus.vacant &&
+                                                      !state.reservedBedIds
+                                                          .contains(b.bedId) &&
                                                       b.bedType ==
                                                           BedType.lower)
                                                   .length;
                                               final upper = available - lower;
-                                              final status =
-                                                  !room.isAvailable(state.rooms)
-                                                      ? 'Unavailable'
-                                                      : total == 0
-                                                          ? 'No beds'
-                                                          : available > 0
-                                                              ? 'Available'
+                                              final status = !room
+                                                      .isAvailable(state.rooms)
+                                                  ? 'Unavailable'
+                                                  : total == 0
+                                                      ? 'No beds'
+                                                      : available > 0
+                                                          ? 'Available'
+                                                          : beds(room).any((bed) =>
+                                                                  bed.status ==
+                                                                      BedStatus
+                                                                          .vacant &&
+                                                                  state
+                                                                      .reservedBedIds
+                                                                      .contains(
+                                                                          bed.bedId))
+                                                              ? 'Reserved'
                                                               : 'Full';
                                               final color = total == 0
                                                   ? _muted
@@ -443,6 +459,14 @@ class _RoomsScreenState extends State<RoomsScreen> {
                                                                           style: const TextStyle(
                                                                               color: _muted,
                                                                               fontSize: 12)),
+                                                                      if (beds(room).any((bed) => state
+                                                                          .reservedBedIds
+                                                                          .contains(bed
+                                                                              .bedId)))
+                                                                        Text(
+                                                                            '${beds(room).where((bed) => state.reservedBedIds.contains(bed.bedId)).length} booked',
+                                                                            style:
+                                                                                const TextStyle(color: _muted, fontSize: 12)),
                                                                       if (available >
                                                                           0)
                                                                         Text(

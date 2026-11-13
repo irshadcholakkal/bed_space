@@ -1,3 +1,4 @@
+import '../screens/bookings_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -138,6 +139,8 @@ GoRouter createAppRouter(Listenable refresh) {
             GoRoute(
                 path: '/rooms/manage',
                 builder: (_, __) => const RoomsManagementScreen()),
+            GoRoute(
+                path: '/bookings', builder: (_, __) => const BookingsScreen()),
             GoRoute(
                 path: '/tenants',
                 builder: (_, __) => const TenantsManagementScreen()),

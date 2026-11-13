@@ -247,6 +247,7 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
             final report = PropertyFinancials(
                 rooms: state.rooms,
                 tenants: state.tenants,
+                bookings: state.bookings,
                 payments: state.payments,
                 expenses: state.expenses);
             final roomIds = report.roomIds(roomId: widget.room.roomId);

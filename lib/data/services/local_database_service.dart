@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:uuid/uuid.dart';
 import 'dart:developer' as developer;
 import 'dart:async';
 import 'package:flutter/foundation.dart';
@@ -9,6 +11,7 @@ import '../models/tenant_model.dart';
 import '../models/payment_model.dart';
 import '../models/bed_model.dart';
 import '../models/expense_model.dart';
+import '../models/booking_model.dart';
 import 'saas_service.dart';
 
 class LocalDatabaseService {
@@ -38,13 +41,14 @@ class LocalDatabaseService {
     final path = kIsWeb ? name : join(await getDatabasesPath(), name);
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2 && oldVersion < 9) await _createBookings(db);
     if (oldVersion >= 2 && oldVersion < 8) {
       await db.execute(
           "ALTER TABLE rooms ADD COLUMN available TEXT NOT NULL DEFAULT 'TRUE'");
@@ -114,6 +118,7 @@ class LocalDatabaseService {
   }
 
   Future<void> _onCreate(Database db, int version) async {
+    await _createBookings(db);
     await db.execute('''
       CREATE TABLE buildings(
         building_id TEXT PRIMARY KEY,
@@ -409,10 +414,314 @@ class LocalDatabaseService {
     await db.delete('expenses', where: 'id = ?', whereArgs: [id]);
   }
 
+  int revision = 0;
+
+  Future<void> _createBookings(Database db) => db.execute('''
+    CREATE TABLE bookings(
+      booking_id TEXT PRIMARY KEY, tenant_name TEXT, phone TEXT,
+      building_id TEXT, room_id TEXT, bed_id TEXT, move_in_date TEXT,
+      rent_amount REAL, advance_amount REAL, rent_paid REAL,
+      payment_date TEXT, rent_due_day INTEGER, status TEXT, refund_amount REAL
+    )
+  ''');
+
+  Future<List<BookingModel>> getBookings() async {
+    final rows =
+        await (await database).query('bookings', orderBy: 'move_in_date ASC');
+    return rows.map(BookingModel.fromJson).toList();
+  }
+
+  Future<void> _queueBooking(
+      Transaction txn, String type, Map<String, dynamic> payload) async {
+    await txn.insert('mutation_queue', {
+      'id': const Uuid().v4(),
+      'type': type,
+      'payload': jsonEncode(payload),
+      'timestamp': DateTime.now().toIso8601String(),
+      'retry_count': 0,
+    });
+  }
+
+  Future<void> createBooking(BookingModel booking) async {
+    booking.validate();
+    if (booking.status != BookingStatus.reserved ||
+        booking.refundAmount != 0 ||
+        BookingModel.day(booking.paymentDate)
+            .isAfter(BookingModel.day(DateTime.now()))) {
+      throw StateError('Create a reserved booking with a valid payment date.');
+    }
+    if (BookingModel.day(booking.moveInDate)
+        .isBefore(BookingModel.day(DateTime.now()))) {
+      throw StateError('Choose today or a future move-in date.');
+    }
+    final db = await database;
+    await db.transaction((txn) async {
+      final rooms = (await txn.query('rooms')).map(RoomModel.fromJson).toList();
+      final room =
+          rooms.where((room) => room.roomId == booking.roomId).firstOrNull;
+      final beds = await txn
+          .query('beds', where: 'bed_id = ?', whereArgs: [booking.bedId]);
+      final reservations = await txn.query('bookings',
+          where: 'bed_id = ? AND status = ?',
+          whereArgs: [booking.bedId, 'reserved']);
+      final occupants = (await txn.query('tenants',
+              where: 'bed_id = ? AND active = ?',
+              whereArgs: [booking.bedId, 'TRUE']))
+          .map(TenantModel.fromJson)
+          .toList();
+      if (room == null ||
+          !room.isAvailable(rooms) ||
+          room.buildingId != booking.buildingId ||
+          beds.isEmpty ||
+          beds.first['room_id'] != booking.roomId ||
+          reservations.isNotEmpty) {
+        throw StateError(
+            'Choose an available bed without an existing booking.');
+      }
+      if (occupants.any((tenant) =>
+              tenant.checkoutDate == null ||
+              BookingModel.day(tenant.checkoutDate!)
+                  .isAfter(BookingModel.day(booking.moveInDate))) ||
+          (occupants.isEmpty && beds.first['status'] == 'OCCUPIED')) {
+        throw StateError(
+            'Schedule the current tenant’s checkout before the move-in date.');
+      }
+      await txn.insert('bookings', booking.toJson());
+      final payment = booking.rentPayment;
+      if (payment != null) await txn.insert('payments', payment.toJson());
+      await _queueBooking(txn, 'ADD_BOOKING', booking.toJson());
+      revision++;
+    });
+  }
+
+  Future<BookingModel> _reservedBooking(Transaction txn, String id) async {
+    final rows =
+        await txn.query('bookings', where: 'booking_id = ?', whereArgs: [id]);
+    if (rows.isEmpty || rows.first['status'] != 'reserved') {
+      throw StateError('This booking has already been processed.');
+    }
+    return BookingModel.fromJson(rows.first);
+  }
+
+  Future<void> checkInBooking(String id) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final booking = await _reservedBooking(txn, id);
+      if (BookingModel.day(booking.moveInDate)
+          .isAfter(BookingModel.day(DateTime.now()))) {
+        throw StateError('Check-in is available on the booked move-in date.');
+      }
+      final beds = await txn
+          .query('beds', where: 'bed_id = ?', whereArgs: [booking.bedId]);
+      final occupants = await txn.query('tenants',
+          where: 'bed_id = ? AND active = ?',
+          whereArgs: [booking.bedId, 'TRUE']);
+      final rooms = (await txn.query('rooms')).map(RoomModel.fromJson).toList();
+      final room =
+          rooms.where((room) => room.roomId == booking.roomId).firstOrNull;
+      if (room == null ||
+          !room.isAvailable(rooms) ||
+          beds.isEmpty ||
+          beds.first['status'] != 'VACANT' ||
+          occupants.isNotEmpty) {
+        throw StateError(
+            'Confirm the previous tenant’s checkout before checking in.');
+      }
+      final updated = booking.withStatus(BookingStatus.checkedIn);
+      await txn.insert('tenants', booking.toTenant().toJson());
+      await txn.update('bookings', updated.toJson(),
+          where: 'booking_id = ?', whereArgs: [id]);
+      await txn.update('beds', {'status': 'OCCUPIED'},
+          where: 'bed_id = ?', whereArgs: [booking.bedId]);
+      await _queueBooking(txn, 'CHECK_IN_BOOKING', updated.toJson());
+      revision++;
+    });
+  }
+
+  Future<void> cancelBooking(String id, double refund) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final booking = await _reservedBooking(txn, id);
+      final updated =
+          booking.withStatus(BookingStatus.cancelled, refund: refund);
+      updated.validate();
+      await txn.update('bookings', updated.toJson(),
+          where: 'booking_id = ?', whereArgs: [id]);
+      final expense = refund > 0
+          ? ExpenseModel(
+              id: 'booking_refund_$id',
+              roomId: booking.roomId,
+              tenantId: id,
+              expenseType: ExpenseType.refund,
+              amount: refund,
+              date: BookingModel.day(DateTime.now()),
+              description: 'Booking refund to ${booking.tenantName}')
+          : null;
+      if (expense != null) await txn.insert('expenses', expense.toJson());
+      await _queueBooking(txn, 'CANCEL_BOOKING', {
+        'booking': updated.toJson(),
+        'expense': expense?.toJson(),
+      });
+      revision++;
+    });
+  }
+
+  /// Commit local changes and their retry record together.
+  Future<void> commitMutation(Map<String, dynamic> mutation) async {
+    final db = await database;
+    final payload =
+        jsonDecode(mutation['payload'] as String) as Map<String, dynamic>;
+    final type = mutation['type'] as String;
+    const tables = {
+      'BUILDING': ('buildings', 'building_id'),
+      'ROOM': ('rooms', 'room_id'),
+      'TENANT': ('tenants', 'tenant_id'),
+      'PAYMENT': ('payments', 'payment_id'),
+      'BED': ('beds', 'bed_id'),
+      'EXPENSE': ('expenses', 'id'),
+    };
+    await db.transaction((txn) async {
+      final previous = type.endsWith('_TENANT')
+          ? await txn.query('tenants',
+              where: 'tenant_id = ?',
+              whereArgs: [payload['tenant_id'] ?? payload['id']])
+          : <Map<String, Object?>>[];
+      if (type.endsWith('_TENANT') && payload['active'] == 'TRUE') {
+        final reservations = (await txn.query('bookings',
+                where: 'bed_id = ? AND status = ? AND booking_id != ?',
+                whereArgs: [
+              payload['bed_id'],
+              'reserved',
+              payload['tenant_id']
+            ]))
+            .map(BookingModel.fromJson);
+        final checkout = DateTime.tryParse('${payload['checkout_date']}');
+        if (reservations.any((booking) =>
+            checkout == null ||
+            BookingModel.day(checkout)
+                .isAfter(BookingModel.day(booking.moveInDate)))) {
+          throw StateError(
+              'This bed has a booking. Checkout must be on or before its move-in date.');
+        }
+        final conflicts = await txn.query('tenants',
+            where: 'bed_id = ? AND active = ? AND tenant_id != ?',
+            whereArgs: [payload['bed_id'], 'TRUE', payload['tenant_id']]);
+        final beds = await txn
+            .query('beds', where: 'bed_id = ?', whereArgs: [payload['bed_id']]);
+        if (conflicts.isNotEmpty ||
+            beds.isEmpty ||
+            beds.first['room_id'] != payload['room_id']) {
+          throw StateError('Choose a vacant bed in the selected room.');
+        }
+      }
+      if (type == 'UPDATE_BED_STATUS') {
+        await txn.update(
+            'beds',
+            {
+              'status': payload['status'] == 'BedStatus.occupied'
+                  ? 'OCCUPIED'
+                  : 'VACANT',
+            },
+            where: 'bed_id = ?',
+            whereArgs: [payload['bedId']]);
+      } else {
+        final entity = type.substring(type.indexOf('_') + 1);
+        final (table, key) = tables[entity]!;
+        if (type.startsWith('DELETE_')) {
+          if (['BED', 'ROOM', 'BUILDING'].contains(entity)) {
+            final bookingKey = {
+              'BED': 'bed_id',
+              'ROOM': 'room_id',
+              'BUILDING': 'building_id'
+            }[entity]!;
+            final reservations = await txn.query('bookings',
+                where: '$bookingKey = ? AND status = ?',
+                whereArgs: [payload['id'], 'reserved']);
+            if (reservations.isNotEmpty) {
+              throw StateError(
+                  'Cancel the bookings before deleting this space.');
+            }
+          }
+          await txn
+              .delete(table, where: '$key = ?', whereArgs: [payload['id']]);
+        } else {
+          await txn.insert(table, payload,
+              conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      }
+      await txn.insert('mutation_queue', mutation);
+      if (type.endsWith('_TENANT')) {
+        final affected = <String>{
+          if (previous.isNotEmpty) previous.first['bed_id'] as String,
+          if (payload['bed_id'] != null) payload['bed_id'] as String,
+        };
+        for (final bedId in affected) {
+          final occupants = await txn.query('tenants',
+              where: 'bed_id = ? AND active = ?', whereArgs: [bedId, 'TRUE']);
+          await _saveBedStatus(txn, bedId,
+              occupants.isEmpty ? BedStatus.vacant : BedStatus.occupied);
+        }
+      }
+      revision++;
+    });
+  }
+
+  Future<void> _saveBedStatus(
+      Transaction txn, String bedId, BedStatus status) async {
+    final changed = await txn.update('beds',
+        {'status': status == BedStatus.occupied ? 'OCCUPIED' : 'VACANT'},
+        where: 'bed_id = ?', whereArgs: [bedId]);
+    if (changed == 0) return;
+    await txn.insert('mutation_queue', {
+      'id': const Uuid().v4(),
+      'type': 'UPDATE_BED_STATUS',
+      'payload': jsonEncode({'bedId': bedId, 'status': status.toString()}),
+      'timestamp': DateTime.now().toIso8601String(),
+      'retry_count': 0,
+    });
+  }
+
+  /// Reject a stale remote snapshot when local writes intervened.
+  Future<void> saveSnapshot(List<dynamic> results,
+      {required int expectedRevision}) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final pending = await txn.query('mutation_queue', limit: 1);
+      if (revision != expectedRevision || pending.isNotEmpty) return;
+      final tables = [
+        'buildings',
+        'rooms',
+        'tenants',
+        'payments',
+        'beds',
+        'expenses',
+        if (results.length > 6) 'bookings',
+      ];
+      for (var i = 0; i < tables.length; i++) {
+        await txn.delete(tables[i]);
+        for (final model in results[i] as List) {
+          await txn.insert(tables[i], model.toJson() as Map<String, dynamic>,
+              conflictAlgorithm: ConflictAlgorithm.replace);
+        }
+      }
+      final occupied = (results[2] as List<TenantModel>)
+          .where((tenant) => tenant.active)
+          .map((tenant) => tenant.bedId)
+          .toSet();
+      for (final bed in results[4] as List<BedModel>) {
+        if (bed.bedId != null &&
+            occupied.contains(bed.bedId) &&
+            bed.status != BedStatus.occupied) {
+          await _saveBedStatus(txn, bed.bedId!, BedStatus.occupied);
+        }
+      }
+    });
+  }
+
   // --- Mutation Queue ---
   Future<List<Map<String, dynamic>>> getMutationQueue() async {
     final db = await database;
-    return await db.query('mutation_queue', orderBy: 'timestamp ASC');
+    return await db.query('mutation_queue', orderBy: 'rowid ASC');
   }
 
   Future<void> addToQueue(Map<String, dynamic> mutation) async {
@@ -448,6 +757,7 @@ class LocalDatabaseService {
       await txn.delete('payments');
       await txn.delete('beds');
       await txn.delete('expenses');
+      await txn.delete('bookings');
       await txn.delete('mutation_queue');
     });
   }

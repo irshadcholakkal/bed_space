@@ -12,6 +12,7 @@ class AppRoutes {
     '/buildings',
     '/rooms/manage',
     '/tenants',
+    '/bookings',
     '/vacant-beds',
     '/billing',
     '/admin',
@@ -88,7 +89,8 @@ class AppSessionRoute {
       } else {
         await prefs.setString('bedspace_session_user', userId);
         if (_userId == userId && _lastRoute == null) {
-          _lastRoute = safeRoute(prefs.getString('bedspace_last_route_$userId'));
+          _lastRoute =
+              safeRoute(prefs.getString('bedspace_last_route_$userId'));
         }
       }
     } catch (_) {/* Storage availability must not change authentication. */}

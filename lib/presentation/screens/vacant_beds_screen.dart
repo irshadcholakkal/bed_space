@@ -1,3 +1,4 @@
+import '../widgets/booking_dialog.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -114,6 +115,7 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                   final vacantBedsWithInfo = state.beds
                       .where((b) =>
                           b.status == BedStatus.vacant &&
+                          !state.reservedBedIds.contains(b.bedId) &&
                           state.rooms.any((room) =>
                               room.roomId == b.roomId &&
                               room.isAvailable(state.rooms)))
@@ -247,20 +249,28 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                               ),
                             ],
                           ),
-                          trailing: IconButton(
-                            icon: const Icon(CupertinoIcons.square_arrow_up,
-                                color: AppTheme.primaryColor),
-                            tooltip: 'Share vacancy on WhatsApp',
-                            onPressed: () => showWhatsAppDraft(context,
-                                message: StatusMessageService.vacancy(
-                                    building: building.buildingName,
-                                    address: building.address,
-                                    room: room.displayName(state.rooms),
-                                    bedType: bed.bedType == BedType.lower
-                                        ? 'Lower'
-                                        : 'Upper',
-                                    rent: rentAmount)),
-                          ),
+                          trailing:
+                              Row(mainAxisSize: MainAxisSize.min, children: [
+                            IconButton(
+                                icon: const Icon(Icons.event_available),
+                                tooltip: 'Book this bed',
+                                onPressed: () => showBookingDialog(context,
+                                    bedId: bed.bedId)),
+                            IconButton(
+                              icon: const Icon(CupertinoIcons.square_arrow_up,
+                                  color: AppTheme.primaryColor),
+                              tooltip: 'Share vacancy on WhatsApp',
+                              onPressed: () => showWhatsAppDraft(context,
+                                  message: StatusMessageService.vacancy(
+                                      building: building.buildingName,
+                                      address: building.address,
+                                      room: room.displayName(state.rooms),
+                                      bedType: bed.bedType == BedType.lower
+                                          ? 'Lower'
+                                          : 'Upper',
+                                      rent: rentAmount)),
+                            ),
+                          ]),
                           onTap: () {
                             TenantsManagementScreen.showAddTenantDialog(
                               context,

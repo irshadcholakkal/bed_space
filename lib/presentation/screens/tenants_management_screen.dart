@@ -196,7 +196,10 @@ class TenantsManagementScreen extends StatefulWidget {
                                   .where(
                                     (b) =>
                                         b.roomId == selectedRoomId &&
-                                        b.status == BedStatus.vacant,
+                                        b.status == BedStatus.vacant &&
+                                        !(state is ManagementLoaded &&
+                                            state.reservedBedIds
+                                                .contains(b.bedId)),
                                   )
                                   .toList();
                               final lowerBeds = beds
@@ -489,6 +492,10 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
         elevation: 0,
         centerTitle: false,
         actions: [
+          IconButton(
+              tooltip: 'Bed bookings',
+              icon: const Icon(Icons.event_available),
+              onPressed: () => context.push('/bookings')),
           IconButton(
             icon: const Icon(
               CupertinoIcons.person_badge_plus,
@@ -1237,7 +1244,10 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                               final beds = roomBeds
                                   .where(
                                     (b) =>
-                                        b.status == BedStatus.vacant ||
+                                        (b.status == BedStatus.vacant &&
+                                            !(state is ManagementLoaded &&
+                                                state.reservedBedIds
+                                                    .contains(b.bedId))) ||
                                         b.bedId == tenant.bedId,
                                   )
                                   .toList();

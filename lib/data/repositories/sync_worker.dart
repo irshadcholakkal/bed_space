@@ -1,3 +1,4 @@
+import '../models/booking_model.dart';
 import 'dart:developer' as developer;
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
@@ -18,54 +19,53 @@ class SyncWorker {
   factory SyncWorker() => _instance;
   SyncWorker._internal();
 
-  bool _isProcessing = false;
+  Future<bool>? _processing;
 
-  Future<bool> processQueue() async {
+  Future<bool> processQueue(
+      {GoogleSheetsService? sheetsService,
+      LocalDatabaseService? localService}) {
+    return _processing ??= _processQueue(sheetsService, localService)
+        .whenComplete(() => _processing = null);
+  }
+
+  Future<bool> _processQueue(GoogleSheetsService? sheetsService,
+      LocalDatabaseService? localService) async {
     if (SaasService.configured && SaasService.userId == null) return false;
-    if (_isProcessing) return false;
 
-    _isProcessing = true;
     try {
       // Check connectivity
       final connectivity = await Connectivity().checkConnectivity();
       if (connectivity.contains(ConnectivityResult.none)) return false;
 
-      // Get credentials
-      final sheetRepo = SheetRepository();
-      final sheetId = await sheetRepo.getSheetId();
-      final token = await sheetRepo.getToken();
-
-      if (sheetId == null || token == null) return false;
-      await LocalDatabaseService.selectWorkspace(sheetId);
-
-      final localService = LocalDatabaseService();
-      final sheetsService = GoogleSheetsService(
-        accessToken: token,
-        sheetId: sheetId,
-      );
-
-      final queue = await localService.getMutationQueue();
-      if (queue.isEmpty) return true;
-
-      for (final item in queue) {
-        final success = await processMutation(item, sheetsService);
-        if (success) {
-          await localService.removeFromQueue(item['id']);
-        } else {
-          final newCount = (item['retry_count'] as int) + 1;
-          await localService.updateMutationRetryCount(item['id'], newCount);
-          return false; // Stop immediately on failure
-        }
+      if (sheetsService == null || localService == null) {
+        final sheetRepo = SheetRepository();
+        final sheetId = await sheetRepo.getSheetId();
+        final token = await sheetRepo.getToken();
+        if (sheetId == null || token == null) return false;
+        await LocalDatabaseService.selectWorkspace(sheetId);
+        localService = LocalDatabaseService();
+        sheetsService =
+            GoogleSheetsService(accessToken: token, sheetId: sheetId);
       }
 
-      // After successful queue processing, do a lightweight refresh
-      await _syncSheetsToLocal(sheetsService, localService);
-      return true;
+      while (true) {
+        final queue = await localService.getMutationQueue();
+        if (queue.isEmpty) return true;
+
+        for (final item in queue) {
+          final success = await processMutation(item, sheetsService);
+          if (success) {
+            await localService.removeFromQueue(item['id']);
+          } else {
+            final newCount = (item['retry_count'] as int) + 1;
+            await localService.updateMutationRetryCount(item['id'], newCount);
+            return false; // Stop immediately on failure
+          }
+        }
+      }
     } catch (e) {
       developer.log('SyncWorker Error: $e');
       return false;
-    } finally {
-      _isProcessing = false;
     }
   }
 
@@ -77,6 +77,28 @@ class SyncWorker {
       final payload = jsonDecode(item['payload'] as String);
 
       switch (type) {
+        case 'ADD_BOOKING':
+          final booking = BookingModel.fromJson(payload);
+          await sheetsService.saveBooking(booking);
+          if (booking.rentPayment != null) {
+            await sheetsService.addPayment(booking.rentPayment!);
+          }
+          break;
+        case 'CHECK_IN_BOOKING':
+          final booking = BookingModel.fromJson(payload);
+          await sheetsService.addTenant(booking.toTenant());
+          await sheetsService.updateBedStatus(
+              booking.bedId, BedStatus.occupied);
+          await sheetsService.saveBooking(booking);
+          break;
+        case 'CANCEL_BOOKING':
+          await sheetsService
+              .saveBooking(BookingModel.fromJson(payload['booking']));
+          if (payload['expense'] != null) {
+            await sheetsService
+                .addExpense(ExpenseModel.fromJson(payload['expense']));
+          }
+          break;
         case 'ADD_BUILDING':
           await sheetsService.addBuilding(BuildingModel.fromJson(payload));
           break;
@@ -135,29 +157,6 @@ class SyncWorker {
     } catch (e) {
       developer.log('Mutation processing failed: $e');
       return false;
-    }
-  }
-
-  Future<void> _syncSheetsToLocal(GoogleSheetsService sheetsService,
-      LocalDatabaseService localService) async {
-    try {
-      final results = await Future.wait([
-        sheetsService.getBuildings(),
-        sheetsService.getRooms(),
-        sheetsService.getTenants(),
-        sheetsService.getPayments(),
-        sheetsService.getBeds(),
-        sheetsService.getExpenses(),
-      ]);
-
-      await localService.saveBuildings(results[0] as List<BuildingModel>);
-      await localService.saveRooms(results[1] as List<RoomModel>);
-      await localService.saveTenants(results[2] as List<TenantModel>);
-      await localService.savePayments(results[3] as List<PaymentModel>);
-      await localService.saveBeds(results[4] as List<BedModel>);
-      await localService.saveExpenses(results[5] as List<ExpenseModel>);
-    } catch (e) {
-      developer.log('Sync to local failed: $e');
     }
   }
 }
