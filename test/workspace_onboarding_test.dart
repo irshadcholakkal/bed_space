@@ -16,6 +16,10 @@ class _Google extends GoogleAuthService {
 
 class _Repository extends SheetRepository {
   @override
+  Future<String?> getUserEmail() async => null;
+  @override
+  Future<String?> getCachedSheetId() async => null;
+  @override
   Future<String?> getSheetId() async => null;
   @override
   Future<bool> isSheetIdForUser(String email) async => false;

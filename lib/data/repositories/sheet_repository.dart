@@ -8,6 +8,7 @@ import '../services/google_auth_service.dart';
 
 class SheetRepository {
   final String? _ownerId = SaasService.userId;
+  String? _resolvedGoogleEmail;
   static final Map<String, String> _sessionTokens = {};
   static void clearSessionTokens() => _sessionTokens.clear();
   String get _prefix => _ownerId == null ? '' : '${_ownerId}_';
@@ -57,6 +58,7 @@ class SheetRepository {
     }
     await prefs.setString(_sheetIdKey, sheetId);
     await prefs.setString(_userEmailKey, userEmail);
+    _resolvedGoogleEmail = userEmail;
     if (driveFolderId != null) {
       await prefs.setString(_driveFolderKey, driveFolderId);
     }
@@ -64,17 +66,29 @@ class SheetRepository {
 
   /// Get saved sheet ID
   Future<String?> getSheetId() async {
-    if (await isDeviceOffline()) return getCachedSheetId();
+    if (await isDeviceOffline()
+        .timeout(const Duration(seconds: 2), onTimeout: () => false)) {
+      return getCachedSheetId();
+    }
     if (_ownerId != null) {
       final binding = await SaasService.client
           .from('storage_bindings')
           .select('spreadsheet_id, google_email')
           .eq('user_id', _ownerId!)
-          .maybeSingle();
+          .maybeSingle()
+          .timeout(const Duration(seconds: 10));
+      if (_ownerId != SaasService.userId) return null;
       if (binding != null) {
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString(_sheetIdKey, binding['spreadsheet_id'] as String);
-        await prefs.setString(_userEmailKey, binding['google_email'] as String);
+        _resolvedGoogleEmail = binding['google_email'] as String;
+        try {
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString(
+              _sheetIdKey, binding['spreadsheet_id'] as String);
+          await prefs.setString(
+              _userEmailKey, binding['google_email'] as String);
+        } catch (_) {
+          // Browser storage failure must not discard a valid server binding.
+        }
         return binding['spreadsheet_id'] as String;
       }
       return null;
@@ -103,12 +117,16 @@ class SheetRepository {
 
   /// Get saved user email
   Future<String?> getUserEmail() async {
+    if (_resolvedGoogleEmail != null && _ownerId == SaasService.userId) {
+      return _resolvedGoogleEmail;
+    }
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString(_userEmailKey);
   }
 
   /// Clear saved sheet ID (for reset functionality)
   Future<void> clearSheetId() async {
+    _resolvedGoogleEmail = null;
     _sessionTokens.remove(_prefix);
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_sheetIdKey);
@@ -120,6 +138,6 @@ class SheetRepository {
   /// Check if sheet ID matches current user email
   Future<bool> isSheetIdForUser(String userEmail) async {
     final savedEmail = await getUserEmail();
-    return savedEmail == userEmail;
+    return savedEmail?.trim().toLowerCase() == userEmail.trim().toLowerCase();
   }
 }

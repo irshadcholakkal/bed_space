@@ -62,7 +62,30 @@ class _NoSavedWorkspace extends _Workspace {
   Future<String?> getCachedSheetId() async => null;
 }
 
+class _RemoteWorkspace extends _Workspace {
+  _RemoteWorkspace() : super('server-sheet');
+  @override
+  Future<String?> getCachedSheetId() async => null;
+}
+
 void main() {
+  test(
+      'account workspace restores from server without a cache or Google renewal',
+      () async {
+    final google = _PendingGoogleSession();
+    final bloc =
+        AuthBloc(authService: google, sheetRepository: _RemoteWorkspace());
+    final restored =
+        bloc.stream.firstWhere((state) => state is AuthAuthenticated);
+    bloc.add(const AuthCheckRequested());
+    expect(
+        (await restored.timeout(const Duration(seconds: 1))
+                as AuthAuthenticated)
+            .sheetId,
+        'server-sheet');
+    expect(google.restoreCalls, 0);
+    await bloc.close();
+  });
   test('saved workspace opens without waiting for Google renewal', () async {
     final google = _PendingGoogleSession();
     final bloc =
@@ -117,10 +140,9 @@ void main() {
     final bloc = AuthBloc(
         authService: _InterruptedGoogleSession(),
         sheetRepository: _SavedWorkspace(matches: false));
-    final rejected =
-        bloc.stream.firstWhere((state) => state is AuthUnauthenticated);
+    final rejected = bloc.stream.firstWhere((state) => state is AuthError);
     bloc.add(const AuthCheckRequested());
-    expect(await rejected, isA<AuthUnauthenticated>());
+    expect((await rejected as AuthError).message, contains('already linked'));
     await bloc.close();
   });
   test(

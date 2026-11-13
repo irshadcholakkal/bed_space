@@ -70,6 +70,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<AuthState> _restoreSession() async {
+    final owner = _authService.accountUserId;
+    if (owner != null) {
+      // A restored app account can recover its server-side workspace binding
+      // even when this device has no cache or Google renewal is unavailable.
+      final sheetId = await _sheetRepository.getSheetId();
+      final email = await _authService.getCurrentUserEmail();
+      if (owner != _authService.accountUserId) return AuthUnauthenticated();
+      if (sheetId != null && email != null) {
+        if (!await _sheetRepository.isSheetIdForUser(email)) {
+          return const AuthError(
+              'Connect the Google account already linked to this workspace.');
+        }
+        return AuthAuthenticated(
+            userEmail: email, accessToken: '', sheetId: sheetId);
+      }
+    }
     final accessToken = await _authService.signInSilently();
     if (accessToken == null) return AuthUnauthenticated();
     final email = await _authService.getCurrentUserEmail();
