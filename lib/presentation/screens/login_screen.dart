@@ -89,6 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) => BlocListener<SheetBloc, SheetState>(
         listener: (context, state) {
           if (state is SheetCreated) {
+            setState(() => _busy = false);
             context.read<AuthBloc>().add(const AuthCheckRequested());
           } else if (state is SheetError) {
             setState(() {
