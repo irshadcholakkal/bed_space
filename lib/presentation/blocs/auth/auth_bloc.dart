@@ -4,6 +4,7 @@ import 'package:equatable/equatable.dart';
 import '../../../data/services/google_auth_service.dart';
 import '../../../data/repositories/sheet_repository.dart';
 import '../../../data/services/saas_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -16,7 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({
     required GoogleAuthService authService,
     required SheetRepository sheetRepository,
-    this.restoreTimeout = const Duration(seconds: 15),
+    this.restoreTimeout = const Duration(seconds: 30),
   })  : _authService = authService,
         _sheetRepository = sheetRepository,
         super(AuthInitial()) {
@@ -63,9 +64,21 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       }
       final restored = await _restoreSession().timeout(restoreTimeout);
       emit(restored);
+    } on TimeoutException {
+      emit(const AuthError(
+          'Workspace lookup timed out. Retry opening the workspace, or reconnect Google. Reference: WORKSPACE_TIMEOUT'));
+    } on AuthException {
+      emit(const AuthError(
+          'Your account session needs renewal. Reconnect Google to continue. Reference: WORKSPACE_SESSION'));
+    } on PostgrestException catch (error) {
+      final sessionError =
+          ['PGRST301', 'PGRST302', 'PGRST303'].contains(error.code);
+      emit(AuthError(sessionError
+          ? 'Your account session needs renewal. Reconnect Google to continue. Reference: WORKSPACE_SESSION'
+          : 'The server could not load your linked workspace. Reference: WORKSPACE_STORAGE'));
     } catch (_) {
       emit(const AuthError(
-          'Could not restore your workspace. Check your connection and retry.'));
+          'Your saved workspace could not be read. Reconnect Google to reopen it. Reference: WORKSPACE_RESTORE'));
     }
   }
 
@@ -85,6 +98,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         return AuthAuthenticated(
             userEmail: email, accessToken: '', sheetId: sheetId);
       }
+      return const AuthError(
+          'Your account is signed in, but no linked workspace was found. Connect Google Sheets & Drive to reopen your spreadsheet. Reference: WORKSPACE_NOT_LINKED');
     }
     final accessToken = await _authService.signInSilently();
     if (accessToken == null) return AuthUnauthenticated();

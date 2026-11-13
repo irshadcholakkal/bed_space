@@ -68,6 +68,11 @@ class _RemoteWorkspace extends _Workspace {
   Future<String?> getCachedSheetId() async => null;
 }
 
+class _PendingWorkspace extends _NoSavedWorkspace {
+  @override
+  Future<String?> getSheetId() => Completer<String?>().future;
+}
+
 void main() {
   test(
       'account workspace restores from server without a cache or Google renewal',
@@ -105,13 +110,27 @@ void main() {
   test('hung remote restoration ends with a retryable error', () async {
     final bloc = AuthBloc(
         authService: _PendingGoogleSession(),
-        sheetRepository: _NoSavedWorkspace(),
+        sheetRepository: _PendingWorkspace(),
         restoreTimeout: const Duration(milliseconds: 20));
     final failed = bloc.stream.firstWhere((state) => state is AuthError);
     bloc.add(const AuthCheckRequested());
     expect(
         (await failed.timeout(const Duration(seconds: 1)) as AuthError).message,
-        contains('retry'));
+        contains('WORKSPACE_TIMEOUT'));
+    await bloc.close();
+  });
+  test(
+      'missing server binding asks to reconnect without waiting for Google renewal',
+      () async {
+    final google = _PendingGoogleSession();
+    final bloc =
+        AuthBloc(authService: google, sheetRepository: _NoSavedWorkspace());
+    final failed = bloc.stream.firstWhere((state) => state is AuthError);
+    bloc.add(const AuthCheckRequested());
+    expect(
+        (await failed.timeout(const Duration(seconds: 1)) as AuthError).message,
+        contains('WORKSPACE_NOT_LINKED'));
+    expect(google.restoreCalls, 0);
     await bloc.close();
   });
   test(

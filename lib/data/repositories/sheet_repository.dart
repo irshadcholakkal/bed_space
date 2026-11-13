@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../services/saas_service.dart';
 import '../services/offline_status.dart';
 import '../services/google_auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SheetRepository {
   final String? _ownerId = SaasService.userId;
@@ -71,12 +72,26 @@ class SheetRepository {
       return getCachedSheetId();
     }
     if (_ownerId != null) {
-      final binding = await SaasService.client
+      final auth = SaasService.client.auth;
+      if (auth.currentSession?.isExpired == true) {
+        await auth.refreshSession().timeout(const Duration(seconds: 8));
+      }
+      if (_ownerId != SaasService.userId) return null;
+      Future<Map<String, dynamic>?> readBinding() => SaasService.client
           .from('storage_bindings')
           .select('spreadsheet_id, google_email')
           .eq('user_id', _ownerId!)
           .maybeSingle()
           .timeout(const Duration(seconds: 10));
+      Map<String, dynamic>? binding;
+      try {
+        binding = await readBinding();
+      } on PostgrestException catch (error) {
+        if (!['PGRST301', 'PGRST302', 'PGRST303'].contains(error.code)) rethrow;
+        await auth.refreshSession().timeout(const Duration(seconds: 8));
+        if (_ownerId != SaasService.userId) return null;
+        binding = await readBinding();
+      }
       if (_ownerId != SaasService.userId) return null;
       if (binding != null) {
         _resolvedGoogleEmail = binding['google_email'] as String;
