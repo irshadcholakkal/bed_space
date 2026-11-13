@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../data/services/google_auth_service.dart';
 import '../../../data/repositories/sheet_repository.dart';
 import '../../../data/services/saas_service.dart';
-import '../../../data/services/offline_status.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
@@ -11,10 +11,12 @@ part 'auth_state.dart';
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final GoogleAuthService _authService;
   final SheetRepository _sheetRepository;
+  final Duration restoreTimeout;
 
   AuthBloc({
     required GoogleAuthService authService,
     required SheetRepository sheetRepository,
+    this.restoreTimeout = const Duration(seconds: 15),
   })  : _authService = authService,
         _sheetRepository = sheetRepository,
         super(AuthInitial()) {
@@ -23,94 +25,70 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthSignOutRequested>(_onAuthSignOutRequested);
   }
 
+  Future<AuthAuthenticated?> _savedWorkspace() async {
+    final owner = _authService.accountUserId;
+    if (SaasService.configured && owner == null) return null;
+    final email = owner == null
+        ? await _sheetRepository.getUserEmail()
+        : await _authService.getCurrentUserEmail();
+    final sheetId = await _sheetRepository.getCachedSheetId();
+    if (email == null ||
+        sheetId == null ||
+        !await _sheetRepository.isSheetIdForUser(email) ||
+        owner != _authService.accountUserId) {
+      return null;
+    }
+    return AuthAuthenticated(
+        userEmail: email,
+        accessToken:
+            owner == null ? await _sheetRepository.getToken() ?? '' : '',
+        sheetId: sheetId);
+  }
+
   Future<void> _onAuthCheckRequested(
     AuthCheckRequested event,
     Emitter<AuthState> emit,
   ) async {
     try {
-      if (SaasService.configured && await isDeviceOffline()) {
-        await _handleOfflineAuthFallback(emit, null);
+      AuthAuthenticated? saved;
+      try {
+        saved = await _savedWorkspace().timeout(const Duration(seconds: 3));
+      } catch (_) {
+        // A cache read failure must still allow remote restoration.
+      }
+      if (saved != null) {
+        // Sheets and Drive renew credentials on demand after the workspace opens.
+        emit(saved);
         return;
       }
-      // Try silent sign-in to restore session
-      final accessToken = await _authService.signInSilently();
-
-      if (accessToken != null) {
-        final userEmail = await _authService.getCurrentUserEmail();
-        if (userEmail != null) {
-          final sheetId = await _sheetRepository.getSheetId();
-          // Cache the latest token for offline access/background sync
-          await _sheetRepository.saveToken(accessToken);
-
-          if (sheetId != null &&
-              await _sheetRepository.isSheetIdForUser(userEmail)) {
-            emit(AuthAuthenticated(
-              userEmail: userEmail,
-              accessToken: accessToken,
-              sheetId: sheetId,
-            ));
-          } else if (SaasService.configured && sheetId != null) {
-            emit(AuthError(
-                'Connect the Google account already linked to this workspace.'));
-          } else {
-            emit(AuthAuthenticatedWithoutSheet(
-              userEmail: userEmail,
-              accessToken: accessToken,
-            ));
-          }
-        } else {
-          // Attempt offline fallback if getCurrentUser is null (no network)
-          await _handleOfflineAuthFallback(emit, accessToken);
-        }
-      } else {
-        // Attempt offline fallback if silent sign-in fails (likely offline)
-        await _handleOfflineAuthFallback(emit, null);
-      }
-    } catch (e) {
-      await _handleOfflineAuthFallback(emit, null);
+      final restored = await _restoreSession().timeout(restoreTimeout);
+      emit(restored);
+    } catch (_) {
+      emit(const AuthError(
+          'Could not restore your workspace. Check your connection and retry.'));
     }
   }
 
-  Future<void> _handleOfflineAuthFallback(
-      Emitter<AuthState> emit, String? accessToken) async {
-    // A signed-in customer can keep using their saved workspace while Google
-    // access is renewed. The cached binding must match their Google account.
-    if (SaasService.configured || _authService.accountUserId != null) {
-      final owner = _authService.accountUserId;
-      final email = await _authService.getCurrentUserEmail();
-      final sheetId = await _sheetRepository.getCachedSheetId();
-      if (owner != null &&
-          email != null &&
-          sheetId != null &&
-          await _sheetRepository.isSheetIdForUser(email) &&
-          owner == _authService.accountUserId) {
-        emit(AuthAuthenticated(
-            userEmail: email,
-            accessToken: accessToken ?? '',
-            sheetId: sheetId));
-        return;
-      }
-      emit(AuthUnauthenticated());
-      return;
+  Future<AuthState> _restoreSession() async {
+    final accessToken = await _authService.signInSilently();
+    if (accessToken == null) return AuthUnauthenticated();
+    final email = await _authService.getCurrentUserEmail();
+    if (email == null) {
+      return const AuthError(
+          'Could not read your Google account. Please reconnect Google.');
     }
-    final cachedEmail = await _sheetRepository.getUserEmail();
-    final cachedSheetId = await _sheetRepository.getSheetId();
-    final cachedToken = accessToken ?? await _sheetRepository.getToken();
-
-    if (cachedEmail != null && cachedSheetId != null) {
-      emit(AuthAuthenticated(
-        userEmail: cachedEmail,
-        accessToken: cachedToken ?? '', // Provide token if available
-        sheetId: cachedSheetId,
-      ));
-    } else if (cachedEmail != null) {
-      emit(AuthAuthenticatedWithoutSheet(
-        userEmail: cachedEmail,
-        accessToken: cachedToken ?? '',
-      ));
-    } else {
-      emit(AuthUnauthenticated());
+    final sheetId = await _sheetRepository.getSheetId();
+    await _sheetRepository.saveToken(accessToken);
+    if (sheetId != null && await _sheetRepository.isSheetIdForUser(email)) {
+      return AuthAuthenticated(
+          userEmail: email, accessToken: accessToken, sheetId: sheetId);
     }
+    if (SaasService.configured && sheetId != null) {
+      return const AuthError(
+          'Connect the Google account already linked to this workspace.');
+    }
+    return AuthAuthenticatedWithoutSheet(
+        userEmail: email, accessToken: accessToken);
   }
 
   Future<void> _onAuthSignInRequested(

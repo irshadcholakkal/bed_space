@@ -262,6 +262,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Text(_error ?? (auth as AuthError).message,
                       style: const TextStyle(
                           color: Color(0xffffc4b5), height: 1.6))),
+              if (auth is AuthError)
+                TextButton.icon(
+                    onPressed: () => context
+                        .read<AuthBloc>()
+                        .add(const AuthCheckRequested()),
+                    icon: const Icon(Icons.refresh),
+                    label: const Text('Retry opening workspace')),
             ],
             const SizedBox(height: 24),
             const Text('Shared spaces, thoughtfully managed.',

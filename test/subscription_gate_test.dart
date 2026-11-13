@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:bed_space/data/services/subscription_service.dart';
 import 'package:bed_space/presentation/screens/subscription_gate.dart';
@@ -83,6 +84,25 @@ void main() {
             'Membership verification is not configured yet. Please contact support.'),
         findsOneWidget);
     expect(find.text('Protected workspace'), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+  testWidgets('stalled membership check offers retry and can reopen workspace',
+      (tester) async {
+    var stalled = true;
+    await tester.pumpWidget(MaterialApp(
+        home: SubscriptionGate(
+            loadAccess: () => stalled
+                ? Completer<AccountAccess>().future
+                : Future.value(access(true, remainingSeconds: 100)),
+            child: const Scaffold(body: Text('Protected workspace')))));
+    await tester.pump(const Duration(seconds: 21));
+    await tester.pumpAndSettle();
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Try again'), findsOneWidget);
+    stalled = false;
+    await tester.tap(find.text('Try again'));
+    await tester.pumpAndSettle();
+    expect(find.text('Protected workspace'), findsOneWidget);
     await tester.pumpWidget(const SizedBox());
   });
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'dart:async';
 import 'package:bed_space/data/services/google_auth_service.dart';
 import 'package:bed_space/data/repositories/sheet_repository.dart';
 import 'package:bed_space/presentation/blocs/auth/auth_bloc.dart';
@@ -46,7 +47,50 @@ class _SavedWorkspace extends _Workspace {
   Future<String?> getCachedSheetId() async => 'saved-sheet';
 }
 
+class _PendingGoogleSession extends _InterruptedGoogleSession {
+  int restoreCalls = 0;
+  @override
+  Future<String?> signInSilently() {
+    restoreCalls++;
+    return Completer<String?>().future;
+  }
+}
+
+class _NoSavedWorkspace extends _Workspace {
+  _NoSavedWorkspace() : super(null);
+  @override
+  Future<String?> getCachedSheetId() async => null;
+}
+
 void main() {
+  test('saved workspace opens without waiting for Google renewal', () async {
+    final google = _PendingGoogleSession();
+    final bloc =
+        AuthBloc(authService: google, sheetRepository: _SavedWorkspace());
+    final restored =
+        bloc.stream.firstWhere((state) => state is AuthAuthenticated);
+    bloc.add(const AuthCheckRequested());
+    expect(
+        (await restored.timeout(const Duration(seconds: 1))
+                as AuthAuthenticated)
+            .sheetId,
+        'saved-sheet');
+    expect(google.restoreCalls, 0);
+    await bloc.close();
+  });
+
+  test('hung remote restoration ends with a retryable error', () async {
+    final bloc = AuthBloc(
+        authService: _PendingGoogleSession(),
+        sheetRepository: _NoSavedWorkspace(),
+        restoreTimeout: const Duration(milliseconds: 20));
+    final failed = bloc.stream.firstWhere((state) => state is AuthError);
+    bloc.add(const AuthCheckRequested());
+    expect(
+        (await failed.timeout(const Duration(seconds: 1)) as AuthError).message,
+        contains('retry'));
+    await bloc.close();
+  });
   test(
       'temporary Google renewal failure preserves the signed-in customer workspace',
       () async {
@@ -61,10 +105,9 @@ void main() {
     expect(saved.accessToken, isEmpty);
     expect(google.interactiveCalls, 0);
     google.renewed = true;
-    final renewed = bloc.stream.firstWhere((state) =>
-        state is AuthAuthenticated && state.accessToken == 'renewed-token');
     bloc.add(const AuthCheckRequested());
-    expect((await renewed as AuthAuthenticated).sheetId, 'saved-sheet');
+    await Future<void>.delayed(Duration.zero);
+    expect((bloc.state as AuthAuthenticated).sheetId, 'saved-sheet');
     await bloc.close();
   });
 

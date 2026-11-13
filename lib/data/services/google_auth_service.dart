@@ -78,9 +78,11 @@ class GoogleAuthService {
       return _renewals.putIfAbsent(
           owner,
           () => _restoreGoogleSession()
+              .timeout(const Duration(seconds: 30), onTimeout: () => null)
               .whenComplete(() => _renewals.remove(owner)));
     }
-    return _restoreGoogleSession();
+    return _restoreGoogleSession()
+        .timeout(const Duration(seconds: 30), onTimeout: () => null);
   }
 
   Future<String?> _restoreGoogleSession() async {

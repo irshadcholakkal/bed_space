@@ -48,7 +48,8 @@ class _SubscriptionGateState extends State<SubscriptionGate>
     if (_requesting) return;
     _requesting = true;
     try {
-      final access = await (widget.loadAccess ?? SubscriptionService.access)();
+      final access = await (widget.loadAccess ?? SubscriptionService.access)()
+          .timeout(const Duration(seconds: 20));
       if (!mounted) return;
       if (access.allowed) _closedForDenial = false;
       if (access.allowed && !_noticeShownThisLaunch) {
