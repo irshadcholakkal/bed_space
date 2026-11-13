@@ -9,6 +9,8 @@ import 'package:bed_space/presentation/screens/login_screen.dart';
 
 class _Google extends GoogleAuthService {
   @override
+  String? get accountUserId => 'customer';
+  @override
   Future<String?> signInSilently() async => 'token';
   @override
   Future<String?> getCurrentUserEmail() async => 'owner@example.com';
@@ -50,8 +52,8 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final repository = _Repository();
-      final auth =
-          AuthBloc(authService: _Google(), sheetRepository: repository);
+      final google = _Google();
+      final auth = AuthBloc(authService: google, sheetRepository: repository);
       final sheet = _SheetCreation(repository);
       addTearDown(auth.close);
       addTearDown(sheet.close);
@@ -59,11 +61,13 @@ void main() {
           auth.stream.firstWhere((s) => s is AuthAuthenticatedWithoutSheet);
       auth.add(const AuthCheckRequested());
       await ready;
+      expect(
+          (auth.state as AuthAuthenticatedWithoutSheet).accessToken, isEmpty);
       await tester.pumpWidget(MaterialApp(
           home: MultiBlocProvider(providers: [
         BlocProvider.value(value: auth),
         BlocProvider<SheetBloc>.value(value: sheet),
-      ], child: const LoginScreen())));
+      ], child: LoginScreen(googleAuthService: google))));
       await tester.pumpAndSettle();
       expect(sheet.state, isA<SheetInitial>());
       await tester.ensureVisible(find.text('Create my workspace'));

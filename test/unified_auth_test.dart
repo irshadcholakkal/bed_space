@@ -119,16 +119,15 @@ void main() {
         contains('WORKSPACE_TIMEOUT'));
     await bloc.close();
   });
-  test('missing server binding asks to reconnect when Google is unavailable',
+  test('new account shows business details when Google is unavailable',
       () async {
     final google = _InterruptedGoogleSession();
     final bloc =
         AuthBloc(authService: google, sheetRepository: _NoSavedWorkspace());
-    final failed = bloc.stream.firstWhere((state) => state is AuthError);
+    final ready = bloc.stream.first;
     bloc.add(const AuthCheckRequested());
-    expect(
-        (await failed.timeout(const Duration(seconds: 1)) as AuthError).message,
-        contains('WORKSPACE_NOT_LINKED'));
+    expect(await ready.timeout(const Duration(seconds: 1)),
+        isA<AuthAuthenticatedWithoutSheet>());
     await bloc.close();
   });
   test('Google reconnect with no binding continues workspace setup', () async {
@@ -141,8 +140,8 @@ void main() {
     expect(state, isA<AuthAuthenticatedWithoutSheet>());
     expect((state as AuthAuthenticatedWithoutSheet).userEmail,
         'owner@example.com');
-    expect(state.accessToken, 'renewed-token');
-    expect(workspace.token, 'renewed-token');
+    expect(state.accessToken, isEmpty);
+    expect(workspace.token, isNull);
     expect(google.interactiveCalls, 0);
     await bloc.close();
   });

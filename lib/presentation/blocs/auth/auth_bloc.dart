@@ -99,20 +99,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
             userEmail: email, accessToken: '', sheetId: sheetId);
       }
       if (email != null && sheetId == null) {
-        // OAuth callbacks must be able to finish onboarding when no binding
-        // exists yet, rather than asking the user to reconnect indefinitely.
-        final token = await _authService
-            .signInSilently()
-            .timeout(const Duration(seconds: 15), onTimeout: () => null);
-        if (owner != _authService.accountUserId) return AuthUnauthenticated();
-        if (token != null) {
-          await _sheetRepository.saveToken(token);
-          return AuthAuthenticatedWithoutSheet(
-              userEmail: email, accessToken: token);
-        }
-        if (_authService.connectionError != null) {
-          return AuthError(_authService.connectionError!);
-        }
+        // Show business details before requesting Google storage credentials.
+        // Workspace creation checks those credentials on form submission.
+        return AuthAuthenticatedWithoutSheet(userEmail: email, accessToken: '');
       }
       return const AuthError(
           'Your account is signed in, but no linked workspace was found. Connect Google Sheets & Drive to reopen your spreadsheet. Reference: WORKSPACE_NOT_LINKED');

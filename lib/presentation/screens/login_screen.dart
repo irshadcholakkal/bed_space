@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../data/services/saas_service.dart';
 import '../../data/services/business_profile_service.dart';
+import '../../data/services/google_auth_service.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/sheet/sheet_bloc.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  final GoogleAuthService? googleAuthService;
+  const LoginScreen({super.key, this.googleAuthService});
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
@@ -64,8 +66,21 @@ class _LoginScreenState extends State<LoginScreen> {
         );
       }
       if (!mounted) return;
+      final google = widget.googleAuthService ?? GoogleAuthService();
+      final token = auth.accessToken.isNotEmpty
+          ? auth.accessToken
+          : await google.signInSilently();
+      if (!mounted) return;
+      if (token == null || token.isEmpty) {
+        setState(() {
+          _busy = false;
+          _error = google.connectionError ??
+              'Connect Google Sheets & Drive below, then create your workspace. Your business details are saved.';
+        });
+        return;
+      }
       context.read<SheetBloc>().add(SheetCreateRequested(
-          accessToken: auth.accessToken,
+          accessToken: token,
           userEmail: auth.userEmail,
           businessName: _business.text.trim()));
     } catch (error) {
@@ -318,6 +333,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 minimumSize: const Size.fromHeight(54),
                 shape: const StadiumBorder()),
             child: const Text('Create my workspace')),
+        if (auth.accessToken.isEmpty)
+          TextButton(
+              onPressed: () =>
+                  context.read<AuthBloc>().add(const AuthSignInRequested()),
+              child: const Text('Connect Google Sheets & Drive')),
       ])));
 
   InputDecoration _decoration(String label, String hint) => InputDecoration(
