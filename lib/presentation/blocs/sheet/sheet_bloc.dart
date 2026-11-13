@@ -53,6 +53,7 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
             'Enter your business name before creating a workspace.');
       }
 
+      emit(SheetSetupProgress(.35, 'Looking for your spreadsheet…'));
       // 1. Try to find existing sheet first
       String? sheetId = await GoogleSheetsService.findSheetByTitle(
         event.accessToken,
@@ -61,19 +62,23 @@ class SheetBloc extends Bloc<SheetEvent, SheetState> {
       sheetId ??= await GoogleSheetsService.findSheetByTitle(
           event.accessToken, sheetName);
 
+      emit(SheetSetupProgress(.50, 'Preparing your spreadsheet and tabs…'));
       // 2. If not found, create new
       sheetId ??= await GoogleSheetsService.createSheet(
         event.accessToken,
         sheetName,
       );
 
+      emit(SheetSetupProgress(.75, 'Preparing your document folder…'));
       final folderId = SaasService.userId == null
           ? null
           : await GoogleSheetsService.ensureDocumentFolder(
               event.accessToken, SaasService.userId!,
               businessName: sheetName);
-      await _sheetRepository.saveSheetId(sheetId, event.userEmail,
-          driveFolderId: folderId);
+      emit(SheetSetupProgress(.90, 'Saving your workspace connection…'));
+      await _sheetRepository
+          .saveSheetId(sheetId, event.userEmail, driveFolderId: folderId)
+          .timeout(const Duration(seconds: 20));
 
       emit(SheetCreated(sheetId: sheetId));
     } catch (e) {

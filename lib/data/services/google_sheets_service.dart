@@ -43,18 +43,23 @@ class GoogleSheetsService {
           "(name = '${_escapeDriveQuery(name)}' or name = '${_escapeDriveQuery(legacyName)}') and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
       'fields': 'files(id)',
     });
-    final found = await http.get(uri, headers: headers);
+    final found = await http
+        .get(uri, headers: headers)
+        .timeout(const Duration(seconds: 30));
     if (found.statusCode != 200) {
       throw Exception(
           'Could not access your Google Drive folder. Reconnect Google and retry.');
     }
     final files = jsonDecode(found.body)['files'] as List;
     if (files.isNotEmpty) return files.first['id'] as String;
-    final created = await http.post(
-        Uri.https('www.googleapis.com', '/drive/v3/files'),
-        headers: headers,
-        body: jsonEncode(
-            {'name': name, 'mimeType': 'application/vnd.google-apps.folder'}));
+    final created = await http
+        .post(Uri.https('www.googleapis.com', '/drive/v3/files'),
+            headers: headers,
+            body: jsonEncode({
+              'name': name,
+              'mimeType': 'application/vnd.google-apps.folder'
+            }))
+        .timeout(const Duration(seconds: 30));
     if (created.statusCode != 200 && created.statusCode != 201) {
       throw Exception('Could not create your private Drive folder.');
     }
@@ -135,7 +140,7 @@ class GoogleSheetsService {
         headers: {
           'Authorization': 'Bearer $accessToken',
         },
-      );
+      ).timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -205,14 +210,16 @@ class GoogleSheetsService {
         ],
       };
 
-      final response = await http.post(
-        Uri.parse(_baseUrl),
-        headers: {
-          'Authorization': 'Bearer $accessToken',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode(spreadsheet),
-      );
+      final response = await http
+          .post(
+            Uri.parse(_baseUrl),
+            headers: {
+              'Authorization': 'Bearer $accessToken',
+              'Content-Type': 'application/json',
+            },
+            body: jsonEncode(spreadsheet),
+          )
+          .timeout(const Duration(seconds: 30));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);

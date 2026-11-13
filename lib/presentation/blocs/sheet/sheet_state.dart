@@ -11,6 +11,14 @@ class SheetInitial extends SheetState {}
 
 class SheetLoading extends SheetState {}
 
+class SheetSetupProgress extends SheetLoading {
+  final double progress;
+  final String message;
+  SheetSetupProgress(this.progress, this.message);
+  @override
+  List<Object> get props => [progress, message];
+}
+
 class SheetCreated extends SheetState {
   final String sheetId;
 
@@ -32,4 +40,3 @@ class SheetError extends SheetState {
   @override
   List<Object> get props => [message];
 }
-

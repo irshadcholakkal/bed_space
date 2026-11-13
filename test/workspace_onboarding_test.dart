@@ -40,6 +40,8 @@ class _SheetCreation extends SheetBloc {
   }
 
   void fail() => emit(const SheetError('Drive unavailable. Retry.'));
+  void folderProgress() =>
+      emit(SheetSetupProgress(.75, 'Preparing your document folder…'));
   void succeed() => emit(const SheetCreated(sheetId: 'created-sheet'));
 }
 
@@ -90,6 +92,16 @@ void main() {
       expect(sheet.requests.single.userEmail, 'owner@example.com');
       expect(sheet.requests.single.accessToken, 'token');
       expect(find.byType(LinearProgressIndicator), findsOneWidget);
+      sheet.folderProgress();
+      await tester.pump();
+      expect(find.text('75%'), findsOneWidget);
+      expect(find.text('Preparing your document folder…'), findsOneWidget);
+      expect(
+          tester
+              .widget<LinearProgressIndicator>(
+                  find.byType(LinearProgressIndicator))
+              .value,
+          .75);
       sheet.fail();
       await tester.pumpAndSettle();
       expect(find.text('Drive unavailable. Retry.'), findsOneWidget);

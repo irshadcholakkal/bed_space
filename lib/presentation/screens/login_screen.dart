@@ -18,6 +18,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _business = TextEditingController();
   final _phone = TextEditingController();
   bool _busy = false;
+  double _progress = 0;
+  String _progressMessage = 'Saving your business details…';
   String? _error;
   static const _ink = Color(0xfff5f5f5);
   static const _muted = Color(0xffa6afad);
@@ -56,20 +58,28 @@ class _LoginScreenState extends State<LoginScreen> {
     FocusScope.of(context).unfocus();
     setState(() {
       _busy = true;
+      _progress = .05;
+      _progressMessage = 'Saving your business details…';
       _error = null;
     });
     try {
       if (SaasService.userId != null) {
-        await BusinessProfileService(SaasService.client).save(
-          businessName: _business.text,
-          phoneNumber: _phone.text,
-        );
+        await BusinessProfileService(SaasService.client)
+            .save(
+              businessName: _business.text,
+              phoneNumber: _phone.text,
+            )
+            .timeout(const Duration(seconds: 20));
       }
       if (!mounted) return;
       final google = widget.googleAuthService ?? GoogleAuthService();
+      setState(() {
+        _progress = .20;
+        _progressMessage = 'Checking Google Sheets & Drive permissions…';
+      });
       final token = auth.accessToken.isNotEmpty
           ? auth.accessToken
-          : await google.signInSilently();
+          : await google.signInSilently().timeout(const Duration(seconds: 35));
       if (!mounted) return;
       if (token == null || token.isEmpty) {
         setState(() {
@@ -104,8 +114,16 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) => BlocListener<SheetBloc, SheetState>(
         listener: (context, state) {
           if (state is SheetCreated) {
-            setState(() => _busy = false);
+            setState(() {
+              _progress = 1;
+              _progressMessage = 'Workspace ready. Opening…';
+            });
             context.read<AuthBloc>().add(const AuthCheckRequested());
+          } else if (state is SheetSetupProgress) {
+            setState(() {
+              _progress = state.progress;
+              _progressMessage = state.message;
+            });
           } else if (state is SheetError) {
             setState(() {
               _busy = false;
@@ -113,7 +131,14 @@ class _LoginScreenState extends State<LoginScreen> {
             });
           }
         },
-        child: BlocBuilder<AuthBloc, AuthState>(builder: (context, auth) {
+        child: BlocConsumer<AuthBloc, AuthState>(listener: (context, auth) {
+          if (auth is AuthError ||
+              auth is AuthAuthenticated ||
+              auth is AuthAuthenticatedWithoutSheet ||
+              auth is AuthUnauthenticated) {
+            setState(() => _busy = false);
+          }
+        }, builder: (context, auth) {
           final loading = _busy || auth is AuthLoading || auth is AuthInitial;
           return Theme(
               data: ThemeData(
@@ -197,10 +222,11 @@ class _LoginScreenState extends State<LoginScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(
+            SizedBox(
                 width: 64,
                 height: 64,
                 child: CircularProgressIndicator(
+                    value: _busy ? _progress : null,
                     strokeWidth: 2,
                     color: _ink,
                     backgroundColor: Color(0xff293230))),
@@ -215,12 +241,22 @@ class _LoginScreenState extends State<LoginScreen> {
                 liveRegion: true,
                 child: Text(
                     _busy
-                        ? 'Preparing your spreadsheet and document folder. Your workspace will open automatically when it is ready.'
+                        ? _progressMessage
                         : 'Checking your Google connection. Just a moment.',
                     style: const TextStyle(color: _muted, height: 1.8))),
             const SizedBox(height: 32),
-            const LinearProgressIndicator(
-                color: _ink, backgroundColor: Color(0xff293230), minHeight: 2),
+            if (_busy) ...[
+              Text('${(_progress * 100).round()}%', style: _heading(28)),
+              const SizedBox(height: 12),
+              const Text('Progress reflects completed setup steps.',
+                  style: TextStyle(color: _muted, fontSize: 12)),
+              const SizedBox(height: 12),
+            ],
+            LinearProgressIndicator(
+                value: _busy ? _progress : null,
+                color: _ink,
+                backgroundColor: Color(0xff293230),
+                minHeight: 2),
           ]);
 
   Widget _details(AuthState auth) => Column(
