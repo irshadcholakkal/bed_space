@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
       });
       final token = auth.accessToken.isNotEmpty
           ? auth.accessToken
-          : await google.signInSilently().timeout(const Duration(seconds: 35));
+          : await google.signInSilently().timeout(const Duration(seconds: 65));
       if (!mounted) return;
       if (token == null || token.isEmpty) {
         setState(() {

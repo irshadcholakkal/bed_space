@@ -229,6 +229,9 @@ class GoogleSheetsService {
         final service = GoogleSheetsService(
           accessToken: accessToken,
           sheetId: sheetId,
+          // Setup already validated this token. Initialize all tabs with the
+          // same credential instead of renewing it again for every header row.
+          tokenProvider: () async => accessToken,
         );
 
         await service._initializeSheetHeaders();

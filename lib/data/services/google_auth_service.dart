@@ -15,6 +15,7 @@ library;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
+import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'saas_service.dart';
@@ -81,12 +82,19 @@ class GoogleAuthService {
     if (SaasService.configured && owner != null) {
       return _renewals.putIfAbsent(
           owner,
-          () => _restoreGoogleSession()
-              .timeout(const Duration(seconds: 30), onTimeout: () => null)
-              .whenComplete(() => _renewals.remove(owner)));
+          () => _restoreGoogleSession().timeout(const Duration(seconds: 60),
+                  onTimeout: () {
+                connectionError =
+                    'Google authorization timed out. Retry or reconnect Google. Reference: GOOGLE_TIMEOUT';
+                return null;
+              }).whenComplete(() => _renewals.remove(owner)));
     }
-    return _restoreGoogleSession()
-        .timeout(const Duration(seconds: 30), onTimeout: () => null);
+    return _restoreGoogleSession().timeout(const Duration(seconds: 60),
+        onTimeout: () {
+      connectionError =
+          'Google authorization timed out. Retry or reconnect Google. Reference: GOOGLE_TIMEOUT';
+      return null;
+    });
   }
 
   Future<String?> _restoreGoogleSession() async {
@@ -117,13 +125,22 @@ class GoogleAuthService {
       }
       final savedRefresh =
           await GoogleTokenStore.readRefreshToken(session.user.id);
-      if (savedRefresh == null || savedRefresh.isEmpty) return null;
+      if (savedRefresh == null || savedRefresh.isEmpty) {
+        connectionError ??=
+            'Google did not return storage credentials. Reconnect Google Sheets & Drive. Reference: GOOGLE_CREDENTIALS';
+        return null;
+      }
       try {
-        if (session.isExpired) await SaasService.client.auth.refreshSession();
+        if (session.isExpired) {
+          await SaasService.client.auth
+              .refreshSession()
+              .timeout(const Duration(seconds: 8));
+        }
         if (SaasService.userId != session.user.id) return null;
-        final response = await SaasService.client.functions.invoke(
-            'refresh-google-session',
-            body: {'refresh_token': savedRefresh});
+        final response = await SaasService.client.functions
+            .invoke('refresh-google-session', body: {
+          'refresh_token': savedRefresh
+        }).timeout(const Duration(seconds: 25));
         final result = response.data as Map<String, dynamic>;
         final token = result['access_token'] as String?;
         if (token == null || SaasService.userId != session.user.id) {
@@ -139,7 +156,25 @@ class GoogleAuthService {
         }
         await GoogleTokenStore.save(session.user.id, token);
         return token;
+      } on FunctionException catch (error) {
+        connectionError = switch (error.status) {
+          404 =>
+            'Google renewal is not deployed. Reconnect Google or ask the administrator to deploy refresh-google-session. Reference: GOOGLE_RENEW_DEPLOY',
+          503 =>
+            'Automatic Google renewal is not configured. Reconnect Google or ask the administrator to configure the Google OAuth credentials. Reference: GOOGLE_RENEW_CONFIG',
+          401 =>
+            'Your account session needs renewal. Sign in again. Reference: GOOGLE_RENEW_SESSION',
+          _ =>
+            'Google access could not be renewed. Reconnect Google Sheets & Drive. Reference: GOOGLE_RENEW_FAILED',
+        };
+        return null;
+      } on TimeoutException {
+        connectionError =
+            'Google renewal timed out. Retry or reconnect Google. Reference: GOOGLE_TIMEOUT';
+        return null;
       } catch (_) {
+        connectionError ??=
+            'Google access could not be renewed. Reconnect Google Sheets & Drive. Reference: GOOGLE_RENEW_FAILED';
         // Keep the app's account session. Only Google may need reconnecting.
         return null;
       }
