@@ -165,6 +165,8 @@ class TenantsManagementScreen extends StatefulWidget {
                             )
                           else
                             DropdownButtonFormField<String>(
+                              itemHeight: null,
+                              isDense: false,
                               icon: const Icon(CupertinoIcons.chevron_down),
                               isExpanded: true,
                               initialValue: selectedRoomId,
@@ -178,7 +180,9 @@ class TenantsManagementScreen extends StatefulWidget {
                                     (r) => DropdownMenuItem<String>(
                                       value: r.roomId,
                                       child: Text(r.displayName(rooms),
-                                          overflow: TextOverflow.ellipsis),
+                                          softWrap: true,
+                                          maxLines: null,
+                                          overflow: TextOverflow.visible),
                                     ),
                                   )
                                   .toList(),
@@ -1211,6 +1215,8 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                             )
                           else
                             DropdownButtonFormField<String>(
+                              itemHeight: null,
+                              isDense: false,
                               icon: const Icon(CupertinoIcons.chevron_down),
                               isExpanded: true,
                               initialValue: selectedRoomId,
@@ -1224,7 +1230,9 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                     (r) => DropdownMenuItem<String>(
                                       value: r.roomId,
                                       child: Text(r.displayName(rooms),
-                                          overflow: TextOverflow.ellipsis),
+                                          softWrap: true,
+                                          maxLines: null,
+                                          overflow: TextOverflow.visible),
                                     ),
                                   )
                                   .toList(),

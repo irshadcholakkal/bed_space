@@ -770,6 +770,8 @@ class _RoomExpensesScreenState extends State<RoomExpensesScreen> {
                         ),
                         const SizedBox(height: 24),
                         DropdownButtonFormField<String>(
+                          itemHeight: null,
+                          isDense: false,
                           icon: const Icon(CupertinoIcons.chevron_down),
                           initialValue: selectedParentId ?? '',
                           isExpanded: true,

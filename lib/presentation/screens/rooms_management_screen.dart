@@ -496,6 +496,8 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                           ),
                           const SizedBox(height: 16),
                           DropdownButtonFormField<String>(
+                            itemHeight: null,
+                            isDense: false,
                             icon: const Icon(CupertinoIcons.chevron_down),
                             key: ValueKey(
                                 '$selectedBuildingId/$selectedParentId'),

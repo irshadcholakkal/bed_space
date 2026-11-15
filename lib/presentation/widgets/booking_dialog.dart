@@ -198,6 +198,8 @@ class _BookingDialogState extends State<_BookingDialog> {
                                           }),
                                 const SizedBox(height: 16),
                                 DropdownButtonFormField<String>(
+                                    itemHeight: null,
+                                    isDense: false,
                                     key: ValueKey(
                                         '${_moveIn.toIso8601String()}/${selection?.bedId}/${candidates.length}'),
                                     initialValue: selection?.bedId,
@@ -223,7 +225,9 @@ class _BookingDialogState extends State<_BookingDialog> {
                                           value: bed.bedId,
                                           child: Text(
                                               '${building?.buildingName ?? ''} · ${room.displayName(state.rooms)} · ${bed.bedType.name} $number',
-                                              overflow: TextOverflow.ellipsis));
+                                              softWrap: true,
+                                              maxLines: null,
+                                              overflow: TextOverflow.visible));
                                     }).toList(),
                                     validator: (value) => value == null
                                         ? 'Select an available bed'

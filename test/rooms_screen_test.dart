@@ -5,9 +5,22 @@ import 'package:bed_space/data/models/bed_model.dart';
 import 'package:bed_space/data/repositories/management_repository.dart';
 import 'package:bed_space/presentation/blocs/management/management_bloc.dart';
 import 'package:bed_space/presentation/screens/rooms_screen.dart';
+import 'package:bed_space/presentation/blocs/room/room_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'property_financials_test.dart' as fixture;
 
 class _Repository extends Fake implements ManagementRepository {}
+
+class _RoomBloc extends RoomBloc {
+  String? opened;
+  _RoomBloc() : super(repository: _Repository()) {
+    emit(const RoomsLoaded(selectedRoomDetails: []));
+  }
+  @override
+  void add(RoomEvent event) {
+    if (event is RoomDetailRequested) opened = event.roomId;
+  }
+}
 
 class _Bloc extends ManagementBloc {
   _Bloc() : super(repository: _Repository()) {
@@ -30,6 +43,49 @@ class _Bloc extends ManagementBloc {
 }
 
 void main() {
+  testWidgets('parent expands subrooms; tap opens sheet; menu opens details',
+      (tester) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final management = _Bloc();
+    final rooms = _RoomBloc();
+    addTearDown(management.close);
+    addTearDown(rooms.close);
+    final router = GoRouter(routes: [
+      GoRoute(path: '/', builder: (_, __) => const RoomsScreen()),
+      GoRoute(
+          path: '/rooms',
+          builder: (_, state) =>
+              Text('Details for ${state.uri.queryParameters['room']}')),
+    ]);
+    addTearDown(router.dispose);
+    await tester.pumpWidget(MultiBlocProvider(providers: [
+      BlocProvider<ManagementBloc>.value(value: management),
+      BlocProvider<RoomBloc>.value(value: rooms),
+    ], child: MaterialApp.router(routerConfig: router)));
+    await tester.pumpAndSettle();
+    expect(find.text('Room 101 / Subroom A'), findsNothing);
+    await tester.tap(find.byTooltip('Expand subrooms'));
+    await tester.pumpAndSettle();
+    expect(find.text('Room 101 / Subroom A'), findsOneWidget);
+    await tester.tap(find.text('Room 101 / Subroom A'));
+    await tester.pumpAndSettle();
+    expect(rooms.opened, 'sub');
+    expect(find.text('Bed Availability'), findsOneWidget);
+    await tester.tap(find.text('Close'));
+    await tester.pumpAndSettle();
+    final parent = find.byKey(const ValueKey('room-card-parent'));
+    await tester.tap(find
+        .descendant(of: parent, matching: find.byTooltip('Room options'))
+        .first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Details'));
+    await tester.pumpAndSettle();
+    expect(find.text('Details for parent'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
   for (final size in [const Size(360, 800), const Size(1440, 1000)]) {
     testWidgets('Rooms list combines search and availability at $size',
         (tester) async {

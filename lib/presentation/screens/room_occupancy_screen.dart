@@ -7,6 +7,10 @@ import '../blocs/room/room_bloc.dart';
 import '../theme/app_theme.dart';
 import '../../data/models/bed_model.dart'; // Added
 
+/// Reuse the occupancy sheet from room cards throughout the app.
+void showRoomDetailBottomSheet(BuildContext context, RoomWithStats room) =>
+    const RoomOccupancyScreen()._showRoomDetail(context, room);
+
 /// Rooms Screen
 /// Shows buildings and rooms with vacancy status
 class RoomOccupancyScreen extends StatefulWidget {

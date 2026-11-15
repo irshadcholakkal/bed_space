@@ -45,6 +45,8 @@ Future<void> showTenantTransfer(
                           const Text('No vacant beds in available rooms.')
                         else
                           DropdownButtonFormField<String>(
+                              itemHeight: null,
+                              isDense: false,
                               isExpanded: true,
                               initialValue: valid ? selected : null,
                               icon: const Icon(CupertinoIcons.chevron_down),
@@ -61,7 +63,9 @@ Future<void> showTenantTransfer(
                                     value: bed.bedId,
                                     child: Text(
                                         '${building?.buildingName ?? ''} · ${room.displayName(state.rooms)} · ${bed.bedType.name} (${bed.bedId})',
-                                        overflow: TextOverflow.ellipsis));
+                                        softWrap: true,
+                                        maxLines: null,
+                                        overflow: TextOverflow.visible));
                               }).toList(),
                               onChanged: (value) =>
                                   update(() => selected = value)),
