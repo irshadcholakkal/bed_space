@@ -80,14 +80,14 @@ class GoogleAuthService {
     connectionError = null;
     final owner = accountUserId;
     if (SaasService.configured && owner != null) {
-      return _renewals.putIfAbsent(
+      return restoreForAccount(
           owner,
           () => _restoreGoogleSession().timeout(const Duration(seconds: 60),
                   onTimeout: () {
                 connectionError =
                     'Google authorization timed out. Retry or reconnect Google. Reference: GOOGLE_TIMEOUT';
                 return null;
-              }).whenComplete(() => _renewals.remove(owner)));
+              }));
     }
     return _restoreGoogleSession().timeout(const Duration(seconds: 60),
         onTimeout: () {
@@ -95,6 +95,18 @@ class GoogleAuthService {
           'Google authorization timed out. Retry or reconnect Google. Reference: GOOGLE_TIMEOUT';
       return null;
     });
+  }
+
+  @visibleForTesting
+  Future<String?> restoreForAccount(
+      String owner, Future<String?> Function() restore) {
+    return _renewals.putIfAbsent(
+        owner,
+        () => restore().whenComplete(() {
+              // Do not return remove(): its value is this very Future. Returning it
+              // from whenComplete makes the renewal wait for its own completion.
+              _renewals.remove(owner);
+            }));
   }
 
   Future<String?> _restoreGoogleSession() async {
