@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:async';
 
 /// Keep contact details durable even while the phone-column migration rolls out.
 class BusinessProfileService {
@@ -63,6 +64,9 @@ class BusinessProfileService {
   }
 
   static String errorMessage(Object error) {
+    if (error is TimeoutException) {
+      return 'Saving business details timed out. Retry when your connection is stable. Reference: PROFILE_TIMEOUT';
+    }
     if (error is AuthException || error is StateError) {
       return 'Your session could not be verified. Please sign out and sign in again.';
     }
@@ -70,6 +74,12 @@ class BusinessProfileService {
         ['42501', '42P01', 'PGRST205'].contains(error.code)) {
       return 'Business profile access is not configured. Please contact the administrator.';
     }
-    return 'Could not save your business details. Check your connection and try again.';
+    if (error is PostgrestException) {
+      if (['42703', 'PGRST204'].contains(error.code)) {
+        return 'Business profile columns are missing. Ask the administrator to apply the profile migrations. Reference: PROFILE_SCHEMA';
+      }
+      return 'The database could not save your business details. Reference: PROFILE_DATABASE';
+    }
+    return 'Could not save your business details. Check your connection and try again. Reference: PROFILE_CONNECTION';
   }
 }

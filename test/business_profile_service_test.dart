@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -6,6 +7,14 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:bed_space/data/services/business_profile_service.dart';
 
 void main() {
+  test('profile failures distinguish timeout and schema errors', () {
+    expect(BusinessProfileService.errorMessage(TimeoutException('timeout')),
+        contains('PROFILE_TIMEOUT'));
+    expect(
+        BusinessProfileService.errorMessage(
+            const PostgrestException(message: 'column missing', code: '42703')),
+        contains('PROFILE_SCHEMA'));
+  });
   for (final missingCode in [null, '42703', 'PGRST204']) {
     test('Save and restore business details with profile schema $missingCode',
         () async {

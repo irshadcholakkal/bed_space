@@ -97,7 +97,9 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) {
         setState(() {
           _busy = false;
-          _error = BusinessProfileService.errorMessage(error);
+          _error = _progress >= .20
+              ? 'Business details were saved, but Google authorization failed. Reconnect Google Sheets & Drive and retry. Reference: GOOGLE_SETUP'
+              : BusinessProfileService.errorMessage(error);
         });
       }
     }
