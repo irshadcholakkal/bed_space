@@ -32,15 +32,16 @@ class GoogleSheetsService {
       {String? businessName}) async {
     final legacyName = 'Bedspace_$customerId';
     final name = businessName?.trim().isNotEmpty == true
-        ? '${businessName!.trim()} - Documents'
+        ? businessName!.trim()
         : legacyName;
+    final previousName = '$name - Documents';
     final headers = {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json'
     };
     final uri = Uri.https('www.googleapis.com', '/drive/v3/files', {
       'q':
-          "(name = '${_escapeDriveQuery(name)}' or name = '${_escapeDriveQuery(legacyName)}') and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
+          "(name = '${_escapeDriveQuery(name)}' or name = '${_escapeDriveQuery(previousName)}' or name = '${_escapeDriveQuery(legacyName)}') and mimeType = 'application/vnd.google-apps.folder' and trashed = false",
       'fields': 'files(id)',
     });
     final found = await http

@@ -78,7 +78,7 @@ void main() {
                     200);
               }
               expect(
-                  jsonDecode(request.body)['name'], 'Palm Living - Documents');
+                  jsonDecode(request.body)['name'], 'Palm Living');
               created = true;
               creations++;
               return http.Response('{"id":"folder-id"}', 201);

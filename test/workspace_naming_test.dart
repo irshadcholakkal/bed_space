@@ -50,7 +50,7 @@ void main() {
         return http.Response('{"files":[]}', 200);
       }
       expect(
-          jsonDecode(request.body)['name'], "Palm's Living & Co - Documents");
+          jsonDecode(request.body)['name'], "Palm's Living & Co");
       return http.Response('{"id":"folder"}', 201);
     });
     await http.runWithClient(() async {
