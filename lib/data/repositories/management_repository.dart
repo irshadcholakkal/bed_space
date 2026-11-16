@@ -210,6 +210,7 @@ class ManagementRepository {
     room.validateHierarchy(await _localService.getRooms());
     final roomWithId = room.roomId == null || room.roomId!.isEmpty
         ? RoomModel(
+            roomType: room.roomType,
             available: room.available,
             media: room.media,
             roomId: const Uuid().v4(),
@@ -233,9 +234,9 @@ class ManagementRepository {
   }
 
   Future<void> updateRoom(RoomModel room) async {
-    room.validateHierarchy(await _localService.getRooms());
-    await _enqueue('UPDATE_ROOM', room);
+    await _localService.updateRoomCapacity(room);
     notifyDataChanged();
+    unawaited(_processQueue());
   }
 
   Future<void> deleteRoom(String id) async {

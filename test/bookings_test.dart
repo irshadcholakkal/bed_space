@@ -130,7 +130,7 @@ void main() {
     local = LocalDatabaseService();
     expect((await local.getTenants()).single.tenantName, 'Existing tenant');
     expect(await local.getBookings(), isEmpty);
-    expect(await (await local.database).getVersion(), 10);
+    expect(await (await local.database).getVersion(), 11);
   });
 
   test(

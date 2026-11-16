@@ -1,8 +1,22 @@
 import 'dart:convert';
 import 'room_media_model.dart';
 
+enum RoomType { bedspace, partition, studio, wholeRoom }
+
+extension RoomTypeLabel on RoomType {
+  String get label => switch (this) {
+        RoomType.bedspace => 'Bedspace',
+        RoomType.partition => 'Partition',
+        RoomType.studio => 'Studio',
+        RoomType.wholeRoom => 'Whole room',
+      };
+}
+
 /// Room data model
 class RoomModel {
+  final RoomType roomType;
+  bool get isWholeUnit => roomType != RoomType.bedspace;
+  String get rentalUnitLabel => isWholeUnit ? 'unit' : 'bed';
   final bool available;
   final List<RoomMediaModel> media;
   final String? roomId;
@@ -19,6 +33,7 @@ class RoomModel {
   final double monthlyRent; // Base rent paid to landlord
 
   RoomModel({
+    this.roomType = RoomType.bedspace,
     this.available = true,
     this.media = const [],
     this.roomId,
@@ -36,6 +51,7 @@ class RoomModel {
 
   Map<String, dynamic> toJson() {
     return {
+      'room_type': roomType.name,
       'available': available ? 'TRUE' : 'FALSE',
       'media_json': jsonEncode(media.map((media) => media.toJson()).toList()),
       'room_id': roomId ?? '',
@@ -54,6 +70,10 @@ class RoomModel {
 
   factory RoomModel.fromJson(Map<String, dynamic> json) {
     return RoomModel(
+      roomType: RoomType.values
+              .where((type) => type.name == json['room_type'])
+              .firstOrNull ??
+          RoomType.bedspace,
       media: RoomMediaModel.decode(json['media_json']),
       available:
           !['FALSE', '0'].contains(json['available']?.toString().toUpperCase()),
@@ -89,16 +109,33 @@ class RoomModel {
               true);
 
   String displayName(Iterable<RoomModel> rooms) {
-    if (!isSubroom) return 'Room $roomNumber';
+    if (!isSubroom) {
+      return '${isWholeUnit ? roomType.label : 'Room'} $roomNumber';
+    }
     final parent =
         rooms.where((room) => room.roomId == parentRoomId).firstOrNull;
     return parent == null
-        ? 'Subroom $roomNumber'
-        : 'Room ${parent.roomNumber} / Subroom $roomNumber';
+        ? '${isWholeUnit ? roomType.label : 'Subroom'} $roomNumber'
+        : '${parent.isWholeUnit ? parent.roomType.label : 'Room'} ${parent.roomNumber} / ${isWholeUnit ? roomType.label : 'Subroom'} $roomNumber';
   }
 
   /// Only one level of subrooms is supported; each space owns its own beds.
   void validateHierarchy(Iterable<RoomModel> rooms) {
+    if (lowerBedsCount < 0 ||
+        upperBedsCount < 0 ||
+        totalCapacity != lowerBedsCount + upperBedsCount ||
+        !lowerBedRent.isFinite ||
+        !upperBedRent.isFinite ||
+        lowerBedRent < 0 ||
+        upperBedRent < 0) {
+      throw ArgumentError(
+          'Capacity must match the bed counts, and rents must be non-negative.');
+    }
+    if (isWholeUnit &&
+        (totalCapacity != 1 || lowerBedsCount != 1 || upperBedsCount != 0)) {
+      throw ArgumentError(
+          'A partition, studio or whole room is rented as one unit.');
+    }
     if (isSubroom) {
       final parent =
           rooms.where((room) => room.roomId == parentRoomId).firstOrNull;

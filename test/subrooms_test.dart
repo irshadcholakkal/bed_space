@@ -193,7 +193,7 @@ void main() {
                           'properties': {
                             'title': 'Rooms',
                             'sheetId': 1,
-                            'gridProperties': {'columnCount': 13}
+                            'gridProperties': {'columnCount': 14}
                           }
                         }
                       ]
@@ -231,7 +231,7 @@ void main() {
     expect(rows[0][10], 'parent');
     expect(rows[1][10], 'parent');
     expect(rows[2], everyElement(''));
-    expect(rows[2], hasLength(13));
+    expect(rows[2], hasLength(14));
     expect(rows[0][11], 'TRUE');
   });
 }

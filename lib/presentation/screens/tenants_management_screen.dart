@@ -230,8 +230,10 @@ class TenantsManagementScreen extends StatefulWidget {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Select Bed Type',
+                                  Text(
+                                    selectedRoom.isWholeUnit
+                                        ? 'Select unit'
+                                        : 'Select Bed Type',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.secondaryTextColor,
@@ -243,7 +245,7 @@ class TenantsManagementScreen extends StatefulWidget {
                                       Expanded(
                                         child: ChoiceChip(
                                           label: Text(
-                                            'Lower (د.إ${selectedRoom.lowerBedRent.toStringAsFixed(0)})',
+                                            '${selectedRoom.isWholeUnit ? 'Unit' : 'Lower'} (د.إ${selectedRoom.lowerBedRent.toStringAsFixed(0)})',
                                           ),
                                           selected: selectedBedId != null &&
                                               allBeds
@@ -278,43 +280,46 @@ class TenantsManagementScreen extends StatefulWidget {
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      Expanded(
-                                        child: ChoiceChip(
-                                          label: Text(
-                                            'Upper (د.إ${selectedRoom.upperBedRent.toStringAsFixed(0)})',
-                                          ),
-                                          selected: selectedBedId != null &&
-                                              allBeds
-                                                      .firstWhere(
-                                                        (b) =>
-                                                            b.bedId ==
-                                                            selectedBedId,
-                                                        orElse: () => BedModel(
-                                                          roomId: '',
-                                                          bedType:
-                                                              BedType.lower,
-                                                          status: BedStatus
-                                                              .occupied,
-                                                        ),
-                                                      )
-                                                      .bedType ==
-                                                  BedType.upper,
-                                          onSelected: upperBeds.isNotEmpty
-                                              ? (selected) {
-                                                  if (selected) {
-                                                    setState(() {
-                                                      selectedBedId =
-                                                          upperBeds.first.bedId;
-                                                      rentController.text =
-                                                          selectedRoom
-                                                              .upperBedRent
-                                                              .toString();
-                                                    });
+                                      if (!selectedRoom.isWholeUnit)
+                                        Expanded(
+                                          child: ChoiceChip(
+                                            label: Text(
+                                              'Upper (د.إ${selectedRoom.upperBedRent.toStringAsFixed(0)})',
+                                            ),
+                                            selected: selectedBedId != null &&
+                                                allBeds
+                                                        .firstWhere(
+                                                          (b) =>
+                                                              b.bedId ==
+                                                              selectedBedId,
+                                                          orElse: () =>
+                                                              BedModel(
+                                                            roomId: '',
+                                                            bedType:
+                                                                BedType.lower,
+                                                            status: BedStatus
+                                                                .occupied,
+                                                          ),
+                                                        )
+                                                        .bedType ==
+                                                    BedType.upper,
+                                            onSelected: upperBeds.isNotEmpty
+                                                ? (selected) {
+                                                    if (selected) {
+                                                      setState(() {
+                                                        selectedBedId =
+                                                            upperBeds
+                                                                .first.bedId;
+                                                        rentController.text =
+                                                            selectedRoom
+                                                                .upperBedRent
+                                                                .toString();
+                                                      });
+                                                    }
                                                   }
-                                                }
-                                              : null,
+                                                : null,
+                                          ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                   if (lowerBeds.isEmpty && upperBeds.isEmpty)
@@ -1284,8 +1289,10 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'Select Bed Type',
+                                  Text(
+                                    selectedRoom.isWholeUnit
+                                        ? 'Select unit'
+                                        : 'Select Bed Type',
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       color: AppTheme.secondaryTextColor,
@@ -1297,7 +1304,7 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                       Expanded(
                                         child: ChoiceChip(
                                           label: Text(
-                                            'Lower (د.إ${selectedRoom.lowerBedRent.toStringAsFixed(0)})',
+                                            '${selectedRoom.isWholeUnit ? 'Unit' : 'Lower'} (د.إ${selectedRoom.lowerBedRent.toStringAsFixed(0)})',
                                           ),
                                           selected: selectedBedId != null &&
                                               allBeds
@@ -1332,43 +1339,46 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      Expanded(
-                                        child: ChoiceChip(
-                                          label: Text(
-                                            'Upper (د.إ${selectedRoom.upperBedRent.toStringAsFixed(0)})',
-                                          ),
-                                          selected: selectedBedId != null &&
-                                              allBeds
-                                                      .firstWhere(
-                                                        (b) =>
-                                                            b.bedId ==
-                                                            selectedBedId,
-                                                        orElse: () => BedModel(
-                                                          roomId: '',
-                                                          bedType:
-                                                              BedType.lower,
-                                                          status: BedStatus
-                                                              .occupied,
-                                                        ),
-                                                      )
-                                                      .bedType ==
-                                                  BedType.upper,
-                                          onSelected: upperBeds.isNotEmpty
-                                              ? (selected) {
-                                                  if (selected) {
-                                                    setState(() {
-                                                      selectedBedId =
-                                                          upperBeds.first.bedId;
-                                                      rentController.text =
-                                                          selectedRoom
-                                                              .upperBedRent
-                                                              .toString();
-                                                    });
+                                      if (!selectedRoom.isWholeUnit)
+                                        Expanded(
+                                          child: ChoiceChip(
+                                            label: Text(
+                                              'Upper (د.إ${selectedRoom.upperBedRent.toStringAsFixed(0)})',
+                                            ),
+                                            selected: selectedBedId != null &&
+                                                allBeds
+                                                        .firstWhere(
+                                                          (b) =>
+                                                              b.bedId ==
+                                                              selectedBedId,
+                                                          orElse: () =>
+                                                              BedModel(
+                                                            roomId: '',
+                                                            bedType:
+                                                                BedType.lower,
+                                                            status: BedStatus
+                                                                .occupied,
+                                                          ),
+                                                        )
+                                                        .bedType ==
+                                                    BedType.upper,
+                                            onSelected: upperBeds.isNotEmpty
+                                                ? (selected) {
+                                                    if (selected) {
+                                                      setState(() {
+                                                        selectedBedId =
+                                                            upperBeds
+                                                                .first.bedId;
+                                                        rentController.text =
+                                                            selectedRoom
+                                                                .upperBedRent
+                                                                .toString();
+                                                      });
+                                                    }
                                                   }
-                                                }
-                                              : null,
+                                                : null,
+                                          ),
                                         ),
-                                      ),
                                     ],
                                   ),
                                 ],

@@ -345,7 +345,7 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                         color: const Color(0xFFEAF6F2),
                         borderRadius: BorderRadius.circular(8)),
                     child: Text(
-                        '${beds.length} ${beds.length == 1 ? 'bed' : 'beds'} available',
+                        '${beds.length} ${room.rentalUnitLabel}${beds.length == 1 ? '' : 's'} available',
                         style: const TextStyle(
                             color: Color(0xFF09634E),
                             fontWeight: FontWeight.w600))),
@@ -356,7 +356,9 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
                         padding: const EdgeInsets.only(bottom: 8),
                         child: Wrap(spacing: 8, runSpacing: 4, children: [
                           Text(
-                              '${beds.where((bed) => bed.bedType == type).length} ${type.name}',
+                              room.isWholeUnit
+                                  ? room.roomType.label
+                                  : '${beds.where((bed) => bed.bedType == type).length} ${type.name}',
                               style:
                                   const TextStyle(fontWeight: FontWeight.w600)),
                           Text(
@@ -382,8 +384,8 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
           childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
           shape: const Border(),
           collapsedShape: const Border(),
-          title: const Text('Choose a bed',
-              style: TextStyle(
+          title: Text(room.isWholeUnit ? 'Rent this unit' : 'Choose a bed',
+              style: const TextStyle(
                   color: AppTheme.textColor,
                   fontSize: 15,
                   fontWeight: FontWeight.w600)),
@@ -410,7 +412,10 @@ class _VacantBedsScreenState extends State<VacantBedsScreen> {
       decoration: const BoxDecoration(
           border: Border(top: BorderSide(color: Color(0xFFEEF0F2)))),
       child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-        Text('${bed.bedType == BedType.lower ? 'Lower' : 'Upper'} bed $number',
+        Text(
+            room.isWholeUnit
+                ? room.roomType.label
+                : '${bed.bedType == BedType.lower ? 'Lower' : 'Upper'} bed $number',
             style: const TextStyle(fontWeight: FontWeight.w600)),
         const SizedBox(height: 8),
         Wrap(

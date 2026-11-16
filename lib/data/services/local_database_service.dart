@@ -41,13 +41,17 @@ class LocalDatabaseService {
     final path = kIsWeb ? name : join(await getDatabasesPath(), name);
     return await openDatabase(
       path,
-      version: 10,
+      version: 11,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
     );
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion >= 2 && oldVersion < 11) {
+      await db.execute(
+          "ALTER TABLE rooms ADD COLUMN room_type TEXT NOT NULL DEFAULT 'bedspace'");
+    }
     if (oldVersion >= 2 && oldVersion < 10) {
       await db.execute(
           "ALTER TABLE rooms ADD COLUMN media_json TEXT NOT NULL DEFAULT '[]'");
@@ -146,7 +150,8 @@ class LocalDatabaseService {
         monthly_rent REAL,
         parent_room_id TEXT,
         available TEXT NOT NULL DEFAULT 'TRUE',
-        media_json TEXT NOT NULL DEFAULT '[]'
+        media_json TEXT NOT NULL DEFAULT '[]',
+        room_type TEXT NOT NULL DEFAULT 'bedspace'
       )
     ''');
 
@@ -572,6 +577,65 @@ class LocalDatabaseService {
   }
 
   /// Commit local changes and their retry record together.
+  Future<void> updateRoomCapacity(RoomModel room) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      final rooms = (await txn.query('rooms')).map(RoomModel.fromJson).toList();
+      room.validateHierarchy(rooms);
+      if (!rooms.any((old) => old.roomId == room.roomId)) {
+        throw StateError('Room no longer exists. Refresh and retry.');
+      }
+      final beds = (await txn
+              .query('beds', where: 'room_id = ?', whereArgs: [room.roomId]))
+          .map(BedModel.fromJson)
+          .toList();
+      final protected = <String?>{
+        for (final row in await txn.query('tenants', where: "active = 'TRUE'"))
+          row['bed_id'] as String?,
+        for (final row
+            in await txn.query('bookings', where: "status = 'reserved'"))
+          row['bed_id'] as String?,
+      };
+      final remove = <BedModel>[];
+      final add = <BedModel>[];
+      for (final type in BedType.values) {
+        final existing = beds.where((bed) => bed.bedType == type).toList();
+        final target =
+            type == BedType.lower ? room.lowerBedsCount : room.upperBedsCount;
+        final disposable = existing
+            .where((bed) =>
+                bed.status == BedStatus.vacant &&
+                !protected.contains(bed.bedId))
+            .toList();
+        final excess = existing.length - target;
+        if (excess > disposable.length) {
+          throw StateError(
+              'Cannot reduce capacity: some spaces are occupied or reserved. Move or check out tenants and cancel reservations first.');
+        }
+        if (excess > 0) remove.addAll(disposable.take(excess));
+        for (var i = existing.length; i < target; i++) {
+          add.add(BedModel(
+              bedId: const Uuid().v4(),
+              roomId: room.roomId!,
+              bedType: type,
+              status: BedStatus.vacant));
+        }
+      }
+      await txn.update('rooms', room.toJson(),
+          where: 'room_id = ?', whereArgs: [room.roomId]);
+      await _queueBooking(txn, 'UPDATE_ROOM', room.toJson());
+      for (final bed in remove) {
+        await txn.delete('beds', where: 'bed_id = ?', whereArgs: [bed.bedId]);
+        await _queueBooking(txn, 'DELETE_BED', {'id': bed.bedId});
+      }
+      for (final bed in add) {
+        await txn.insert('beds', bed.toJson());
+        await _queueBooking(txn, 'ADD_BED', bed.toJson());
+      }
+      revision++;
+    });
+  }
+
   Future<void> commitMutation(Map<String, dynamic> mutation) async {
     final db = await database;
     final payload =
@@ -587,8 +651,8 @@ class LocalDatabaseService {
     };
     await db.transaction((txn) async {
       if (type == 'ADD_BED') {
-        final existing = await txn.query('beds', where: 'bed_id = ?',
-            whereArgs: [payload['bed_id']], limit: 1);
+        final existing = await txn.query('beds',
+            where: 'bed_id = ?', whereArgs: [payload['bed_id']], limit: 1);
         if (existing.isNotEmpty) return;
       }
       final previous = type.endsWith('_TENANT')

@@ -1,3 +1,4 @@
+import '../widgets/room_edit_sheet.dart';
 import '../widgets/room_media_picker.dart';
 import 'dart:async';
 import 'package:uuid/uuid.dart';
@@ -293,6 +294,27 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                             color: AppTheme.primaryColor,
                                           ),
                                         ),
+                                        trailing: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              if (!room.isSubroom)
+                                                IconButton(
+                                                    tooltip: 'Add Subroom',
+                                                    icon: const Icon(
+                                                        CupertinoIcons.house),
+                                                    onPressed: () =>
+                                                        showAddRoomDialog(
+                                                            context,
+                                                            parentRoom: room)),
+                                              IconButton(
+                                                  tooltip:
+                                                      'Edit room, beds & rent',
+                                                  icon: const Icon(
+                                                      CupertinoIcons.pencil),
+                                                  onPressed: () =>
+                                                      showRoomEditSheet(
+                                                          context, room)),
+                                            ]),
                                         title: Text(
                                           room.displayName(state.rooms),
                                           style: const TextStyle(
@@ -323,7 +345,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                'Capacity: ${room.totalCapacity} beds',
+                                                'Capacity: ${room.totalCapacity} ${room.rentalUnitLabel}s',
                                                 style: const TextStyle(
                                                   color: AppTheme
                                                       .secondaryTextColor,
@@ -331,7 +353,9 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                               ),
                                               const SizedBox(height: 4),
                                               Text(
-                                                'Lower: ${room.lowerBedsCount} | Upper: ${room.upperBedsCount}',
+                                                room.isWholeUnit
+                                                    ? 'Rented as one unit'
+                                                    : 'Lower: ${room.lowerBedsCount} | Upper: ${room.upperBedsCount}',
                                                 style: const TextStyle(
                                                   color: AppTheme
                                                       .secondaryTextColor,
@@ -350,16 +374,6 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                             ],
                                           ),
                                         ),
-                                        trailing: room.isSubroom
-                                            ? null
-                                            : IconButton(
-                                                icon: const Icon(
-                                                    CupertinoIcons.house),
-                                                tooltip: 'Add Subroom',
-                                                onPressed: () =>
-                                                    showAddRoomDialog(context,
-                                                        parentRoom: room),
-                                              ),
                                         // trailing: IconButton(
                                         //   icon: const Icon(
                                         //     CupertinoIcons.creditcard,
@@ -412,6 +426,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
 
     String? selectedBuildingId = parentRoom?.buildingId;
     String? selectedParentId = parentRoom?.roomId;
+    var selectedRoomType = RoomType.bedspace;
     String? validationError;
     var saving = false;
     final mediaPicker = GlobalKey<RoomMediaPickerState>();
@@ -530,6 +545,36 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                     }),
                           ),
                           const SizedBox(height: 16),
+                          DropdownButtonFormField<RoomType>(
+                            initialValue: selectedRoomType,
+                            isExpanded: true,
+                            decoration:
+                                const InputDecoration(labelText: 'Rental type'),
+                            items: [
+                              for (final type in RoomType.values)
+                                DropdownMenuItem(
+                                    value: type, child: Text(type.label))
+                            ],
+                            onChanged: saving
+                                ? null
+                                : (value) => setState(() {
+                                      selectedRoomType = value!;
+                                      capacityController.text =
+                                          value == RoomType.bedspace
+                                              ? '2'
+                                              : '1';
+                                      lowerBedsController.text = '1';
+                                      upperBedsController.text =
+                                          value == RoomType.bedspace
+                                              ? '1'
+                                              : '0';
+                                      upperRentController.text =
+                                          value == RoomType.bedspace
+                                              ? '600'
+                                              : '0';
+                                    }),
+                          ),
+                          const SizedBox(height: 16),
                           TextField(
                             enabled: !saving,
                             controller: roomNumberController,
@@ -542,58 +587,68 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                             ),
                           ),
                           const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  enabled: !saving,
-                                  controller: capacityController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Capacity',
-                                    prefixIcon: Icon(CupertinoIcons.person_2),
+                          if (selectedRoomType == RoomType.bedspace) ...[
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    enabled: !saving,
+                                    controller: capacityController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Capacity',
+                                      prefixIcon: Icon(CupertinoIcons.person_2),
+                                    ),
+                                    keyboardType: TextInputType.number,
                                   ),
-                                  keyboardType: TextInputType.number,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  enabled: !saving,
-                                  controller: lowerBedsController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Lower Beds',
-                                    prefixIcon: Icon(CupertinoIcons.bed_double),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextField(
+                                    enabled: !saving,
+                                    controller: lowerBedsController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Lower Beds',
+                                      prefixIcon:
+                                          Icon(CupertinoIcons.bed_double),
+                                    ),
+                                    keyboardType: TextInputType.number,
                                   ),
-                                  keyboardType: TextInputType.number,
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: TextField(
-                                  enabled: !saving,
-                                  controller: upperBedsController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Upper Beds',
-                                    prefixIcon: Icon(CupertinoIcons.bed_double),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: TextField(
+                                    enabled: !saving,
+                                    controller: upperBedsController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Upper Beds',
+                                      prefixIcon:
+                                          Icon(CupertinoIcons.bed_double),
+                                    ),
+                                    keyboardType: TextInputType.number,
                                   ),
-                                  keyboardType: TextInputType.number,
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                          ] else
+                            const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 12),
+                                child: Text('Rented as one complete unit.')),
                           Row(
                             children: [
                               Expanded(
                                 child: TextField(
                                   enabled: !saving,
                                   controller: lowerRentController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Lower Rent',
+                                  decoration: InputDecoration(
+                                    labelText:
+                                        selectedRoomType == RoomType.bedspace
+                                            ? 'Lower Rent'
+                                            : 'Monthly unit rent',
                                     prefixIcon: Icon(
                                         CupertinoIcons.money_dollar_circle),
                                   ),
@@ -601,18 +656,19 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                 ),
                               ),
                               const SizedBox(width: 16),
-                              Expanded(
-                                child: TextField(
-                                  enabled: !saving,
-                                  controller: upperRentController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Upper Rent',
-                                    prefixIcon: Icon(
-                                        CupertinoIcons.money_dollar_circle),
+                              if (selectedRoomType == RoomType.bedspace)
+                                Expanded(
+                                  child: TextField(
+                                    enabled: !saving,
+                                    controller: upperRentController,
+                                    decoration: const InputDecoration(
+                                      labelText: 'Upper Rent',
+                                      prefixIcon: Icon(
+                                          CupertinoIcons.money_dollar_circle),
+                                    ),
+                                    keyboardType: TextInputType.number,
                                   ),
-                                  keyboardType: TextInputType.number,
                                 ),
-                              ),
                             ],
                           ),
                           const SizedBox(height: 24),
@@ -658,6 +714,7 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                                       return;
                                     }
                                     final room = RoomModel(
+                                      roomType: selectedRoomType,
                                       roomId: roomId,
                                       buildingId: selectedBuildingId!,
                                       parentRoomId: selectedParentId,

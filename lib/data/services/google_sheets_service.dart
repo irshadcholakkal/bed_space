@@ -181,7 +181,7 @@ class GoogleSheetsService {
           {
             'properties': {
               'title': 'Rooms',
-              'gridProperties': {'rowCount': 1000, 'columnCount': 13}
+              'gridProperties': {'rowCount': 1000, 'columnCount': 14}
             }
           },
           {
@@ -264,7 +264,8 @@ class GoogleSheetsService {
         'monthly_rent',
         'parent_room_id',
         'available',
-        'media_json'
+        'media_json',
+        'room_type'
       ],
       'Beds': ['bed_id', 'room_id', 'bed_type', 'status'],
       'Tenants': [
@@ -478,7 +479,7 @@ class GoogleSheetsService {
       throw StateError('The Rooms tab is missing from your spreadsheet.');
     }
     final properties = room['properties'];
-    if ((properties['gridProperties']?['columnCount'] as int? ?? 0) < 13) {
+    if ((properties['gridProperties']?['columnCount'] as int? ?? 0) < 14) {
       final expanded = await http
           .post(Uri.parse('$_baseUrl/$sheetId:batchUpdate'),
               headers: await _headers,
@@ -488,7 +489,7 @@ class GoogleSheetsService {
                     'updateSheetProperties': {
                       'properties': {
                         'sheetId': properties['sheetId'],
-                        'gridProperties': {'columnCount': 13}
+                        'gridProperties': {'columnCount': 14}
                       },
                       'fields': 'gridProperties.columnCount'
                     }
@@ -501,13 +502,13 @@ class GoogleSheetsService {
       }
     }
     await _writeRange('Rooms', 'M1', [
-      ['media_json']
+      ['media_json', 'room_type']
     ]);
   }
 
   Future<List<RoomModel>> getRooms() async {
     await _ensureRoomMediaColumn();
-    final rows = await _readRange('Rooms', 'A2:M');
+    final rows = await _readRange('Rooms', 'A2:N');
     return rows.where((row) => row.isNotEmpty && row[0].isNotEmpty).map((row) {
       return RoomModel.fromJson({
         'room_id': row[0],
@@ -523,6 +524,7 @@ class GoogleSheetsService {
         'parent_room_id': row.length > 10 ? row[10] : null,
         'available': row.length > 11 ? row[11] : 'TRUE',
         'media_json': row.length > 12 ? row[12] : '[]',
+        'room_type': row.length > 13 ? row[13] : 'bedspace',
       });
     }).toList();
   }
@@ -532,7 +534,7 @@ class GoogleSheetsService {
     await _writeRange('Rooms', 'K1', [
       ['parent_room_id', 'available']
     ]);
-    final rows = await _readRange('Rooms', 'A:M');
+    final rows = await _readRange('Rooms', 'A:N');
     final newRow = [
       (room.roomId != null && room.roomId!.isNotEmpty)
           ? room.roomId!
@@ -549,11 +551,12 @@ class GoogleSheetsService {
       room.parentRoomId ?? '',
       room.available ? 'TRUE' : 'FALSE',
       room.toJson()['media_json'],
+      room.roomType.name,
     ];
     final existing =
         rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
     final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
-    await _writeRange('Rooms', 'A$rowNumber:M$rowNumber', [newRow]);
+    await _writeRange('Rooms', 'A$rowNumber:N$rowNumber', [newRow]);
   }
 
   // Beds CRUD
@@ -764,11 +767,11 @@ class GoogleSheetsService {
 
   Future<void> deleteRoom(String roomId) async {
     await _ensureRoomMediaColumn();
-    final rows = await _readRange('Rooms', 'A2:M');
+    final rows = await _readRange('Rooms', 'A2:N');
     for (int i = 0; i < rows.length; i++) {
       if (rows[i].isNotEmpty && rows[i][0] == roomId) {
-        await _writeRange('Rooms', 'A${i + 2}:M${i + 2}', [
-          ['', '', '', '', '', '', '', '', '', '', '', '', '']
+        await _writeRange('Rooms', 'A${i + 2}:N${i + 2}', [
+          ['', '', '', '', '', '', '', '', '', '', '', '', '', '']
         ]);
         break;
       }

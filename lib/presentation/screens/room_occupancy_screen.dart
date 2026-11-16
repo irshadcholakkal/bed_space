@@ -6,6 +6,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/room/room_bloc.dart';
 import '../theme/app_theme.dart';
 import '../../data/models/bed_model.dart'; // Added
+import '../../data/models/room_model.dart';
+import 'tenants_management_screen.dart';
 
 /// Reuse the occupancy sheet from room cards throughout the app.
 void showRoomDetailBottomSheet(BuildContext context, RoomWithStats room) =>
@@ -373,7 +375,7 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                'Capacity: ${roomWithStats.room.totalCapacity} beds',
+                                                'Capacity: ${roomWithStats.room.totalCapacity} ${roomWithStats.room.rentalUnitLabel}s',
                                                 style: const TextStyle(
                                                   color: AppTheme
                                                       .secondaryTextColor,
@@ -384,7 +386,9 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
                                                       .vacantLowerBeds >
                                                   0)
                                                 Text(
-                                                  'Vacant Lower: ${roomWithStats.vacantLowerBeds}',
+                                                  roomWithStats.room.isWholeUnit
+                                                      ? 'Unit available'
+                                                      : 'Vacant Lower: ${roomWithStats.vacantLowerBeds}',
                                                   style: const TextStyle(
                                                     color:
                                                         AppTheme.secondaryColor,
@@ -461,7 +465,7 @@ extension on RoomOccupancyScreen {
     final roomBloc = context.read<RoomBloc>();
     roomBloc.add(RoomDetailRequested(roomWithStats.room.roomId ?? ''));
 
-    showModalBottomSheet(
+    showModalBottomSheet<BedDetail>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -472,14 +476,21 @@ extension on RoomOccupancyScreen {
             final isLoading = state is RoomsLoaded && state.isDetailsLoading;
             final details =
                 state is RoomsLoaded ? state.selectedRoomDetails : null;
+            final roomAvailable = roomWithStats.room.isAvailable(state
+                .roomsByBuilding.values
+                .expand((rooms) => rooms)
+                .map((item) => item.room));
 
             return Container(
+              constraints: BoxConstraints(
+                  maxHeight: MediaQuery.sizeOf(context).height * .9),
               padding: const EdgeInsets.all(24),
               decoration: const BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
               ),
-              child: Column(
+              child: SingleChildScrollView(
+                  child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -523,20 +534,25 @@ extension on RoomOccupancyScreen {
                   const SizedBox(height: 24),
                   _detailRow(
                     'Total Capacity',
-                    '${roomWithStats.room.totalCapacity} Beds',
+                    '${roomWithStats.room.totalCapacity} ${roomWithStats.room.rentalUnitLabel}s',
                   ),
                   _detailRow(
-                    'Lower Bed Rent',
+                    roomWithStats.room.isWholeUnit
+                        ? 'Monthly unit rent'
+                        : 'Lower Bed Rent',
                     'د.إ${roomWithStats.room.lowerBedRent.toStringAsFixed(0)}',
                   ),
-                  _detailRow(
-                    'Upper Bed Rent',
-                    'د.إ${roomWithStats.room.upperBedRent.toStringAsFixed(0)}',
-                  ),
+                  if (!roomWithStats.room.isWholeUnit)
+                    _detailRow(
+                      'Upper Bed Rent',
+                      'د.إ${roomWithStats.room.upperBedRent.toStringAsFixed(0)}',
+                    ),
                   const Divider(height: 32),
-                  const Text(
-                    'Bed Availability',
-                    style: TextStyle(
+                  Text(
+                    roomWithStats.room.isWholeUnit
+                        ? 'Unit Availability'
+                        : 'Bed Availability',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                       color: AppTheme.primaryColor,
@@ -552,78 +568,107 @@ extension on RoomOccupancyScreen {
                     )
                   else if (details != null)
                     ...details.map(
-                      (bedDetail) => Container(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: bedDetail.bed.status == BedStatus.vacant
-                              ? AppTheme.secondaryColor.withValues(alpha: 0.05)
-                              : AppTheme.primaryColor.withValues(alpha: 0.05),
+                      (bedDetail) => InkWell(
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: (bedDetail.bed.status == BedStatus.vacant
-                                    ? AppTheme.secondaryColor
-                                    : AppTheme.primaryColor)
-                                .withValues(alpha: 0.1),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
+                          onTap: roomAvailable &&
+                                  bedDetail.bed.status == BedStatus.vacant &&
+                                  bedDetail.booking == null &&
+                                  bedDetail.tenantName == null &&
+                                  bedDetail.bed.bedId?.isNotEmpty == true
+                              ? () => Navigator.pop(context, bedDetail)
+                              : null,
+                          child: Container(
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: bedDetail.bed.status == BedStatus.vacant
+                                  ? AppTheme.secondaryColor
+                                      .withValues(alpha: 0.05)
+                                  : AppTheme.primaryColor
+                                      .withValues(alpha: 0.05),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
                                 color: (bedDetail.bed.status == BedStatus.vacant
                                         ? AppTheme.secondaryColor
                                         : AppTheme.primaryColor)
                                     .withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                bedDetail.bed.bedType == BedType.lower
-                                    ? CupertinoIcons.arrow_down
-                                    : CupertinoIcons.arrow_up,
-                                size: 16,
-                                color: bedDetail.bed.status == BedStatus.vacant
-                                    ? AppTheme.secondaryColor
-                                    : AppTheme.primaryColor,
                               ),
                             ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '${bedDetail.bed.bedType == BedType.lower ? "Lower" : "Upper"} Bed',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: (bedDetail.bed.status ==
+                                                BedStatus.vacant
+                                            ? AppTheme.secondaryColor
+                                            : AppTheme.primaryColor)
+                                        .withValues(alpha: 0.1),
+                                    shape: BoxShape.circle,
                                   ),
-                                  if (bedDetail.booking != null)
-                                    Text(
-                                        'Booked by ${bedDetail.booking!.tenantName} from ${DateFormat('dd MMM yyyy').format(bedDetail.booking!.moveInDate)}',
-                                        style: const TextStyle(fontSize: 12)),
-                                  Text(
-                                    bedDetail.bed.status == BedStatus.vacant
-                                        ? bedDetail.booking == null
-                                            ? 'Available'
-                                            : 'Reserved'
-                                        : 'Occupied by ${bedDetail.tenantName ?? "Unknown"}',
-                                    style: TextStyle(
-                                      color: bedDetail.bed.status ==
-                                              BedStatus.vacant
-                                          ? AppTheme.secondaryColor
-                                          : AppTheme.secondaryTextColor,
-                                      fontSize: 12,
-                                    ),
+                                  child: Icon(
+                                    bedDetail.bed.bedType == BedType.lower
+                                        ? CupertinoIcons.arrow_down
+                                        : CupertinoIcons.arrow_up,
+                                    size: 16,
+                                    color:
+                                        bedDetail.bed.status == BedStatus.vacant
+                                            ? AppTheme.secondaryColor
+                                            : AppTheme.primaryColor,
                                   ),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        roomWithStats.room.isWholeUnit
+                                            ? roomWithStats.room.roomType.label
+                                            : '${bedDetail.bed.bedType == BedType.lower ? "Lower" : "Upper"} Bed',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                      if (roomAvailable &&
+                                          bedDetail.bed.status ==
+                                              BedStatus.vacant &&
+                                          bedDetail.booking == null &&
+                                          bedDetail.tenantName == null &&
+                                          bedDetail.bed.bedId?.isNotEmpty ==
+                                              true)
+                                        const Text('Tap to add tenant',
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color:
+                                                    AppTheme.secondaryColor)),
+                                      if (bedDetail.booking != null)
+                                        Text(
+                                            'Booked by ${bedDetail.booking!.tenantName} from ${DateFormat('dd MMM yyyy').format(bedDetail.booking!.moveInDate)}',
+                                            style:
+                                                const TextStyle(fontSize: 12)),
+                                      Text(
+                                        bedDetail.bed.status == BedStatus.vacant
+                                            ? bedDetail.booking == null
+                                                ? 'Available'
+                                                : 'Reserved'
+                                            : 'Occupied by ${bedDetail.tenantName ?? "Unknown"}',
+                                        style: TextStyle(
+                                          color: bedDetail.bed.status ==
+                                                  BedStatus.vacant
+                                              ? AppTheme.secondaryColor
+                                              : AppTheme.secondaryTextColor,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
-                      ),
+                          )),
                     )
                   else
                     const Center(
@@ -647,12 +692,21 @@ extension on RoomOccupancyScreen {
                   ),
                   const SizedBox(height: 16),
                 ],
-              ),
+              )),
             );
           },
         ),
       ),
-    );
+    ).then((selection) {
+      if (selection == null || !context.mounted) return;
+      TenantsManagementScreen.showAddTenantDialog(context,
+          preSelectedBuildingId: roomWithStats.room.buildingId,
+          preSelectedRoomId: roomWithStats.room.roomId,
+          preSelectedBedId: selection.bed.bedId,
+          preSelectedRentAmount: selection.bed.bedType == BedType.lower
+              ? roomWithStats.room.lowerBedRent
+              : roomWithStats.room.upperBedRent);
+    });
   }
 
   Widget _detailRow(String label, String value) {

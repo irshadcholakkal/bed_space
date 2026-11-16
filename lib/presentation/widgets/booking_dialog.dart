@@ -1,3 +1,4 @@
+import '../../data/models/room_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -204,8 +205,8 @@ class _BookingDialogState extends State<_BookingDialog> {
                                         '${_moveIn.toIso8601String()}/${selection?.bedId}/${candidates.length}'),
                                     initialValue: selection?.bedId,
                                     isExpanded: true,
-                                    decoration:
-                                        const InputDecoration(labelText: 'Bed'),
+                                    decoration: const InputDecoration(
+                                        labelText: 'Bed / rental unit'),
                                     items: candidates.map((bed) {
                                       final room = state.rooms.firstWhere(
                                           (room) => room.roomId == bed.roomId);
@@ -224,7 +225,7 @@ class _BookingDialogState extends State<_BookingDialog> {
                                       return DropdownMenuItem(
                                           value: bed.bedId,
                                           child: Text(
-                                              '${building?.buildingName ?? ''} · ${room.displayName(state.rooms)} · ${bed.bedType.name} $number',
+                                              '${building?.buildingName ?? ''} · ${room.displayName(state.rooms)} · ${room.isWholeUnit ? room.roomType.label : bed.bedType.name} $number',
                                               softWrap: true,
                                               maxLines: null,
                                               overflow: TextOverflow.visible));

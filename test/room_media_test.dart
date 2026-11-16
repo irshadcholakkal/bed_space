@@ -230,7 +230,7 @@ void main() {
         expect(
             jsonDecode(request.body)['requests'][0]['updateSheetProperties']
                 ['properties']['gridProperties']['columnCount'],
-            13);
+            14);
         expansions++;
         return http.Response('{}', 200);
       }
@@ -252,7 +252,7 @@ void main() {
         ];
         return http.Response(
             jsonEncode({
-              'values': request.url.path.endsWith('A:M') ? [[], row] : [row]
+              'values': request.url.path.endsWith('A:N') ? [[], row] : [row]
             }),
             200);
       }
@@ -270,7 +270,7 @@ void main() {
     final rows = writes
         .map((request) =>
             (jsonDecode(request.body)['values'] as List).single as List)
-        .where((row) => row.length == 13)
+        .where((row) => row.length == 14)
         .toList();
     expect(RoomMediaModel.decode(rows.first[12]), hasLength(2));
     expect(rows.last, everyElement(''));
@@ -296,7 +296,7 @@ void main() {
     try {
       expect((await local.getRooms()).single.roomNumber, 'Old room');
       expect((await local.getRooms()).single.media, isEmpty);
-      expect(await db.getVersion(), 10);
+      expect(await db.getVersion(), 11);
       final media = jsonEncode([photo.toJson(), video.toJson()]);
       await db.update('rooms', {'media_json': media},
           where: 'room_id = ?', whereArgs: ['old']);

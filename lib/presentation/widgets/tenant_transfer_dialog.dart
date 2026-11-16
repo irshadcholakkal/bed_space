@@ -1,3 +1,4 @@
+import '../../data/models/room_model.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -62,7 +63,7 @@ Future<void> showTenantTransfer(
                                 return DropdownMenuItem(
                                     value: bed.bedId,
                                     child: Text(
-                                        '${building?.buildingName ?? ''} · ${room.displayName(state.rooms)} · ${bed.bedType.name} (${bed.bedId})',
+                                        '${building?.buildingName ?? ''} · ${room.displayName(state.rooms)} · ${room.isWholeUnit ? room.roomType.label : bed.bedType.name} (${bed.bedId})',
                                         softWrap: true,
                                         maxLines: null,
                                         overflow: TextOverflow.visible));

@@ -1,3 +1,4 @@
+import '../widgets/room_edit_sheet.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -54,7 +55,9 @@ class _RoomsScreenState extends State<RoomsScreen> {
     final status = !room.isAvailable(state.rooms)
         ? 'Unavailable'
         : roomBeds.isEmpty
-            ? 'No beds'
+            ? room.isWholeUnit
+                ? 'No unit'
+                : 'No beds'
             : available > 0
                 ? 'Available'
                 : roomBeds.any((bed) =>
@@ -118,16 +121,25 @@ class _RoomsScreenState extends State<RoomsScreen> {
                         PopupMenuButton<String>(
                             tooltip: 'Room options',
                             icon: const Icon(CupertinoIcons.ellipsis_vertical),
-                            onSelected: (_) => context
-                                    .push(Uri(path: '/rooms', queryParameters: {
-                                  'building': room.buildingId,
-                                  'room': room.roomId ?? '',
-                                  if (widget.period != null)
-                                    'period': widget.period!
-                                }).toString()),
+                            onSelected: (action) {
+                              if (action == 'edit') {
+                                showRoomEditSheet(context, room);
+                                return;
+                              }
+                              context
+                                  .push(Uri(path: '/rooms', queryParameters: {
+                                'building': room.buildingId,
+                                'room': room.roomId ?? '',
+                                if (widget.period != null)
+                                  'period': widget.period!
+                              }).toString());
+                            },
                             itemBuilder: (_) => const [
                                   PopupMenuItem(
-                                      value: 'details', child: Text('Details'))
+                                      value: 'details', child: Text('Details')),
+                                  PopupMenuItem(
+                                      value: 'edit',
+                                      child: Text('Edit room, beds & rent'))
                                 ]),
                       ]),
                       Text(buildingNames[room.buildingId] ?? 'Unknown building',
@@ -136,7 +148,8 @@ class _RoomsScreenState extends State<RoomsScreen> {
                       Wrap(spacing: 16, runSpacing: 8, children: [
                         Text(status,
                             style: TextStyle(color: color, fontSize: 12)),
-                        Text('$available / ${roomBeds.length} beds available',
+                        Text(
+                            '$available / ${roomBeds.length} ${room.rentalUnitLabel}s available',
                             style: TextStyle(color: color, fontSize: 12)),
                         Text(
                             '${roomBeds.where((bed) => bed.status == BedStatus.occupied).length} occupied',
@@ -148,7 +161,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                               '${roomBeds.where((bed) => state.reservedBedIds.contains(bed.bedId)).length} booked',
                               style:
                                   const TextStyle(color: _muted, fontSize: 12)),
-                        if (available > 0)
+                        if (available > 0 && !room.isWholeUnit)
                           Text(
                               '$lower lower | ${available - lower} upper vacant',
                               style:
