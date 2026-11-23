@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/management/management_bloc.dart';
 import '../../data/models/building_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/refresh_workspace.dart';
 
 class BuildingsManagementScreen extends StatelessWidget {
   const BuildingsManagementScreen({super.key});
@@ -115,10 +116,9 @@ class BuildingsManagementScreen extends StatelessWidget {
 
             return RefreshIndicator(
               color: AppTheme.primaryColor,
-              onRefresh: () async {
-                context.read<ManagementBloc>().add(const LoadBuildings());
-              },
+              onRefresh: () => refreshWorkspace(context),
               child: ListView.builder(
+                physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(24),
                 itemCount: state.buildings.length,
                 itemBuilder: (context, index) {

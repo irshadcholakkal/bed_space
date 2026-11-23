@@ -14,6 +14,7 @@ import '../theme/app_theme.dart';
 import '../widgets/sharing_actions.dart';
 import '../widgets/tenant_transfer_dialog.dart';
 import '../../data/models/billing_snapshot.dart';
+import '../widgets/refresh_workspace.dart';
 
 class TenantsManagementScreen extends StatefulWidget {
   const TenantsManagementScreen({super.key});
@@ -690,13 +691,9 @@ class _TenantsManagementScreenState extends State<TenantsManagementScreen> {
 
                   return RefreshIndicator(
                     color: AppTheme.primaryColor,
-                    onRefresh: () async {
-                      context.read<ManagementBloc>().add(const LoadTenants());
-                      context.read<ManagementBloc>().add(const LoadBuildings());
-                      context.read<ManagementBloc>().add(const LoadRooms());
-                      context.read<ManagementBloc>().add(const LoadPayments());
-                    },
+                    onRefresh: () => refreshWorkspace(context),
                     child: ListView.builder(
+                      physics: const AlwaysScrollableScrollPhysics(),
                       padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                       itemCount: activeTenants.length,
                       itemBuilder: (context, index) {
@@ -1906,6 +1903,9 @@ class _RentBalanceScreenState extends State<RentBalanceScreen> {
               return RefreshIndicator(
                 color: AppTheme.primaryColor,
                 onRefresh: () async {
+                  if (!await refreshWorkspace(context) || !context.mounted) {
+                    return;
+                  }
                   context.read<ManagementBloc>().add(
                         LoadTenantBalance(widget.tenantId),
                       );

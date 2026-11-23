@@ -10,6 +10,7 @@ import '../models/payment_model.dart';
 import '../models/bed_model.dart';
 import '../models/expense_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'dart:convert';
 import 'sync_worker.dart';
@@ -72,10 +73,21 @@ class ManagementRepository {
 
     controller = StreamController<Map<String, dynamic>>(
       onListen: () {
-        subscription = _dataChangeController.stream
-            .listen((_) => publish('local_update'), onDone: controller.close);
-        publish('local_initial');
-        unawaited(syncWithSheets());
+        var ready = !kIsWeb;
+        subscription = _dataChangeController.stream.listen((_) {
+          if (ready) publish('local_update');
+        }, onDone: controller.close);
+        if (kIsWeb) {
+          unawaited(syncWithSheets().then((_) {
+            ready = true;
+            if (!controller.isClosed && controller.hasListener) {
+              publish('local_initial');
+            }
+          }));
+        } else {
+          publish('local_initial');
+          unawaited(syncWithSheets());
+        }
       },
       onCancel: () => subscription?.cancel(),
     );
@@ -107,14 +119,9 @@ class ManagementRepository {
     };
   }
 
-  Future<void> _syncSheetsToLocal() {
-    return _refresh ??=
-        _refreshFromSheets().whenComplete(() => _refresh = null);
-  }
-
-  Future<void> _refreshFromSheets() async {
+  Future<bool> _refreshFromSheets() async {
     final revision = _localService.revision;
-    if ((await _localService.getMutationQueue()).isNotEmpty) return;
+    if ((await _localService.getMutationQueue()).isNotEmpty) return false;
     final results = await Future.wait([
       _sheetsService.getBuildings(),
       _sheetsService.getRooms(),
@@ -130,25 +137,55 @@ class ManagementRepository {
     results[4] = (results[4] as List<BedModel>)
         .where((bed) => roomIds.contains(bed.roomId))
         .toList();
-    await _localService.saveSnapshot(results, expectedRevision: revision);
-
-    notifyDataChanged();
-    if (!await _processQueue()) {
-      throw StateError(
-          'Google sync is pending. Changes are saved locally and will retry.');
-    }
+    return _localService.saveSnapshot(results, expectedRevision: revision);
   }
 
   void notifyDataChanged() {
     if (!_dataChangeController.isClosed) _dataChangeController.add(null);
   }
 
-  Future<void> triggerSync() async {
-    if (!await _processQueue()) {
-      throw StateError(
-          'Google sync is pending. Changes are saved locally and will retry.');
+  Future<void> triggerSync() {
+    return _refresh ??= _sync().whenComplete(() => _refresh = null);
+  }
+
+  Future<bool> restoreWorkspace(Future<void> Function() replace) async {
+    while (_refresh != null) {
+      try {
+        await _refresh;
+      } catch (_) {
+        // The restore still needs to retry pending changes before replacing data.
+      }
     }
-    await _syncSheetsToLocal();
+    var restored = false;
+    _refresh = _processQueue().then((synced) async {
+      if (!synced) {
+        throw StateError('Sync pending changes before restoring workspace data.');
+      }
+      await replace();
+      restored = true;
+      await _sync();
+    }).whenComplete(() => _refresh = null);
+    try {
+      await _refresh;
+      return true;
+    } catch (_) {
+      if (!restored) rethrow;
+      return false;
+    }
+  }
+
+  Future<void> _sync() async {
+    while (true) {
+      if (!await _processQueue()) {
+        throw StateError(
+            'Google sync is pending. Changes are saved locally and will retry.');
+      }
+      if (await _refreshFromSheets()) {
+        notifyDataChanged();
+        // Applying the snapshot can queue occupancy corrections for older sheets.
+        if ((await _localService.getMutationQueue()).isEmpty) return;
+      }
+    }
   }
 
   Future<void> syncWithSheets() async {
@@ -170,19 +207,11 @@ class ManagementRepository {
       'retry_count': 0,
     };
     await _localService.commitMutation(mutation);
-    _processQueue(); // Try processing immediately if online
+    await _processQueue();
   }
 
-  Future<bool> _processQueue() async {
-    final success = await SyncWorker().processQueue(
-        sheetsService: _sheetsService, localService: _localService);
-    if (success) {
-      notifyDataChanged();
-    }
-    return success;
-  }
-
-  // _processMutation is now in SyncWorker
+  Future<bool> _processQueue() => SyncWorker().processQueue(
+      sheetsService: _sheetsService, localService: _localService);
 
   // --- Mutation Helpers (OFFLINE FIRST) ---
 
@@ -235,8 +264,8 @@ class ManagementRepository {
 
   Future<void> updateRoom(RoomModel room) async {
     await _localService.updateRoomCapacity(room);
+    await _processQueue();
     notifyDataChanged();
-    unawaited(_processQueue());
   }
 
   Future<void> deleteRoom(String id) async {
@@ -250,22 +279,22 @@ class ManagementRepository {
 
   Future<void> addBooking(BookingModel booking) async {
     await _localService.createBooking(booking);
+    await _processQueue();
     notifyDataChanged();
-    unawaited(_processQueue());
   }
 
   Future<List<BookingModel>> getBookings() => _localService.getBookings();
 
   Future<void> checkInBooking(String id) async {
     await _localService.checkInBooking(id);
+    await _processQueue();
     notifyDataChanged();
-    unawaited(_processQueue());
   }
 
   Future<void> cancelBooking(String id, {double refund = 0}) async {
     await _localService.cancelBooking(id, refund);
+    await _processQueue();
     notifyDataChanged();
-    unawaited(_processQueue());
   }
 
   Future<void> addTenant(TenantModel tenant) async {

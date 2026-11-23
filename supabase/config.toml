@@ -9,3 +9,9 @@ verify_jwt = false
 [functions.refresh-google-session]
 verify_jwt = false
 # The handler validates the user's JWT with Supabase Auth before renewing Google access.
+
+[functions.workspace-employees]
+verify_jwt = false
+
+[functions.workspace-backups]
+verify_jwt = false

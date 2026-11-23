@@ -756,12 +756,12 @@ class LocalDatabaseService {
   }
 
   /// Reject a stale remote snapshot when local writes intervened.
-  Future<void> saveSnapshot(List<dynamic> results,
+  Future<bool> saveSnapshot(List<dynamic> results,
       {required int expectedRevision}) async {
     final db = await database;
-    await db.transaction((txn) async {
+    return db.transaction((txn) async {
       final pending = await txn.query('mutation_queue', limit: 1);
-      if (revision != expectedRevision || pending.isNotEmpty) return;
+      if (revision != expectedRevision || pending.isNotEmpty) return false;
       final tables = [
         'buildings',
         'rooms',
@@ -789,6 +789,7 @@ class LocalDatabaseService {
           await _saveBedStatus(txn, bed.bedId!, BedStatus.occupied);
         }
       }
+      return true;
     });
   }
 

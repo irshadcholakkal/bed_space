@@ -335,12 +335,26 @@ class GoogleSheetsService {
     }
   }
 
+  /// Let Sheets choose the row so concurrent collectors can append safely.
+  Future<void> _appendRow(String sheetName, String range, List<dynamic> row) async {
+    final url = '$_baseUrl/$sheetId/values/$sheetName!$range:append'
+        '?valueInputOption=RAW&insertDataOption=INSERT_ROWS';
+    final response = await http
+        .post(Uri.parse(url), headers: await _headers,
+            body: jsonEncode({'values': [row]}))
+        .timeout(const Duration(seconds: 30));
+    if (response.statusCode != 200) {
+      throw Exception('Failed to append to sheet: ${response.body}');
+    }
+  }
+
   /// Read data from a range in the sheet
   Future<List<List<String>>> _readRange(String sheetName, String range) async {
     final url = '$_baseUrl/$sheetId/values/$sheetName!$range';
 
     final response = await http
-        .get(Uri.parse(url), headers: await _headers)
+        .get(Uri.parse(url),
+            headers: {...await _headers, 'Cache-Control': 'no-cache'})
         .timeout(const Duration(seconds: 30));
 
     if (response.statusCode == 200) {
@@ -419,11 +433,14 @@ class GoogleSheetsService {
     final rows = await _readRange('Bookings', 'A:N');
     final index = rows
         .indexWhere((row) => row.isNotEmpty && row.first == booking.bookingId);
-    final row = index < 0 ? rows.length + 1 : index + 1;
     final json = booking.toJson();
-    await _writeRange('Bookings', 'A$row:N$row', [
-      _bookingColumns.map((column) => json[column]).toList(),
-    ]);
+    final values = _bookingColumns.map((column) => json[column]).toList();
+    if (index < 0) {
+      await _appendRow('Bookings', 'A:N', values);
+    } else {
+      final row = index + 1;
+      await _writeRange('Bookings', 'A$row:N$row', [values]);
+    }
   }
 
   Future<List<BuildingModel>> getBuildings() async {
@@ -652,8 +669,12 @@ class GoogleSheetsService {
     ];
     final existing =
         rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
-    final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
-    await _writeRange('Tenants', 'A$rowNumber:L$rowNumber', [newRow]);
+    if (existing < 0) {
+      await _appendRow('Tenants', 'A:L', newRow);
+    } else {
+      final rowNumber = existing + 1;
+      await _writeRange('Tenants', 'A$rowNumber:L$rowNumber', [newRow]);
+    }
   }
 
   // Payments CRUD
@@ -685,8 +706,12 @@ class GoogleSheetsService {
     ];
     final existing =
         rows.indexWhere((row) => row.isNotEmpty && row[0] == newRow[0]);
-    final rowNumber = existing < 0 ? rows.length + 1 : existing + 1;
-    await _writeRange('Payments', 'A$rowNumber:E$rowNumber', [newRow]);
+    if (existing < 0) {
+      await _appendRow('Payments', 'A:E', newRow);
+    } else {
+      final rowNumber = existing + 1;
+      await _writeRange('Payments', 'A$rowNumber:E$rowNumber', [newRow]);
+    }
   }
 
   // --- Expenses CRUD ---

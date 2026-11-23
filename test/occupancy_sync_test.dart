@@ -96,10 +96,11 @@ void main() {
     final revision = local.revision;
     await commit('ADD_TENANT', tenant().toJson());
     final empty = [[], [], <TenantModel>[], [], <BedModel>[], []];
-    await local.saveSnapshot(empty, expectedRevision: local.revision);
+    expect(await local.saveSnapshot(empty, expectedRevision: local.revision),
+        isFalse);
     expect(await local.getTenants(), hasLength(1));
     await clearQueue();
-    await local.saveSnapshot(empty, expectedRevision: revision);
+    expect(await local.saveSnapshot(empty, expectedRevision: revision), isFalse);
     expect(await local.getTenants(), hasLength(1));
     expect((await local.getBeds()).first.status, BedStatus.occupied);
   });

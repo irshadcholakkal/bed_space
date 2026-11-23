@@ -18,6 +18,7 @@ class AppRoutes {
     '/billing',
     '/admin',
     '/connect-google',
+    '/employee-workspaces',
   };
 
   static String? safeDestination(String? value) {
@@ -30,6 +31,8 @@ class AppRoutes {
       return null;
     }
     if (pages.contains(uri.path) ||
+        RegExp(r'^/employee-workspaces/[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$')
+            .hasMatch(uri.path) ||
         RegExp(r'^/rooms/[^/]+/expenses$').hasMatch(uri.path) ||
         RegExp(r'^/tenants/[^/]+/rent-balance$').hasMatch(uri.path)) {
       return uri

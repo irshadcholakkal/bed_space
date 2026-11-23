@@ -13,6 +13,7 @@ void main() {
     var token = 'first-token';
     final used = <String?>[];
     final client = MockClient((request) async {
+      expect(request.headers['Cache-Control'], 'no-cache');
       used.add(request.headers['Authorization']);
       return http.Response('{"values":[]}', 200);
     });
@@ -67,6 +68,11 @@ void main() {
             200);
       }
       if (request.method == 'POST') {
+        if (request.url.path.endsWith('Bookings!A:N:append')) {
+          final value = (jsonDecode(request.body)['values'] as List).single;
+          rows.add(value as List);
+          return http.Response('{}', 200);
+        }
         expect(
             jsonDecode(request.body)['requests'][0]['addSheet']['properties']
                 ['title'],

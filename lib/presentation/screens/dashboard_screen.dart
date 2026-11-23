@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/refresh_workspace.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -63,9 +64,7 @@ class DashboardScreen extends StatelessWidget {
 
           if (state is DashboardLoaded) {
             return RefreshIndicator(
-              onRefresh: () async {
-                context.read<DashboardBloc>().add(DashboardLoadRequested());
-              },
+              onRefresh: () => refreshWorkspace(context),
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.all(16),

@@ -31,7 +31,7 @@ test('Public root serves Next HTML and never invokes the app fallback', async ()
   assert.equal(await response.text(), 'next-landing');
 });
 test('Public shortcuts route to the app and preserve query parameters', async () => {
-  for (const path of ['login', 'signup', 'dashboard', 'rooms/manage', 'tenants/id/rent-balance', 'settings', 'admin', 'billing']) {
+  for (const path of ['login', 'signup', 'dashboard', 'rooms/manage', 'tenants/id/rent-balance', 'settings', 'admin', 'billing', 'employee-workspaces']) {
     const response = await worker.fetch(new Request(`https://example.com/${path}?billing=annual`), {});
     assert.equal(response.status, 308);
     assert.equal(response.headers.get('location'), `https://example.com/app/${path}?billing=annual`);

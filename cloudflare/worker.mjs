@@ -1,6 +1,6 @@
 // Public marketing HTML lives at /. Flutter and its SPA fallback live at /app/.
 const appAliases = new Set(['login', 'signup', 'dashboard', 'rooms', 'financials',
-  'settings', 'buildings', 'tenants', 'vacant-beds', 'billing', 'admin', 'connect-google']);
+  'settings', 'buildings', 'tenants', 'vacant-beds', 'billing', 'admin', 'connect-google', 'employee-workspaces']);
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);

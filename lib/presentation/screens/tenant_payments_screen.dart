@@ -10,6 +10,7 @@ import '../../data/models/payment_model.dart';
 import '../../data/models/expense_model.dart';
 import '../theme/app_theme.dart';
 import '../widgets/sharing_actions.dart';
+import '../widgets/refresh_workspace.dart';
 
 class TenantPaymentsScreen extends StatefulWidget {
   const TenantPaymentsScreen({super.key});
@@ -81,14 +82,9 @@ class _TenantPaymentsScreenState extends State<TenantPaymentsScreen> {
               );
 
               return RefreshIndicator(
-                onRefresh: () async {
-                  context
-                      .read<FinancialBloc>()
-                      .add(FinancialLoadRequested(month: _selectedMonth));
-                  // Wait a brief moment to show the spinner, but don't block forever
-                  await Future.delayed(const Duration(seconds: 1));
-                },
+                onRefresh: () => refreshWorkspace(context),
                 child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
                     _buildSliverAppBar(),
                     SliverToBoxAdapter(

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/services/saas_service.dart';
 import '../../data/services/business_profile_service.dart';
 import '../../data/services/google_auth_service.dart';
@@ -309,6 +310,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             minimumSize: const Size.fromHeight(54),
                             shape: const StadiumBorder()),
                         label: const Text('Connect Google Sheets & Drive'))),
+            if (SaasService.configured && GoRouter.maybeOf(context) != null)
+              TextButton(
+                onPressed: () => context.push('/employee-workspaces'),
+                child: const Text('Open employee workspaces'),
+              ),
             if (_error != null || auth is AuthError) ...[
               const SizedBox(height: 16),
               Semantics(

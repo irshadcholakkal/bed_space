@@ -10,6 +10,7 @@ import '../blocs/management/management_bloc.dart';
 import '../../data/models/room_model.dart';
 import '../../data/models/building_model.dart';
 import '../theme/app_theme.dart';
+import '../widgets/refresh_workspace.dart';
 
 class RoomsManagementScreen extends StatefulWidget {
   const RoomsManagementScreen({super.key});
@@ -236,12 +237,9 @@ class _RoomsManagementScreenState extends State<RoomsManagementScreen> {
                             )
                           : RefreshIndicator(
                               color: AppTheme.primaryColor,
-                              onRefresh: () async {
-                                context
-                                    .read<ManagementBloc>()
-                                    .add(const LoadRooms());
-                              },
+                              onRefresh: () => refreshWorkspace(context),
                               child: ListView.builder(
+                                physics: const AlwaysScrollableScrollPhysics(),
                                 padding:
                                     const EdgeInsets.fromLTRB(24, 0, 24, 24),
                                 itemCount: filteredRooms.length,

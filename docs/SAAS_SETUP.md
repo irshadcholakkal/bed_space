@@ -165,3 +165,83 @@ error appears in Supabase Authentication logs for `/callback`.
 The app now recognizes error callbacks at startup and shows a retryable sign-in
 screen instead of silently returning to the landing page. This improves error
 handling but cannot repair Google/Supabase server credentials.
+
+## Employee access
+
+Apply the workspace employee migration and deploy the `workspace-employees`
+Edge Function with the PWA release. Set `EMPLOYEE_TOKEN_KEY` to a random
+32-byte key encoded as standard Base64 in Supabase Function secrets. Use the
+same Google OAuth client settings as `refresh-google-session` and set
+`APP_URL` to the PWA origin. Keep the encryption key stable between releases.
+If the key changes, each owner must reconnect Google from the Employees page.
+
+In the PWA, an owner opens **Settings → Employees**, connects Google for
+employees, and creates an invitation with the desired permissions. Use
+**Copy invitation link** and share it with the employee. The employee signs
+in with the invited email and selects **Join**. Employees use the owner's
+membership and private spreadsheet through the Edge Function.
+
+To verify a release, invite a test employee with **Collect rent** only.
+Record a partial payment against a test tenant, verify the receipt and the
+payment in Sheets, then revoke the invitation and verify that the employee
+can no longer refresh the workspace. Use the owner's activity list to check
+who recorded the payment.
+
+Employees should open their workspace once while signed in and online. The
+PWA can then show its last downloaded data and save changes on the device
+while offline. Reopen the workspace or leave it open when the connection
+returns to sync. Sheets permissions and conflicts are checked again during
+sync. The PWA surfaces rejected changes and offers receipts only for confirmed
+payments. Invitations and employee administration require a connection.
+
+## Weekly workspace backups
+
+Open SQL Editor in the Supabase project that matches `SUPABASE_URL` in
+`.env`. If the backup migration reports that `public.storage_bindings` is
+missing, check the account schema first.
+
+```sql
+select to_regclass('public.profiles') as profiles,
+       to_regclass('public.storage_bindings') as storage_bindings;
+```
+
+On a new project where both results are `null`, run
+`supabase/migrations/202611090001_accounts.sql` first. If exactly one result
+is `null`, the account schema is incomplete. Inspect the existing schema
+before rerunning the accounts migration, which creates tables and policies.
+
+Once both tables exist, apply
+`supabase/migrations/202611230002_workspace_backups.sql` and deploy
+`supabase functions deploy workspace-backups --project-ref YOUR_PROJECT_REF`.
+The function uses the same `GOOGLE_OAUTH_CLIENT_ID` and
+`GOOGLE_OAUTH_CLIENT_SECRET` as Google session renewal. Keep the following
+additional values in Supabase Edge Function secrets.
+
+- `BACKUP_TOKEN_KEY` is a persistent random 32-byte key encoded as standard
+  Base64. Changing it requires owners to reconnect backups.
+- `BACKUP_CRON_SECRET` is a separate random secret shared with Supabase Vault.
+
+In Supabase Vault, create `workspace_backup_cron_secret` with the same value
+as `BACKUP_CRON_SECRET` and `workspace_backup_project_url` with the project URL.
+The migration schedules a check every 15 minutes. A failed copy is eligible
+for retry after an hour. Cron run history and the Edge Function logs are
+available in the Supabase dashboard.
+
+Owners can enable backups in **Settings > Automatic backups** after connecting
+their Google workspace. The first successful run creates a spreadsheet named
+**Backup** in My Drive. Subsequent runs replace its workspace tab values every
+seven days while keeping the same spreadsheet link. The job retries a failed
+run and leaves the previous snapshot available if the update fails.
+
+**Settings > Download and restore data** offers readable CSV, Excel, PDF, and
+Word reports from the live Google Sheet. To keep an uploadable copy, choose
+**Download Backup recovery file** or **Download current data recovery file**.
+Recovery files use JSON and retain the data needed to restore relationships
+between records. Owners can upload a recovery file from their account or
+restore directly from the weekly Backup. They preview record counts and
+confirm before the app replaces the workspace tabs in one Sheets request.
+
+These workflows cover synced data in the seven app tabs, including links to
+room media. Separate Drive files and Supabase account or billing records are
+outside this scope. The backup captures cell values. Spreadsheet formatting
+and formulas are outside the data recovery format.

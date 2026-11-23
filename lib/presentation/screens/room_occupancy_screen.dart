@@ -8,6 +8,7 @@ import '../theme/app_theme.dart';
 import '../../data/models/bed_model.dart'; // Added
 import '../../data/models/room_model.dart';
 import 'tenants_management_screen.dart';
+import '../widgets/refresh_workspace.dart';
 
 /// Reuse the occupancy sheet from room cards throughout the app.
 void showRoomDetailBottomSheet(BuildContext context, RoomWithStats room) =>
@@ -248,10 +249,9 @@ class _RoomOccupancyScreenState extends State<RoomOccupancyScreen> {
 
                 return RefreshIndicator(
                   color: AppTheme.primaryColor,
-                  onRefresh: () async {
-                    context.read<RoomBloc>().add(RoomLoadRequested());
-                  },
+                  onRefresh: () => refreshWorkspace(context),
                   child: ListView.builder(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     itemCount: filteredBuildings.length,
                     itemBuilder: (context, buildingIndex) {

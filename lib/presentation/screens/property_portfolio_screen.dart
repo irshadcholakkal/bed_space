@@ -4,7 +4,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../data/models/bed_model.dart';
-import '../../data/repositories/management_repository.dart';
 import '../../data/models/property_financials.dart';
 import '../../data/models/room_model.dart';
 import '../blocs/management/management_bloc.dart';
@@ -12,6 +11,7 @@ import '../theme/app_theme.dart';
 import '../widgets/room_delete_dialog.dart';
 import '../widgets/room_media_picker.dart';
 import '../widgets/room_sharing_actions.dart';
+import '../widgets/refresh_workspace.dart';
 
 const _paper = AppTheme.backgroundColor;
 const _ink = AppTheme.textColor;
@@ -189,9 +189,9 @@ class _PropertyPortfolioScreenState extends State<PropertyPortfolioScreen> {
                           r.roomId == b.roomId && r.isAvailable(state.rooms)))
                   .length;
               return RefreshIndicator(
-                onRefresh: () =>
-                    context.read<ManagementRepository>().triggerSync(),
+                onRefresh: () => refreshWorkspace(context),
                 child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
                     padding: EdgeInsets.symmetric(
                         horizontal:
                             MediaQuery.sizeOf(context).width >= 960 ? 48 : 20,

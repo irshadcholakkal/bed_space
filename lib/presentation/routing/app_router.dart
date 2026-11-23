@@ -1,3 +1,4 @@
+import '../screens/employee_workspaces_screen.dart';
 import '../screens/bookings_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'dart:async';
@@ -108,6 +109,19 @@ GoRouter createAppRouter(Listenable refresh) {
           builder: (_, __) => const SaasGate(
               requiresWorkspace: false,
               child: AccountRouteFrame(child: MembershipRoute()))),
+      GoRoute(
+          path: '/employee-workspaces',
+          builder: (_, __) => const SaasGate(
+              requiresWorkspace: false, child: EmployeeWorkspacesScreen())),
+      GoRoute(
+          path: '/employee-workspaces/:workspaceId',
+          builder: (_, state) => SaasGate(
+              requiresWorkspace: false,
+              child: EmployeeWorkspaceScreen(
+                key: ValueKey(state.pathParameters['workspaceId']),
+                workspaceId: state.pathParameters['workspaceId']!,
+                initialName: state.extra as String?,
+              ))),
       GoRoute(path: '/auth/callback', redirect: (_, state) => '/'),
       GoRoute(path: '/billing/return', redirect: (_, state) => '/billing'),
       ShellRoute(

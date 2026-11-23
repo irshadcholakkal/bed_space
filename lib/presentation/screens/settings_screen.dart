@@ -1,7 +1,12 @@
+import 'package:go_router/go_router.dart';
+import '../../data/services/saas_service.dart';
+import 'employees_screen.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import '../widgets/pwa_install_tile.dart';
+import '../widgets/workspace_backup_tile.dart';
+import '../widgets/workspace_data_tile.dart';
 import '../../data/services/pwa_install.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -63,6 +68,25 @@ class SettingsScreen extends StatelessWidget {
                         },
                       )),
                   const SizedBox(height: 24),
+                ],
+                if (SaasService.configured && authState is AuthAuthenticated)
+                  ListTile(
+                    leading: const Icon(Icons.groups_outlined),
+                    title: const Text('Employees'),
+                    subtitle: const Text('Invite employees and manage permissions'),
+                    onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) => const EmployeesScreen(),
+                    )),
+                  ),
+                if (SaasService.configured)
+                  ListTile(
+                    leading: const Icon(Icons.work_outline),
+                    title: const Text('Employee workspaces'),
+                    onTap: () => context.push('/employee-workspaces'),
+                  ),
+                if (SaasService.configured && authState is AuthAuthenticated) ...[
+                  const WorkspaceBackupTile(),
+                  WorkspaceDataTile(sheetId: authState.sheetId),
                 ],
                 // Account Section
                 Text(

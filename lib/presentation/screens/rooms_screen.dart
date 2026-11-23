@@ -5,7 +5,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/bed_model.dart';
 import '../../data/models/room_model.dart';
-import '../../data/repositories/management_repository.dart';
 import '../blocs/management/management_bloc.dart';
 import 'property_portfolio_screen.dart';
 import 'room_occupancy_screen.dart';
@@ -14,6 +13,7 @@ import '../theme/app_theme.dart';
 import 'buildings_management_screen.dart';
 import 'rooms_management_screen.dart';
 import 'tenants_management_screen.dart';
+import '../widgets/refresh_workspace.dart';
 
 enum _RoomFilter { all, available, unavailable, full, noBeds, rooms, subrooms }
 
@@ -432,9 +432,7 @@ class _RoomsScreenState extends State<RoomsScreen> {
                               const LinearProgressIndicator(minHeight: 2),
                             Expanded(
                                 child: RefreshIndicator(
-                                    onRefresh: () => context
-                                        .read<ManagementRepository>()
-                                        .triggerSync(),
+                                    onRefresh: () => refreshWorkspace(context),
                                     child: filtered.isEmpty
                                         ? ListView(
                                             physics:
