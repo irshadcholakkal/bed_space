@@ -38,6 +38,14 @@ class EmployeeService {
           status: 0);
     } on FunctionException catch (error) {
       final details = error.details;
+      if (error.status == 404 &&
+          details is Map &&
+          details['code'] == 'NOT_FOUND') {
+        throw const EmployeeRequestException(
+          'Employee access has not been set up for this app. Ask your administrator to deploy the workspace-employees function.',
+          status: 503,
+        );
+      }
       throw EmployeeRequestException(
         details is Map && details['error'] is String
             ? details['error'] as String

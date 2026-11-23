@@ -168,12 +168,29 @@ handling but cannot repair Google/Supabase server credentials.
 
 ## Employee access
 
-Apply the workspace employee migration and deploy the `workspace-employees`
-Edge Function with the PWA release. Set `EMPLOYEE_TOKEN_KEY` to a random
-32-byte key encoded as standard Base64 in Supabase Function secrets. Use the
-same Google OAuth client settings as `refresh-google-session` and set
-`APP_URL` to the PWA origin. Keep the encryption key stable between releases.
-If the key changes, each owner must reconnect Google from the Employees page.
+Use the Supabase project that matches `SUPABASE_URL` in `.env`. Apply the
+accounts and subscriptions migrations if the membership setup check reports
+missing prerequisites, then apply
+`supabase/migrations/202611230001_workspace_employees.sql` if the employee
+schema has not been installed.
+
+Set `EMPLOYEE_TOKEN_KEY` to a random 32-byte key encoded as standard Base64
+in Supabase Edge Function secrets. Use the same Google OAuth client settings
+as `refresh-google-session` and set `APP_URL` to the PWA origin. Keep the
+encryption key stable between releases. If the key changes, each owner must
+reconnect Google from the Employees page.
+
+Deploy from the repository root with a Supabase account that can deploy
+Edge Functions to the project.
+
+```sh
+supabase functions deploy workspace-employees --project-ref YOUR_PROJECT_REF --use-api
+```
+
+A `404 NOT_FOUND` response from `/functions/v1/workspace-employees` with
+the message `Requested function was not found` means the project is missing
+the Edge Function. Applying the SQL migration creates the employee tables.
+The deploy command publishes the function separately.
 
 In the PWA, an owner opens **Settings → Employees**, connects Google for
 employees, and creates an invitation with the desired permissions. Use
